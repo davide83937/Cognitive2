@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 
 from Models import get_llm
 from Prompt import triage_system_prompt
-from Schemas import State
+from Schemas import State, RouterSchema
+
 
 class TriageDecision(BaseModel):
     classification: Literal["accept", "refine", "reject"] = Field(description="La decisione di classificazione")
@@ -20,7 +21,7 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
 
     # Run the router LLM
     llm = get_llm()
-    llm = llm.with_structured_output(TriageDecision)
+    llm = llm.with_structured_output(RouterSchema)
     result = llm.invoke(
         [
             {"role": "system", "content": system_prompt},
