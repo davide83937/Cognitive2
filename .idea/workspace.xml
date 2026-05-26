@@ -4,23 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/PROGETTO2.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/Activate.ps1" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/activate" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/activate.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/activate.fish" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/deactivate.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/python.exe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/Scripts/pythonw.exe" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.venv/pyvenv.cfg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-    </list>
+    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="boh" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -36,6 +20,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "davide83937"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/davide83937/Cognitive2",
+    "accountId": "42101907-8782-42bc-b026-af789859d904"
+  }
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -46,19 +42,19 @@
       <entry key="MS500" value="1.0" />
       <entry key="S2" value="1.0" />
       <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.0" />
-      <entry key="S60" value="1.0" />
-      <entry key="M2" value="1.0" />
-      <entry key="M5" value="1.0" />
-      <entry key="M10" value="1.0" />
-      <entry key="M15" value="1.0" />
-      <entry key="M30" value="1.0" />
-      <entry key="H1" value="1.0" />
-      <entry key="H2" value="1.0" />
-      <entry key="H4" value="1.0" />
-      <entry key="D1" value="1.0" />
-      <entry key="W1" value="1.0" />
+      <entry key="S10" value="1.0000000000000016" />
+      <entry key="S30" value="1.000011763416597" />
+      <entry key="S60" value="1.003429783753685" />
+      <entry key="M2" value="1.058564355658412" />
+      <entry key="M5" value="1.3214055321791143" />
+      <entry key="M10" value="1.566926390441576" />
+      <entry key="M15" value="1.6849903436428835" />
+      <entry key="M30" value="1.8276414342231084" />
+      <entry key="H1" value="1.9097480058912513" />
+      <entry key="H2" value="1.9538071114702653" />
+      <entry key="H4" value="1.9766304887060744" />
+      <entry key="D1" value="1.9960666047103073" />
+      <entry key="W1" value="1.9994371368334698" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -80,23 +76,23 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.12413656192962948" />
-      <entry key="MS500" value="0.65883997586707" />
-      <entry key="S2" value="0.900938167122072" />
-      <entry key="S5" value="0.9591311462985207" />
-      <entry key="S10" value="0.9793524116979141" />
-      <entry key="S30" value="0.9930695503933336" />
-      <entry key="S60" value="0.996528750409808" />
-      <entry key="M2" value="0.9982628663883116" />
-      <entry key="M5" value="0.9993047841034731" />
-      <entry key="M10" value="0.9996523316150836" />
-      <entry key="M15" value="0.9997682076442794" />
-      <entry key="M30" value="0.9998840971053993" />
-      <entry key="H1" value="0.9999420468734171" />
-      <entry key="H2" value="0.9999710230168758" />
-      <entry key="H4" value="0.9999855114034782" />
-      <entry key="D1" value="0.9999975852193351" />
-      <entry key="W1" value="0.9999996550309765" />
+      <entry key="MS100" value="0.9201876506248751" />
+      <entry key="MS500" value="0.9835020740262483" />
+      <entry key="S2" value="0.9958497530944581" />
+      <entry key="S5" value="0.9983378297043665" />
+      <entry key="S10" value="0.9991685692136085" />
+      <entry key="S30" value="0.9997344614512963" />
+      <entry key="S60" value="1.0032792582907397" />
+      <entry key="M2" value="1.0583933092319044" />
+      <entry key="M5" value="1.321154360441048" />
+      <entry key="M10" value="1.5667154252115236" />
+      <entry key="M15" value="1.6848223261977842" />
+      <entry key="M30" value="1.8275408872146632" />
+      <entry key="H1" value="1.909692972661975" />
+      <entry key="H2" value="1.953778317773059" />
+      <entry key="H4" value="1.9766157610784891" />
+      <entry key="D1" value="1.9960641031574922" />
+      <entry key="W1" value="1.9994367783056963" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -108,22 +104,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "master",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -139,9 +136,70 @@
       <option name="presentableId" value="Default" />
       <updated>1779790139548</updated>
     </task>
+    <task id="LOCAL-00001" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792201323</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792201324</updated>
+    </task>
+    <task id="LOCAL-00002" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792221443</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792221443</updated>
+    </task>
+    <task id="LOCAL-00003" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792276173</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792276173</updated>
+    </task>
+    <task id="LOCAL-00004" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792360510</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792360510</updated>
+    </task>
+    <task id="LOCAL-00005" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792383334</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792383334</updated>
+    </task>
+    <task id="LOCAL-00006" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792404986</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792404986</updated>
+    </task>
+    <task id="LOCAL-00007" summary="boh">
+      <option name="closed" value="true" />
+      <created>1779792473339</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792473339</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="boh" />
+    <option name="LAST_COMMIT_MESSAGE" value="boh" />
   </component>
 </project>
