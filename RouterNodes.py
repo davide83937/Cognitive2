@@ -70,7 +70,7 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
         # If real life, this would do something else
         print("🔔 Classification: REFINE")
         print("User has asked some edits")
-        goto = END
+        goto = "update_article_node"
     else:
         raise ValueError(f"Invalid classification: {result.classification}")
     return Command(goto=goto)

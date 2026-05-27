@@ -48,3 +48,9 @@ Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATT
     "classification": "approve" oppure "refine"
 }}
 Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
+
+def get_update_prompt():
+    update_prompt = """Sei un giornalista esperto. Hai appena generato un articolo, ma l'utente ha richiesto delle modifiche fornendo un feedback.
+    Il tuo compito è analizzare la cronologia dei messaggi, comprendere le modifiche richieste e utilizzare nuovamente il tool 'write_an_article' per generare la versione aggiornata.
+    Assicurati di passare al tool i nuovi parametri (about, author, content) aggiornati in base alle richieste."""
+    return update_prompt

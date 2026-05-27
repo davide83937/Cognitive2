@@ -3,7 +3,7 @@ from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
 from Models import get_llm, get_llm_with_tools
-from Prompt import get_refine_prompt, get_accept_prompt
+from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt
 from base import get_tools_by_name
 
 
@@ -53,12 +53,12 @@ def tool_node(state: MessagesState):
         observation = tool.invoke(tool_call["args"])
 
         # --- INIZIO STAMPA DEL RISULTATO ---
-        #print("\n" + "=" * 50)
-        #print("📝 ARTICOLO GENERATO:")
-        #print("=" * 50)
-        #print(observation)  # Qui stampi il contenuto reale!
-        #print("=" * 50 + "\n")
-        # --- FINE STAMPA DEL RISULTATO ---
+        print("\n" + "=" * 50)
+        print("📝 ARTICOLO GENERATO:")
+        print("=" * 50)
+        print(observation)  # Qui stampi il contenuto reale!
+        print("=" * 50 + "\n")
+         #--- FINE STAMPA DEL RISULTATO ---
 
         # Crea il messaggio formattato in modo nativo per LangChain
         tool_message = ToolMessage(
@@ -82,6 +82,17 @@ def tool_node(state: MessagesState):
         goto="tool_node_router"  # O il nome che hai dato al nodo successivo
     )
 
+def update_article_node(state: MessagesState):
+    llm = get_llm_with_tools()
+    update_prompt = get_update_prompt()
+
+    # Costruiamo i messaggi da passare al LLM: il system prompt per la modifica + tutta la history
+    messages = [{"role": "system", "content": update_prompt}] + state["messages"]
+
+    response = llm.invoke(messages)
+
+    # Passiamo il comando a tool_node per eseguire la nuova stesura
+    return Command(update={"messages": [response]}, goto="tool_node")
 
 
 
