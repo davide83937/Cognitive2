@@ -20,6 +20,18 @@ class RouterSchema(BaseModel):
         )
     )
 
+class RouterSchemaToolNode(BaseModel):
+    ragionamento: str = Field(
+        description="Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo"
+    )
+    classification: Literal["approve", "refine"] = Field(
+        description=(
+            "DECISION RULES:\n"
+            "- 'approve': Se l'utente approva l'articolo così come è.\n"
+            "- 'refine': Se l'utente ha chiesto delle modifiche.\n"
+        )
+    )
+
 class StateInput(TypedDict):
     # This is the input to the state
     topic_input: str

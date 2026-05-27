@@ -11,7 +11,6 @@ def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = Fals
     return [all_tools[name] for name in tool_names if name in all_tools]
 
 
-def get_tools_by_name(tools: Optional[List[BaseTool]] = None) -> Dict[str, BaseTool]:
-    if tools is None:
-        tools = get_tools()
-    return {tool.name: tool for tool in tools}
+get_tools_by_name = {
+    "write_an_article": write_an_article
+}

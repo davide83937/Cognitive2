@@ -4,8 +4,8 @@ from langgraph import graph
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START
-from Nodes import refine_node, accept_node
-from RouterNodes import triage_router
+from Nodes import refine_node, accept_node, tool_node
+from RouterNodes import triage_router, tool_node_router
 from Schemas import State
 
 #load_dotenv()
@@ -20,6 +20,8 @@ builder = StateGraph(State)
 builder.add_node("triage_router", triage_router)
 builder.add_node("refine_node", refine_node)
 builder.add_node("accept_node", accept_node)
+builder.add_node("tool_node", tool_node)
+builder.add_node("tool_node_router", tool_node_router)
 
 # 4. Definisci l'arco di ingresso
 builder.add_edge(START, "triage_router")
@@ -41,14 +43,22 @@ while True:
 
     # Se il grafo è fermo su un interrupt, gestisci il suggerimento e la ripresa
     if snapshot.tasks and snapshot.tasks[0].interrupts:
-        # Recupera il suggerimento "chirurgico"
         dati = snapshot.tasks[0].interrupts[0].value
-        print(f"🤖 Suggerimento: {dati['proposta']}")
+        new_input = ""
+        # CASO 1: L'interrupt proviene dal refine_node
+        if "proposta" in dati:
+            print(f"🤖 Suggerimento: {dati['proposta']}")
+            new_input = input("Inserisci il tuo topic raffinato: ")
+        elif "articolo_generato" in dati:
+            print("\n" + "=" * 50)
+            print("📝 ARTICOLO GENERATO:")
+            print("=" * 50)
+            print(dati["articolo_generato"])
+            print("=" * 50 + "\n")
 
-        # Chiedi input all'utente
-        nuovo_topic = input("Inserisci il tuo topic raffinato: ")
+            new_input = input("Inserisci il tuo feedback per migliorare l'articolo: ")
 
         # Riprendi il grafo usando la 'resume' dell'interrupt
         # Questo passa 'nuovo_topic' direttamente alla variabile che aspettava l'interrupt
-        app.invoke(Command(resume=nuovo_topic), config=config)
+        app.invoke(Command(resume=new_input), config=config)
 

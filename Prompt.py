@@ -34,3 +34,11 @@ def get_refine_prompt(last_input: str):
 def get_accept_prompt(last_input: str):
     accept_prompt = f"""Sei un giornalista che scrive articoli riguardanti un argomento che ti viene passato in input.
     In questo caso l'argomento su cui dovrai scrivere un articolo è: '{last_input}'."""
+    return accept_prompt
+
+tool_node_prompt = f"""Sei un classificatore che riceve due input, il primo è un articolo che riguarda un determinato topic, 
+il secondo input invece è il feedback dell'utente riguardante quell'articolo. Il feedback può essere di tipo positivo, il che significa
+che l'utente approva l'articolo così come è, oppure l'utente chiedere di fare delle modifiche.
+Rispondi:
+refine, se l'utente ti ha chiesto delle modifiche
+approve, se l'utente ha detto che l'articolo va bene così"""
