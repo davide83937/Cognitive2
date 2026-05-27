@@ -41,4 +41,10 @@ il secondo input invece è il feedback dell'utente riguardante quell'articolo. I
 che l'utente approva l'articolo così come è, oppure l'utente chiedere di fare delle modifiche.
 Rispondi:
 refine, se l'utente ti ha chiesto delle modifiche
-approve, se l'utente ha detto che l'articolo va bene così"""
+approve, se l'utente ha detto che l'articolo va bene così.
+Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATTAMENTE questa struttura:
+{{
+    "ragionamento": "Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo",
+    "classification": "approve" oppure "refine"
+}}
+Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""

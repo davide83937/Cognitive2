@@ -52,7 +52,7 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
     user_prompt = feedback_input
 
     llm = get_llm()
-    llm = llm.with_structured_output(RouterSchemaToolNode)
+    llm = llm.with_structured_output(RouterSchemaToolNode, method="json_mode")
     result = llm.invoke(
         [
             {"role": "system", "content": system_prompt},
