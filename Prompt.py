@@ -14,5 +14,23 @@ router_prompt = ChatPromptTemplate.from_messages([
 triage_system_prompt = """Sei un classificatore che riceve dei topic dall'utente e li classifica in una delle seguenti 3 categorie:
 - accept, se l'argomento ha a che fare con la scienza o la tecnologie ed è abbastanza specifico,
 - refine, se l'argomento ha a che fare con la scienza o tecnologia ma è troppo generico e quindi ha bisogno di essere specializzato,
-ad esempio se il topic è "elettricità" oppure "droni", bisogna essere più specifici
+ad esempio se il topic è "elettricità" oppure "droni", bisogna essere più specifici, in tal caso proponi tu qualcosa di più specifico
+inerente al topic proposto
 - reject, Se l'argomento non ha nulla a che vedere con la scienza o la tecnologia"""
+
+def get_refine_prompt(last_input: str):
+
+    refine_prompt = f"""
+                Sei un editor per un blog di robotica. L'utente ha proposto l'argomento: '{last_input}'.
+                La classificazione precedente è stata 'REFINE' perché l'argomento è troppo generico.
+    
+                Il tuo compito è:
+                1. Spiegare brevemente perché è troppo generico.
+                2. Proporre 3 alternative specifiche basate sull'argomento proposto.
+                3. Chiedere all'utente di sceglierne una o di fornire un dettaglio tecnico.
+                """
+    return refine_prompt
+
+def get_accept_prompt(last_input: str):
+    accept_prompt = f"""Sei un giornalista che scrive articoli riguardanti un argomento che ti viene passato in input.
+    In questo caso l'argomento su cui dovrai scrivere un articolo è: '{last_input}'."""

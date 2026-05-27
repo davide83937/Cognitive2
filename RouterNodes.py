@@ -1,6 +1,6 @@
 from typing import Literal
 
-from langgraph.constants import END
+from langgraph.constants import END, START
 from langgraph.types import Command
 from packaging.metadata import parse_email
 from pydantic import BaseModel, Field
@@ -32,7 +32,7 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
 
     if classification == "accept":
         print("📧 Classification: ACCEPT")
-        goto = END
+        goto = "accept_node"
 
     elif result.classification == "reject":
         print("🚫 Classification: REJECT")
@@ -40,7 +40,11 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
     elif result.classification == "refine":
         # If real life, this would do something else
         print("🔔 Classification: REFINE")
-        goto = END
+        goto = "refine_node"
     else:
         raise ValueError(f"Invalid classification: {result.classification}")
     return Command(goto=goto)
+
+
+
+
