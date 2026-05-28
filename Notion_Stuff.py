@@ -181,7 +181,7 @@ def trova_prima_data_disponibile(data_partenza=None, max_articoli=3):
             for pagina in pagine:
                 # Navighiamo la struttura JSON di Notion per estrarre la data
                 # Aggiungiamo un check nel caso una riga abbia la colonna Data vuota
-                campo_data = pagina.get("properties", {}).get("Data", {}).get("date")
+                campo_data = pagina.get("properties", {}).get("Date", {}).get("date")
                 if campo_data and campo_data.get("start"):
                     date_occupate.append(campo_data["start"])
 

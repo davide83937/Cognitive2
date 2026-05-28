@@ -97,10 +97,18 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
         print("User has approved")
         goto = "decision_node"
 
-    elif result.classification == "scheduling":
+    elif classification == "scheduling":
         # If real life, this would do something else
         print("🔔 Classification: SCHEDULING")
         print("You are talking about the schedule")
         goto = "check_schedule_node"
-    return Command(goto=goto)
+
+    if result.data_proposta and result.data_proposta != "NESSUNA":
+        print(f"🎯 Trasferisco la nuova data allo stato: {result.data_proposta}")
+        return Command(update={"data_proposta": result.data_proposta}, goto=goto)
+    # Passiamo sia l'aggiornamento della data che la destinazione
+    return Command(
+
+        goto=goto
+    )
 

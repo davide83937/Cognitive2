@@ -122,13 +122,15 @@ def update_article_node(state: MessagesState):
 
 
 
-def check_schedule_node(state: MessagesState):
+def check_schedule_node(state: State):
 
     last_message = state["messages"][-1]
     llm = get_llm_with_calendar_tools()
 
     ai_msg = llm.invoke([{"role": "system", "content": check_date_prompt}] + [last_message])
     new_messages = [ai_msg]
+
+    data_estratta = state.get("data_proposta")
 
     # 3. Verifichiamo se l'LLM ha deciso di chiamare uno o più tool
     if hasattr(ai_msg, "tool_calls") and len(ai_msg.tool_calls) > 0:

@@ -64,7 +64,8 @@ decision, se l'utente è deciso a pubblicare l'articolo in una specifica data
 Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATTAMENTE questa struttura:
 {{
     "ragionamento": "Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo",
-    "classification": "decision" oppure "scheduling"
+    "classification": "decision" oppure "scheduling",
+    "data_proposta": "La data in formato YYYY-MM-DD se l'utente ne specifica una nuova nel suo messaggio, altrimenti null"
 }}
 Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
 

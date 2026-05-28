@@ -13,6 +13,7 @@ class ArticleData(BaseModel):
 class State(MessagesState):
     classification_decision: Literal["accept", "refine", "reject"]
     final_article: Optional[ArticleData] = None  # <--- Il nostro nuovo oggetto
+    data_proposta: Optional[str] = None  # <-- Aggiungi questa riga
 
 class RouterSchema(BaseModel):
     ragionamento: str = Field(
@@ -37,6 +38,10 @@ class RouterSchemaToolNode(BaseModel):
             "- 'approve': Se l'utente approva l'articolo così come è.\n"
             "- 'refine': Se l'utente ha chiesto delle modifiche.\n"
         )
+    )
+    data_proposta: Optional[str] = Field(
+        default=None,
+        description="SOLO SE l'utente scrive esplicitamente una data (es. 'pubblica il 28 maggio'), estraila in formato YYYY-MM-DD. Se l'utente dice solo 'ok', 'va bene' o 'confermo', lascia null."
     )
 
 
