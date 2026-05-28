@@ -54,3 +54,16 @@ def get_update_prompt():
     Il tuo compito è analizzare la cronologia dei messaggi, comprendere le modifiche richieste e utilizzare nuovamente il tool 'write_an_article' per generare la versione aggiornata.
     Assicurati di passare al tool i nuovi parametri (about, author, content) aggiornati in base alle richieste."""
     return update_prompt
+
+scheduling_node_prompt = """Sei un classificatore che cparla con l'utente per quanto riguarda la 
+schedulazione di un articolo, il tuo compito è analizzare l'input dell'utente, è stabilire se sta chiedendo informazioni
+riguardanti le date disponibili o se è deciso per una data specifica.
+Rispondi:
+scheduling, se l'utente ti ha chiesto informazioni riguardanti una data o le date disponibili
+decision, se l'utente è deciso a pubblicare l'articolo in una specifica data
+Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATTAMENTE questa struttura:
+{{
+    "ragionamento": "Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo",
+    "classification": "decision" oppure "scheduling"
+}}
+Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""

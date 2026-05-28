@@ -39,6 +39,18 @@ class RouterSchemaToolNode(BaseModel):
         )
     )
 
-class StateInput(TypedDict):
-    # This is the input to the state
-    topic_input: str
+
+class RouterSchemaScheduling(BaseModel):
+    ragionamento: str = Field(
+        description="Analizza se l'utente sta chiedendo informazioni sulle disponibilità (scheduling) o se ha scelto una data per pubblicare (decision)."
+    )
+    classification: Literal["query", "decision"] = Field(
+        description=(
+            "- 'scheduling': Se l'utente chiede la prima data disponibile o vuole verificare una data specifica.\n"
+            "- 'decision': Se l'utente conferma una data e vuole procedere con la pubblicazione."
+        )
+    )
+    data_proposta: Optional[str] = Field(
+        None,
+        description="La data YYYY-MM-DD se l'utente ne ha menzionata una, altrimenti None."
+    )
