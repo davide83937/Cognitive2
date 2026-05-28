@@ -2,8 +2,9 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
-from Models import get_llm, get_llm_with_tools
+from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt
+from Schemas import State, ArticleData
 from base import get_tools_by_name
 
 
@@ -14,6 +15,7 @@ def call_llm(state: MessagesState):
     llm = get_llm()
     risposta = llm.invoke(state["messages"])
     return {"messages": [risposta]}
+
 
 def refine_node(state: MessagesState):
     last_input = state["messages"][-1].content
@@ -40,46 +42,66 @@ def accept_node(state: MessagesState):
 # Assicurati di importare i tuoi tool
 # dalla tua mappa, ad esempio: get_tools_by_name = {"write_an_article": write_an_article}
 
-def tool_node(state: MessagesState):
+def tool_node(state: State):  # <--- Usa State al posto di MessagesState
     result = []
-    # L'ultimo messaggio generato dal LLM, che contiene la richiesta dei tool
     last_message = state["messages"][-1]
 
+    # Prepariamo delle variabili con valori di default
+    titolo_estratto = "Nuovo Articolo"
+    autore_estratto = "Agente AI"
+    testo_articolo = ""
+
     for tool_call in last_message.tool_calls:
-        # Recupera il tool dalla tua mappa
-        tool = get_tools_by_name[tool_call["name"]]
+        # 1. ESTRAIAMO I PARAMETRI DIRETTAMENTE DAGLI ARGOMENTI DEL TOOL
+        argomenti = tool_call.get("args", {})
+
+        # Recuperiamo "about" e "author" se esistono
+        titolo_estratto = argomenti.get("about", titolo_estratto)
+        autore_estratto = argomenti.get("author", autore_estratto)
 
         # Esegue fisicamente la funzione passando gli argomenti
+        tool = get_tools_by_name[tool_call["name"]]
         observation = tool.invoke(tool_call["args"])
+
+        testo_articolo = str(observation)
 
         # --- INIZIO STAMPA DEL RISULTATO ---
         print("\n" + "=" * 50)
-        print("📝 ARTICOLO GENERATO:")
+        print(f"📝 ARTICOLO GENERATO (Titolo: {titolo_estratto} | Autore: {autore_estratto}):")
         print("=" * 50)
-        print(observation)  # Qui stampi il contenuto reale!
+        print(testo_articolo)
         print("=" * 50 + "\n")
-         #--- FINE STAMPA DEL RISULTATO ---
+        # --- FINE STAMPA DEL RISULTATO ---
 
-        # Crea il messaggio formattato in modo nativo per LangChain
         tool_message = ToolMessage(
-            content=str(observation),  # Forza a stringa per sicurezza
-            tool_call_id=tool_call["id"],  # ID fondamentale per ricollegare la risposta
-            name=tool_call["name"]  # Nome del tool eseguito
+            content=testo_articolo,
+            tool_call_id=tool_call["id"],
+            name=tool_call["name"]
         )
-
         result.append(tool_message)
-        # 1. Blocchiamo il grafo per chiedere il feedback
-        # Passiamo l'articolo nel payload dell'interrupt così Main.py può stamparlo
-    feedback_utente = interrupt({"articolo_generato": str(observation)})
-    # 2. Aggiungiamo il feedback dell'utente come un nuovo HumanMessage
+
+    # Chiediamo il feedback all'utente
+    feedback_utente = interrupt({"articolo_generato": testo_articolo})
+
     messaggio_feedback = HumanMessage(
         content=f"Questo è il feedback dell'utente sull'articolo appena scritto: {feedback_utente}"
     )
     result.append(messaggio_feedback)
-    # Restituendo "messages", LangGraph appenderà questi ToolMessage alla cronologia
+
+    # 2. CREIAMO L'OGGETTO ARTICOLO CON I DATI ESTRATTI
+    articolo_generato = ArticleData(
+        title=titolo_estratto,
+        text=testo_articolo,
+        author=autore_estratto
+    )
+
+    # Restituendo "messages" e "final_article", aggiorniamo la cronologia e salviamo l'oggetto
     return Command(
-        update={"messages": result},
-        goto="tool_node_router"  # O il nome che hai dato al nodo successivo
+        update={
+            "messages": result,
+            "final_article": articolo_generato  # <--- Salviamo l'oggetto nello stato!
+        },
+        goto="tool_node_router"
     )
 
 def update_article_node(state: MessagesState):
@@ -96,3 +118,5 @@ def update_article_node(state: MessagesState):
 
 
 
+def schedule_node(state: MessagesState):
+    llm = get_llm_with_calendar_tools()

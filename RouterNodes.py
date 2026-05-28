@@ -64,7 +64,7 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
     if classification == "approve":
         print("📧 Classification: ACCEPT")
         print("User has approved")
-        goto = END
+        goto = "schedule_node"
 
     elif result.classification == "refine":
         # If real life, this would do something else

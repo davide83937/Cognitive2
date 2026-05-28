@@ -3,10 +3,11 @@ from datetime import timedelta, datetime
 
 import requests
 
-from Models import get_notion_token, get_notion_db_id
+
 
 
 def add_row_to_notion(title, date, author, text):
+    from Models import get_notion_token, get_notion_db_id
     print(f"Tentativo di aggiunta di: '{title}'...")
 
     # Per aggiungere righe, l'endpoint corretto è quello delle "pages"
@@ -73,6 +74,7 @@ def add_row_to_notion(title, date, author, text):
 
 
 def controlla_disponibilita_data(data_target, max_articoli=3):
+    from Models import get_notion_token, get_notion_db_id
     """
     Controlla se una specifica data ha meno di 'max_articoli' schedulati.
     data_target deve essere nel formato 'YYYY-MM-DD' (es. '2026-06-01').
@@ -134,6 +136,7 @@ def controlla_disponibilita_data(data_target, max_articoli=3):
 
 
 def trova_prima_data_disponibile(data_partenza=None, max_articoli=3):
+    from Models import get_notion_token, get_notion_db_id
     """
     Trova la prima data (da data_partenza in poi) che ha meno di 'max_articoli' schedulati.
     Se data_partenza non è fornita, usa la data di oggi.

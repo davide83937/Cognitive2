@@ -4,7 +4,7 @@ from langgraph import graph
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START
-from Nodes import refine_node, accept_node, tool_node, update_article_node
+from Nodes import refine_node, accept_node, tool_node, update_article_node, schedule_node
 from RouterNodes import triage_router, tool_node_router
 from Schemas import State
 
@@ -23,6 +23,7 @@ builder.add_node("accept_node", accept_node)
 builder.add_node("tool_node", tool_node)
 builder.add_node("tool_node_router", tool_node_router)
 builder.add_node("update_article_node", update_article_node)
+builder.add_node("schedule_node", schedule_node)
 
 # 4. Definisci l'arco di ingresso
 builder.add_edge(START, "triage_router")

@@ -1,11 +1,18 @@
 from langgraph.graph import add_messages, MessagesState
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
-from typing import Annotated, Literal
+from typing import Literal, Optional
 
+
+class ArticleData(BaseModel):
+    title: str = Field(description="Il titolo dell'articolo")
+    text: str = Field(description="Il contenuto completo dell'articolo")
+    author: str = Field(default="AI Agent", description="L'autore dell'articolo")
+    date: Optional[str] = Field(default=None, description="La data di pubblicazione schedulata (YYYY-MM-DD)")
 
 class State(MessagesState):
     classification_decision: Literal["accept", "refine", "reject"]
+    final_article: Optional[ArticleData] = None  # <--- Il nostro nuovo oggetto
 
 class RouterSchema(BaseModel):
     ragionamento: str = Field(

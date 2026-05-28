@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 import os
-from Tools import write_an_article
+from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
@@ -25,3 +25,8 @@ def get_notion_token():
 
 def get_notion_db_id():
     return NOTION_DATABASE_ID
+
+def get_llm_with_calendar_tools():
+    llm = get_llm()
+    llm = llm.bind_tools([find_first_available_date_tool, check_specific_date_tool])
+    return llm
