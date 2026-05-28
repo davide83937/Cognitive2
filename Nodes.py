@@ -1,11 +1,15 @@
+import time
 from langchain_core.messages import HumanMessage, AIMessage
+from langgraph.constants import END
 from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
 from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
-from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt
+from Notion_Stuff import add_row_to_notion, controlla_disponibilita_data
+from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
 from Schemas import State, ArticleData
 from base import get_tools_by_name
+import re
 
 
 def call_llm(state: MessagesState):
@@ -118,5 +122,127 @@ def update_article_node(state: MessagesState):
 
 
 
-def schedule_node(state: MessagesState):
+def check_schedule_node(state: MessagesState):
+
+    last_message = state["messages"][-1]
     llm = get_llm_with_calendar_tools()
+
+    ai_msg = llm.invoke([{"role": "system", "content": check_date_prompt}] + [last_message])
+    new_messages = [ai_msg]
+
+    # 3. Verifichiamo se l'LLM ha deciso di chiamare uno o più tool
+    if hasattr(ai_msg, "tool_calls") and len(ai_msg.tool_calls) > 0:
+        print(f"🔧 L'LLM ha richiesto {len(ai_msg.tool_calls)} tool(s). Esecuzione in corso...")
+
+        # 4. Eseguiamo ogni tool richiesto
+        for tool_call in ai_msg.tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+            tool_id = tool_call["id"]
+
+            print(f"   -> Eseguo '{tool_name}' con argomenti: {tool_args}")
+
+            # Richiamiamo la funzione Python vera e propria
+            selected_tool = get_tools_by_name[tool_name]
+            tool_result = selected_tool.invoke(tool_args)
+
+            # Creiamo il ToolMessage con il risultato da dare in pasto all'LLM
+            tool_msg = ToolMessage(
+                content=str(tool_result),
+                name=tool_name,
+                tool_call_id=tool_id
+            )
+            new_messages.append(tool_msg)
+            # 🎯 ESTRAZIONE DATA: Cerca il formato YYYY-MM-DD nel testo restituito dal tool
+            match = re.search(r"\d{4}-\d{2}-\d{2}", str(tool_result))
+            if match:
+                data_estratta = match.group(0)
+
+    else:
+        print("✅ Nessun tool richiesto dall'LLM. Risposta generata direttamente.")
+
+    # 6. Restituiamo tutti i nuovi messaggi generati (AIMessage(s) e ToolMessage(s))
+    # LangGraph li appenderà automaticamente alla lista 'messages' dello State
+        # --- NUOVA SEZIONE: STAMPA, INTERRUPT E AGGIORNAMENTO STATO ---
+
+    # 1. Stampiamo il risultato (l'ultimo messaggio aggiunto, che sia il ToolMessage o l'AIMessage)
+    print("\n" + "=" * 50)
+    print("📅 RISULTATO SCHEDULING (Tool/LLM):")
+    for msg in new_messages:
+        # pretty_print() è un metodo comodo di LangChain per stampare i messaggi in modo leggibile
+        msg.pretty_print()
+    print("=" * 50 + "\n")
+
+    # 2. Lanciamo l'interrupt.
+    # Passiamo un dizionario in modo che Main.py possa riconoscerlo,
+    # esattamente come hai fatto per "proposta" e "articolo_generato".
+    user_feedback = interrupt({"schedule_result": "In attesa di feedback sulle date..."})
+
+    # 3. Aggiorniamo lo stato con l'input dell'utente
+    print(f"👤 Utente ha risposto: {user_feedback}")
+    new_messages.append(HumanMessage(content=user_feedback))
+
+    return Command(
+        update={
+            "messages": new_messages,
+            "data_proposta": data_estratta  # Usa il nome della variabile in cui hai salvato la data
+        },
+        goto="scheduling_node_router"
+    )
+
+
+# --- Il Nodo Decisionale Definitivo ---
+def decision_node(state: State) -> Command:
+    print("--- [decision_node] Verifica disponibilità finale (Senza LLM) ---")
+
+    # 1. Recuperiamo la data salvata dal router
+    target_date = state.get("data_proposta")
+    if not target_date:
+        target_date = "2026-01-01"  # Data fallback di emergenza se manca
+
+    # 2. Chiamiamo la tua funzione di controllo
+    risultato_disponibilita = controlla_disponibilita_data(target_date)
+
+    # Se il risultato esiste ed è true
+    is_available = risultato_disponibilita and risultato_disponibilita.get("is_available", False)
+
+    if is_available:
+        print("🚀 PUBBLICAZIONE ARTICOLO SU NOTION IN CORSO...")
+        time.sleep(2)
+
+        # Recuperiamo l'articolo generato per avere titolo, autore e testo
+        final_article = state.get("final_article")
+
+        if final_article:
+            # Estraiamo i dati dall'oggetto Pydantic ArticleData
+            titolo = final_article.title
+            testo = final_article.text
+            autore = final_article.author
+
+            # Eseguiamo la pubblicazione
+            add_row_to_notion(titolo, target_date, autore, testo)
+
+            # Aggiorniamo la data nello stato dell'articolo
+            final_article.date = target_date
+        else:
+            print("⚠️ Errore: Nessun articolo finale trovato nello stato da pubblicare.")
+
+        return Command(
+            update={"final_article": final_article},
+            goto=END
+        )
+    else:
+        # La data è piena, dobbiamo chiedere all'utente una nuova data
+        msg_testo = f"Purtroppo la data {target_date} è già piena. Inserisci una nuova data in formato YYYY-MM-DD."
+        ai_msg = AIMessage(content=msg_testo)
+
+        # L'interruzione che aspetta il tuo input da terminale
+        user_feedback = interrupt({"schedule_result": msg_testo})
+
+        human_msg = HumanMessage(content=user_feedback)
+
+        # Ritorniamo al router aggiungendo i messaggi in modo che l'LLM rianalizzi la nuova data
+        return Command(
+            update={"messages": [ai_msg, human_msg]},
+            goto="scheduling_node_router"
+        )

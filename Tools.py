@@ -14,6 +14,7 @@ def find_first_available_date_tool(data_partenza: str = None) -> str:
     Trova la prima data disponibile su Notion per pubblicare un articolo.
     Accetta opzionalmente una 'data_partenza' (YYYY-MM-DD). Se non fornita, cerca da oggi.
     Restituisce la data trovata o un messaggio se il calendario è pieno.
+    Una giornata è piena se ci sono già 3 articoli schedulati
     """
     data_trovata = trova_prima_data_disponibile(data_partenza)
     if data_trovata:
@@ -28,6 +29,7 @@ def check_specific_date_tool(data_target: str) -> str:
     Verifica se una data specifica è disponibile su Notion per schedulare un articolo.
     L'argomento 'data_target' deve essere rigorosamente nel formato stringa 'YYYY-MM-DD' (es. '2026-06-01').
     Da usare quando l'utente propone una data precisa o chiede se un determinato giorno è libero.
+    Una giornata è piena se ci sono già 3 articoli schedulati.
     """
     risultato = controlla_disponibilita_data(data_target)
 

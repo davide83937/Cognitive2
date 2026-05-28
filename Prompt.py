@@ -55,7 +55,7 @@ def get_update_prompt():
     Assicurati di passare al tool i nuovi parametri (about, author, content) aggiornati in base alle richieste."""
     return update_prompt
 
-scheduling_node_prompt = """Sei un classificatore che cparla con l'utente per quanto riguarda la 
+scheduling_node_prompt = """Sei un classificatore che parla con l'utente per quanto riguarda la 
 schedulazione di un articolo, il tuo compito è analizzare l'input dell'utente, è stabilire se sta chiedendo informazioni
 riguardanti le date disponibili o se è deciso per una data specifica.
 Rispondi:
@@ -67,3 +67,9 @@ Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATT
     "classification": "decision" oppure "scheduling"
 }}
 Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
+
+check_date_prompt = """Sei l'assistente editoriale responsabile della pianificazione del blog di robotica.
+    Il tuo compito è aiutare l'utente a trovare una data disponibile per pubblicare il suo articolo.
+    L'utente ti chiederà informazioni sulle date disponibili, hai dei tool a disposizione per poter cercare e fornire
+    le informazioni, scegli sempre il tool più adatto alla richiesta che ti viene fatta.
+"""

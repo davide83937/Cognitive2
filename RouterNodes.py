@@ -86,22 +86,21 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
 
     llm = get_llm()
     llm = llm.with_structured_output(RouterSchemaScheduling, method="json_mode")
+    # 🎯 LA SVOLTA: Concateniamo il System Prompt con TUTTI i messaggi della storia ()
     result = llm.invoke(
-        [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+        [{"role": "system", "content": system_prompt}] + state["messages"]
     )
     classification = result.classification
 
     if classification == "decision":
         print("📧 Classification: DECISION")
         print("User has approved")
-        goto = END
+        goto = "decision_node"
 
     elif result.classification == "scheduling":
         # If real life, this would do something else
         print("🔔 Classification: SCHEDULING")
         print("You are talking about the schedule")
-        goto = END
+        goto = "check_schedule_node"
+    return Command(goto=goto)
 

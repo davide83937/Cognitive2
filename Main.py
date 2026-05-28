@@ -2,9 +2,10 @@ from langchain_core.messages import HumanMessage
 from langgraph import graph
 
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START
-from Nodes import refine_node, accept_node, tool_node, update_article_node
+from Nodes import refine_node, accept_node, tool_node, update_article_node, check_schedule_node, decision_node
 from RouterNodes import triage_router, tool_node_router, scheduling_node_router
 from Schemas import State
 
@@ -24,12 +25,19 @@ builder.add_node("tool_node", tool_node)
 builder.add_node("tool_node_router", tool_node_router)
 builder.add_node("update_article_node", update_article_node)
 builder.add_node("scheduling_node_router", scheduling_node_router)
+builder.add_node("check_schedule_node", check_schedule_node)
+builder.add_node("decision_node", decision_node)
 
 # 4. Definisci l'arco di ingresso
 builder.add_edge(START, "triage_router")
 
 # 5. Compila il grafo (punto di accesso vero e proprio)
-memory = MemorySaver()
+serde = JsonPlusSerializer(
+    allowed_msgpack_modules=[('Schemas', 'ArticleData')]
+)
+
+# Inizializza il MemorySaver passandogli il serializzatore personalizzato
+memory = MemorySaver(serde=serde)
 app = builder.compile(checkpointer=memory)#"""checkpointer=memory"""
 print("Inviando la domanda al grafo locale...")
 content = input()
@@ -59,6 +67,10 @@ while True:
             print("=" * 50 + "\n")
 
             new_input = input("Inserisci il tuo feedback per migliorare l'articolo: ")
+            # NUOVO CASO: L'interrupt proviene da check_schedule_node
+        elif "schedule_result" in dati:
+            print(f"🤖 Assistente: {dati['schedule_result']}")
+            new_input = input("Inserisci la tua risposta o conferma la data: ")
 
         # Riprendi il grafo usando la 'resume' dell'interrupt
         # Questo passa 'nuovo_topic' direttamente alla variabile che aspettava l'interrupt

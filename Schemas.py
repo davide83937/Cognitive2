@@ -1,6 +1,6 @@
 from langgraph.graph import add_messages, MessagesState
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from typing import Literal, Optional
 
 
@@ -44,7 +44,7 @@ class RouterSchemaScheduling(BaseModel):
     ragionamento: str = Field(
         description="Analizza se l'utente sta chiedendo informazioni sulle disponibilità (scheduling) o se ha scelto una data per pubblicare (decision)."
     )
-    classification: Literal["query", "decision"] = Field(
+    classification: Literal["scheduling", "decision"] = Field(
         description=(
             "- 'scheduling': Se l'utente chiede la prima data disponibile o vuole verificare una data specifica.\n"
             "- 'decision': Se l'utente conferma una data e vuole procedere con la pubblicazione."
