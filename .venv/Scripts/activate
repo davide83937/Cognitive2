@@ -60,13 +60,13 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-if [ ! -d 'D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO2\.venv' ]; then
-    echo "Virtual environment directory 'D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO2\.venv' does not exist!" >&2
+if [ ! -d 'D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO_FINALE\.venv' ]; then
+    echo "Virtual environment directory 'D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO_FINALE\.venv' does not exist!" >&2
     CURRENT_PATH=$(realpath "${0}")
     CURRENT_DIR=$(dirname "${CURRENT_PATH}")
     VIRTUAL_ENV="$(realpath "${CURRENT_DIR}/../")"
 else
-    VIRTUAL_ENV='D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO2\.venv'
+    VIRTUAL_ENV='D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO_FINALE\.venv'
 fi
 
 case "$(uname)" in

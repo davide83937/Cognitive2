@@ -60,7 +60,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV 'D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO2\.venv'
+set -gx VIRTUAL_ENV 'D:\Desktop\Universita\Magistrale\COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE\PROGETTO_FINALE\.venv'
 
 set -gx _OLD_PKG_CONFIG_PATH "$PKG_CONFIG_PATH"
 set -gx PKG_CONFIG_PATH "$VIRTUAL_ENV/lib/pkgconfig:$PKG_CONFIG_PATH"

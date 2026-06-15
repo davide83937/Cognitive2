@@ -38,41 +38,50 @@ serde = JsonPlusSerializer(
 
 # Inizializza il MemorySaver passandogli il serializzatore personalizzato
 memory = MemorySaver(serde=serde)
-app = builder.compile(checkpointer=memory)#"""checkpointer=memory"""
+app = builder.compile()#"""checkpointer=memory"""
+
+"""
 print("Inviando la domanda al grafo locale...")
 content = input()
 config = {"configurable": {"thread_id": "1"}}
 output = app.invoke(Command(update={"messages": [HumanMessage(content=content)],
                                         "classification_decision": None}), config=config)
-print(output["messages"][-1].content)
+print(output["messages"][-1].content)"""
 
-while True:
+if __name__ == "__main__":
+    print("Inviando la domanda al grafo locale...")
+    content = input()
+    config = {"configurable": {"thread_id": "1"}}
+    output = app.invoke(Command(update={"messages": [HumanMessage(content=content)],
+                                        "classification_decision": None}), config=config)
+    print(output["messages"][-1].content)
+    while True:
 
-    # 2. Controlla lo stato DOPO l'esecuzione
-    snapshot = app.get_state(config)
+        # 2. Controlla lo stato DOPO l'esecuzione
+        snapshot = app.get_state(config)
 
-    # Se il grafo è fermo su un interrupt, gestisci il suggerimento e la ripresa
-    if snapshot.tasks and snapshot.tasks[0].interrupts:
-        dati = snapshot.tasks[0].interrupts[0].value
-        new_input = ""
-        # CASO 1: L'interrupt proviene dal refine_node
-        if "proposta" in dati:
-            print(f"🤖 Suggerimento: {dati['proposta']}")
-            new_input = input("Inserisci il tuo topic raffinato: ")
-        elif "articolo_generato" in dati:
-            print("\n" + "=" * 50)
-            print("📝 ARTICOLO GENERATO:")
-            print("=" * 50)
-            print(dati["articolo_generato"])
-            print("=" * 50 + "\n")
+        # Se il grafo è fermo su un interrupt, gestisci il suggerimento e la ripresa
+        if snapshot.tasks and snapshot.tasks[0].interrupts:
+            dati = snapshot.tasks[0].interrupts[0].value
+            new_input = ""
+            # CASO 1: L'interrupt proviene dal refine_node
+            if "proposta" in dati:
+                print(f"🤖 Suggerimento: {dati['proposta']}")
+                new_input = input("Inserisci il tuo topic raffinato: ")
+            elif "articolo_generato" in dati:
+                print("\n" + "=" * 50)
+                print("📝 ARTICOLO GENERATO:")
+                print("=" * 50)
+                print(dati["articolo_generato"])
+                print("=" * 50 + "\n")
 
-            new_input = input("Inserisci il tuo feedback per migliorare l'articolo: ")
-            # NUOVO CASO: L'interrupt proviene da check_schedule_node
-        elif "schedule_result" in dati:
-            print(f"🤖 Assistente: {dati['schedule_result']}")
-            new_input = input("Inserisci la tua risposta o conferma la data: ")
+                new_input = input("Inserisci il tuo feedback per migliorare l'articolo: ")
+                # NUOVO CASO: L'interrupt proviene da check_schedule_node
+            elif "schedule_result" in dati:
+                print(f"🤖 Assistente: {dati['schedule_result']}")
+                new_input = input("Inserisci la tua risposta o conferma la data: ")
 
-        # Riprendi il grafo usando la 'resume' dell'interrupt
-        # Questo passa 'nuovo_topic' direttamente alla variabile che aspettava l'interrupt
-        app.invoke(Command(resume=new_input), config=config)
+            # Riprendi il grafo usando la 'resume' dell'interrupt
+            # Questo passa 'nuovo_topic' direttamente alla variabile che aspettava l'interrupt
+            app.invoke(Command(resume=new_input), config=config)
 

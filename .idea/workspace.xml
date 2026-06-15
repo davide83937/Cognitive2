@@ -4,7 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="boh" />
+    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="FUNZIONA!!!!!">
+      <change beforePath="$PROJECT_DIR$/.idea/PROGETTO2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PROGETTO2.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.venv/Scripts/activate" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/activate" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.venv/Scripts/activate.bat" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/activate.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.venv/Scripts/activate.fish" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/activate.fish" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.venv/Scripts/python.exe" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/python.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.venv/Scripts/pythonw.exe" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/pythonw.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.venv/pyvenv.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/pyvenv.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -20,79 +32,79 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "davide83937"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;davide83937&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/davide83937/Cognitive2",
-    "accountId": "42101907-8782-42bc-b026-af789859d904"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/davide83937/Cognitive2&quot;,
+    &quot;accountId&quot;: &quot;42101907-8782-42bc-b026-af789859d904&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0000000000000016" />
-      <entry key="S30" value="1.000011763416597" />
-      <entry key="S60" value="1.003429783753685" />
-      <entry key="M2" value="1.058564355658412" />
-      <entry key="M5" value="1.3214055321791143" />
-      <entry key="M10" value="1.566926390441576" />
-      <entry key="M15" value="1.6849903436428835" />
-      <entry key="M30" value="1.8276414342231084" />
-      <entry key="H1" value="1.9097480058912513" />
-      <entry key="H2" value="1.9538071114702653" />
-      <entry key="H4" value="1.9766304887060744" />
-      <entry key="D1" value="1.9960666047103073" />
-      <entry key="W1" value="1.9994371368334698" />
+      <entry key="MS100" value="1.0000035102373146" />
+      <entry key="MS500" value="1.081108672933699" />
+      <entry key="S2" value="1.53366266901998" />
+      <entry key="S5" value="1.7778694754407782" />
+      <entry key="S10" value="1.8819690898442976" />
+      <entry key="S30" value="1.958998191704475" />
+      <entry key="S60" value="1.9792845325862232" />
+      <entry key="M2" value="1.9896335829547502" />
+      <entry key="M5" value="2.0152230184870588" />
+      <entry key="M10" value="2.272389470714862" />
+      <entry key="M15" value="3.3153728390785857" />
+      <entry key="M30" value="14.31478228079493" />
+      <entry key="H1" value="52.390938249422454" />
+      <entry key="H2" value="130.60154079326495" />
+      <entry key="H4" value="257.75852688153947" />
+      <entry key="D1" value="561.645373016019" />
+      <entry key="W1" value="656.3130548821733" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
       <entry key="S2" value="0.0" />
-      <entry key="S5" value="0.0" />
-      <entry key="S10" value="0.0" />
-      <entry key="S30" value="0.0" />
-      <entry key="S60" value="0.0" />
-      <entry key="M2" value="0.0" />
-      <entry key="M5" value="0.0" />
-      <entry key="M10" value="0.0" />
-      <entry key="M15" value="0.0" />
-      <entry key="M30" value="0.0" />
-      <entry key="H1" value="0.0" />
-      <entry key="H2" value="0.0" />
-      <entry key="H4" value="0.0" />
-      <entry key="D1" value="0.0" />
-      <entry key="W1" value="0.0" />
+      <entry key="S5" value="5.044347971831208E-212" />
+      <entry key="S10" value="3.1589624056529364E-106" />
+      <entry key="S30" value="1.086231626945382E-35" />
+      <entry key="S60" value="4.911393376672035E-18" />
+      <entry key="M2" value="3.734139484364095E-9" />
+      <entry key="M5" value="0.0010438046409376575" />
+      <entry key="M10" value="0.08415297564451263" />
+      <entry key="M15" value="0.40516847529062266" />
+      <entry key="M30" value="2.2930701630378088" />
+      <entry key="H1" value="6.7802152838948455" />
+      <entry key="H2" value="16.826421121481268" />
+      <entry key="H4" value="36.117522157591566" />
+      <entry key="D1" value="86.68209480439091" />
+      <entry key="W1" value="102.94538176658189" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9201876506248751" />
-      <entry key="MS500" value="0.9835020740262483" />
-      <entry key="S2" value="0.9958497530944581" />
-      <entry key="S5" value="0.9983378297043665" />
-      <entry key="S10" value="0.9991685692136085" />
-      <entry key="S30" value="0.9997344614512963" />
-      <entry key="S60" value="1.0032792582907397" />
-      <entry key="M2" value="1.0583933092319044" />
-      <entry key="M5" value="1.321154360441048" />
-      <entry key="M10" value="1.5667154252115236" />
-      <entry key="M15" value="1.6848223261977842" />
-      <entry key="M30" value="1.8275408872146632" />
-      <entry key="H1" value="1.909692972661975" />
-      <entry key="H2" value="1.953778317773059" />
-      <entry key="H4" value="1.9766157610784891" />
-      <entry key="D1" value="1.9960641031574922" />
-      <entry key="W1" value="1.9994367783056963" />
+      <entry key="MS100" value="0.952640949789912" />
+      <entry key="MS500" value="1.0686886857105677" />
+      <entry key="S2" value="1.5266357331143567" />
+      <entry key="S5" value="1.7742083161404323" />
+      <entry key="S10" value="1.8799569919775945" />
+      <entry key="S30" value="1.9582826913164328" />
+      <entry key="S60" value="1.978920881059067" />
+      <entry key="M2" value="1.989450253134105" />
+      <entry key="M5" value="2.016186291680194" />
+      <entry key="M10" value="2.356251338747871" />
+      <entry key="M15" value="3.719600624193529" />
+      <entry key="M30" value="16.60461745261304" />
+      <entry key="H1" value="59.16570781748575" />
+      <entry key="H2" value="147.42106799243513" />
+      <entry key="H4" value="293.86875593035086" />
+      <entry key="D1" value="648.3245825733061" />
+      <entry key="W1" value="759.257947545932" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -107,6 +119,10 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.Main.executor": "Run",
+    "Python.Notion_Test.executor": "Run",
+    "Python.Notion_Test2.executor": "Run",
+    "Python.Notion_Test3.executor": "Run",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
@@ -114,13 +130,46 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/Desktop/Universita/Magistrale/COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE/PROGETTO2",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm"
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
+  <component name="RunManager">
+    <configuration name="Main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PROGETTO2" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.Main" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -138,61 +187,93 @@
     </task>
     <task id="LOCAL-00001" summary="boh">
       <option name="closed" value="true" />
-      <created>1779792201323</created>
+      <created>1779809829856</created>
       <option name="number" value="00001" />
       <option name="presentableId" value="LOCAL-00001" />
       <option name="project" value="LOCAL" />
-      <updated>1779792201324</updated>
+      <updated>1779809829856</updated>
     </task>
     <task id="LOCAL-00002" summary="boh">
       <option name="closed" value="true" />
-      <created>1779792221443</created>
+      <created>1779810323044</created>
       <option name="number" value="00002" />
       <option name="presentableId" value="LOCAL-00002" />
       <option name="project" value="LOCAL" />
-      <updated>1779792221443</updated>
+      <updated>1779810323044</updated>
     </task>
     <task id="LOCAL-00003" summary="boh">
       <option name="closed" value="true" />
-      <created>1779792276173</created>
+      <created>1779871846873</created>
       <option name="number" value="00003" />
       <option name="presentableId" value="LOCAL-00003" />
       <option name="project" value="LOCAL" />
-      <updated>1779792276173</updated>
+      <updated>1779871846873</updated>
     </task>
     <task id="LOCAL-00004" summary="boh">
       <option name="closed" value="true" />
-      <created>1779792360510</created>
+      <created>1779877565924</created>
       <option name="number" value="00004" />
       <option name="presentableId" value="LOCAL-00004" />
       <option name="project" value="LOCAL" />
-      <updated>1779792360510</updated>
+      <updated>1779877565924</updated>
     </task>
-    <task id="LOCAL-00005" summary="boh">
+    <task id="LOCAL-00005" summary="si vede uno spiraglio di luce">
       <option name="closed" value="true" />
-      <created>1779792383334</created>
+      <created>1779878548102</created>
       <option name="number" value="00005" />
       <option name="presentableId" value="LOCAL-00005" />
       <option name="project" value="LOCAL" />
-      <updated>1779792383334</updated>
+      <updated>1779878548102</updated>
     </task>
-    <task id="LOCAL-00006" summary="boh">
+    <task id="LOCAL-00006" summary="si vede uno spiraglio di luce">
       <option name="closed" value="true" />
-      <created>1779792404986</created>
+      <created>1779888443299</created>
       <option name="number" value="00006" />
       <option name="presentableId" value="LOCAL-00006" />
       <option name="project" value="LOCAL" />
-      <updated>1779792404986</updated>
+      <updated>1779888443299</updated>
     </task>
-    <task id="LOCAL-00007" summary="boh">
+    <task id="LOCAL-00007" summary="notion">
       <option name="closed" value="true" />
-      <created>1779792473339</created>
+      <created>1779955971315</created>
       <option name="number" value="00007" />
       <option name="presentableId" value="LOCAL-00007" />
       <option name="project" value="LOCAL" />
-      <updated>1779792473339</updated>
+      <updated>1779955971316</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="notion">
+      <option name="closed" value="true" />
+      <created>1779961308214</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1779961308214</updated>
+    </task>
+    <task id="LOCAL-00009" summary="notion">
+      <option name="closed" value="true" />
+      <created>1779966703994</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1779966703994</updated>
+    </task>
+    <task id="LOCAL-00010" summary="notion">
+      <option name="closed" value="true" />
+      <created>1779972673814</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1779972673814</updated>
+    </task>
+    <task id="LOCAL-00011" summary="FUNZIONA!!!!!">
+      <option name="closed" value="true" />
+      <created>1779975174158</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1779975174158</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -200,6 +281,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="boh" />
-    <option name="LAST_COMMIT_MESSAGE" value="boh" />
+    <MESSAGE value="si vede uno spiraglio di luce" />
+    <MESSAGE value="notion" />
+    <MESSAGE value="FUNZIONA!!!!!" />
+    <option name="LAST_COMMIT_MESSAGE" value="FUNZIONA!!!!!" />
   </component>
 </project>
