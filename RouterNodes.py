@@ -46,6 +46,9 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
         raise ValueError(f"Invalid classification: {result.classification}")
     return Command(goto=goto)
 
+class FinalPlan(BaseModel):
+    posts_to_write: list[str] = Field(description="Lista degli argomenti da scrivere, escludendo quelli scartati dall'utente")
+
 def tool_node_router(state: State) -> Command[Literal["__end__"]]:
     article_input = state["messages"][-2].content
     feedback_input = state["messages"][-1].content
@@ -63,10 +66,8 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
     classification = result.classification
 
     if classification == "approve":
-        print("📧 Classification: ACCEPT")
-        print("User has approved")
-        goto = "scheduling_node_router"
-        return Command(update={"messages": ["Quale è la prima data disponibile?"]}, goto=goto)
+        print("📧 Classification: ACCEPT - User has approved the draft")
+        return Command(goto="save_draft_node")  # <--- MODIFICA QUI
 
     elif result.classification == "refine":
         # If real life, this would do something else
@@ -113,3 +114,36 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
         goto=goto
     )
 
+
+def drafting_router(state: State) -> Command:
+    pending_posts = state.get("pending_posts", [])
+
+    if not pending_posts:
+        print("\n✅ Tutti gli articoli scelti sono stati scritti e approvati! Passiamo alla schedulazione.")
+        return Command(goto="scheduling_queue_router")
+
+    next_post = pending_posts.pop(0)
+    return Command(
+        update={"pending_posts": pending_posts, "current_topic": next_post},
+        goto="accept_node"
+    )
+
+
+def scheduling_queue_router(state: State) -> Command:
+    approved_articles = state.get("approved_articles", [])
+
+    if not approved_articles:
+        print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
+        return Command(goto=END)
+
+    next_article = approved_articles.pop(0)
+    print(f"\n📅 Passiamo alla schedulazione di: {next_article.title}")
+
+    return Command(
+        update={
+            "approved_articles": approved_articles,
+            "final_article": next_article,  # Lo impostiamo come articolo corrente per il salvataggio su Notion
+            "messages": ["Per quando vuoi schedulare questo articolo?"]
+        },
+        goto="scheduling_node_router"
+    )

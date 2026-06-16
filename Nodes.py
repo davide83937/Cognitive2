@@ -4,9 +4,12 @@ from langgraph.constants import END
 from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
+from pydantic import BaseModel
+
 from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Notion_Stuff import add_row_to_notion, controlla_disponibilita_data
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
+from RouterNodes import FinalPlan
 from Schemas import State, ArticleData, KGExtraction
 from Tools import save_to_neo4j, get_covered_context_from_neo4j
 from base import get_tools_by_name
@@ -35,11 +38,34 @@ def refine_node(state: MessagesState):
         goto="triage_router"
     )
 
-def accept_node(state: MessagesState):
-    last_input = state.get("current_topic") # <--- Legge il topic pulito!
+
+def accept_node(state: State):
+    # 1. Recuperiamo il topic e il piano
+    last_input = state.get("current_topic")
+    piano_approvato = state.get("editorial_plan", "Nessun piano specifico")
+
+    if not last_input:
+        last_input = state["messages"][0].content
+
     llm = get_llm_with_tools()
-    accept_prompt = get_accept_prompt(last_input.__str__())
-    response = llm.invoke([{"role": "system", "content": accept_prompt}])
+
+    # 2. Otteniamo il prompt di base (assicurati di aver importato get_accept_prompt)
+    accept_prompt_base = get_accept_prompt(str(last_input))
+
+    # 3. Istruzione mirata
+    istruzione_mirata = (
+        f"{accept_prompt_base}\n\n"
+        f"ATTENZIONE: È stato approvato il seguente piano editoriale:\n{piano_approvato}\n\n"
+        f"Il tuo compito ORA è scrivere ESCLUSIVAMENTE l'articolo corrispondente al 'Post 1' (quello di oggi) descritto nel piano."
+    )
+
+    # 🎯 IL FIX È QUI: Concateniamo il system prompt con tutto lo storico della chat
+    # Così l'LLM "legge" i risultati di Tavily/Neo4j che il tool_node ha appena aggiunto
+    messages_to_pass = [{"role": "system", "content": istruzione_mirata}] + state["messages"]
+
+    # 4. Invochiamo l'LLM con la memoria completa
+    response = llm.invoke(messages_to_pass)
+
     return Command(update={"messages": [response]}, goto="tool_node")
 
 
@@ -47,67 +73,80 @@ def accept_node(state: MessagesState):
 # Assicurati di importare i tuoi tool
 # dalla tua mappa, ad esempio: get_tools_by_name = {"write_an_article": write_an_article}
 
-def tool_node(state: State):  # <--- Usa State al posto di MessagesState
+def tool_node(state: State):
     result = []
     last_message = state["messages"][-1]
 
-    # Prepariamo delle variabili con valori di default
-    titolo_estratto = "Nuovo Articolo"
-    autore_estratto = "Agente AI"
+    # Variabili di appoggio
     testo_articolo = ""
+    articolo_generato = None  # Lo usiamo come "bandierina" per capire se ha scritto l'articolo
 
+    # Eseguiamo TUTTI i tool che l'LLM ha richiesto in questo turno
     for tool_call in last_message.tool_calls:
-        # 1. ESTRAIAMO I PARAMETRI DIRETTAMENTE DAGLI ARGOMENTI DEL TOOL
-        argomenti = tool_call.get("args", {})
+        tool_name = tool_call["name"]
+        tool_args = tool_call.get("args", {})
 
-        # Recuperiamo "about" e "author" se esistono
-        titolo_estratto = argomenti.get("about", titolo_estratto)
-        autore_estratto = argomenti.get("author", autore_estratto)
+        # Eseguiamo il tool
+        tool = get_tools_by_name[tool_name]
+        observation = tool.invoke(tool_args)
 
-        # Esegue fisicamente la funzione passando gli argomenti
-        tool = get_tools_by_name[tool_call["name"]]
-        observation = tool.invoke(tool_call["args"])
-
-        testo_articolo = str(observation)
-
-        # --- INIZIO STAMPA DEL RISULTATO ---
-        print("\n" + "=" * 50)
-        print(f"📝 ARTICOLO GENERATO (Titolo: {titolo_estratto} | Autore: {autore_estratto}):")
-        print("=" * 50)
-        print(testo_articolo)
-        print("=" * 50 + "\n")
-        # --- FINE STAMPA DEL RISULTATO ---
-
+        # Creiamo il messaggio di risposta del tool per l'LLM
         tool_message = ToolMessage(
-            content=testo_articolo,
+            content=str(observation),
             tool_call_id=tool_call["id"],
-            name=tool_call["name"]
+            name=tool_name
         )
         result.append(tool_message)
 
-    # Chiediamo il feedback all'utente
-    feedback_utente = interrupt({"articolo_generato": testo_articolo})
+        # 🎯 CONTROLLO CRITICO: È il tool di scrittura?
+        # Sostituisci "write_an_article" con il VERO NOME del tuo tool di scrittura se diverso
+        if tool_name == "write_an_article":
+            titolo_estratto = tool_args.get("about", "Nuovo Articolo")
+            autore_estratto = tool_args.get("author", "Agente AI")
+            testo_articolo = str(observation)
 
-    messaggio_feedback = HumanMessage(
-        content=f"Questo è il feedback dell'utente sull'articolo appena scritto: {feedback_utente}"
-    )
-    result.append(messaggio_feedback)
+            print("\n" + "=" * 50)
+            print(f"📝 ARTICOLO GENERATO (Titolo: {titolo_estratto} | Autore: {autore_estratto}):")
+            print("=" * 50)
+            print(testo_articolo)
+            print("=" * 50 + "\n")
 
-    # 2. CREIAMO L'OGGETTO ARTICOLO CON I DATI ESTRATTI
-    articolo_generato = ArticleData(
-        title=titolo_estratto,
-        text=testo_articolo,
-        author=autore_estratto
-    )
+            # Valorizziamo l'oggetto finale
+            articolo_generato = ArticleData(
+                title=titolo_estratto,
+                text=testo_articolo,
+                author=autore_estratto
+            )
 
-    # Restituendo "messages" e "final_article", aggiorniamo la cronologia e salviamo l'oggetto
-    return Command(
-        update={
-            "messages": result,
-            "final_article": articolo_generato  # <--- Salviamo l'oggetto nello stato!
-        },
-        goto="tool_node_router"
-    )
+    # --- FUORI DAL CICLO FOR: DECIDIAMO DOVE ANDARE ---
+
+    # CASO A: L'LLM ha usato il tool per scrivere l'articolo
+    if articolo_generato is not None:
+        # Chiediamo il feedback all'utente
+        feedback_utente = interrupt({"articolo_generato": testo_articolo})
+
+        messaggio_feedback = HumanMessage(
+            content=f"Questo è il feedback dell'utente sull'articolo appena scritto: {feedback_utente}"
+        )
+        result.append(messaggio_feedback)
+
+        # Aggiorniamo lo stato e andiamo alla fase di router per eventuale riscrittura
+        return Command(
+            update={
+                "messages": result,
+                "final_article": articolo_generato
+            },
+            goto="tool_node_router"
+        )
+
+    # CASO B: L'LLM ha fatto solo ricerche (Tavily, Neo4j, ecc.)
+    else:
+        print(f"\n🔍 L'agente ha consultato {len(last_message.tool_calls)} fonte/i in background. Torno a elaborare...")
+        # Rimandiamo la palla ad accept_node in modo che legga i risultati delle ricerche e scriva l'articolo
+        return Command(
+            update={"messages": result},
+            goto="accept_node"
+        )
 
 def update_article_node(state: MessagesState):
     llm = get_llm_with_tools()
@@ -194,7 +233,6 @@ def check_schedule_node(state: State):
     )
 
 
-# --- Il Nodo Decisionale Definitivo ---
 def decision_node(state: State) -> Command:
     print("--- [decision_node] Verifica disponibilità finale (Senza LLM) ---")
 
@@ -213,11 +251,11 @@ def decision_node(state: State) -> Command:
         print("🚀 PUBBLICAZIONE ARTICOLO SU NOTION IN CORSO...")
         time.sleep(2)
 
-        # Recuperiamo l'articolo generato per avere titolo, autore e testo
+        # Recuperiamo l'articolo corrente in fase di schedulazione
         final_article = state.get("final_article")
 
         if final_article:
-            # Estraiamo i dati dall'oggetto Pydantic ArticleData
+            # Estraiamo i dati dall'oggetto
             titolo = final_article.title
             testo = final_article.text
             autore = final_article.author
@@ -228,23 +266,18 @@ def decision_node(state: State) -> Command:
             # Aggiorniamo la data nello stato dell'articolo
             final_article.date = target_date
 
-            # --- NOVITÀ: Estrazione e salvataggio nel Knowledge Graph ---
-            print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
-            llm = get_llm().with_structured_output(KGExtraction)
+            print(f"✅ Articolo '{titolo}' pubblicato con successo per il {target_date}!")
 
-            # Chiediamo al LLM di analizzare il testo finale e restituirci l'oggetto strutturato
-            prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {titolo}\nTesto: {testo}"
-            estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
+            # NOTA: L'estrazione per Neo4j è stata rimossa da qui,
+            # ora viene fatta subito dopo l'approvazione del testo in 'save_draft_node'.
 
-            # Salviamo tutto in Neo4j
-            save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources)
-            # -------------------------------------------------------------
         else:
             print("⚠️ Errore: Nessun articolo finale trovato nello stato da pubblicare.")
 
+        # Invece di finire (END), torniamo al gestore della coda per vedere se ci sono altri articoli da schedulare
         return Command(
             update={"final_article": final_article},
-            goto=END
+            goto="scheduling_queue_router"
         )
     else:
         # La data è piena, dobbiamo chiedere all'utente una nuova data
@@ -320,4 +353,37 @@ def planning_node(state: State) -> Command:
             "current_topic": last_input
         },
         goto="accept_node"  # Va al tuo nodo esistente che genera l'articolo
+    )
+
+
+def process_plan_node(state: State):
+    print("\n🧠 Elaborazione della tua selezione...")
+    user_feedback = state["messages"][-1].content
+    original_plan = state.get("editorial_plan", "")
+
+    llm = get_llm().with_structured_output(FinalPlan)
+    prompt = f"Piano originale:\n{original_plan}\n\nFeedback utente:\n{user_feedback}\n\nEstrai SOLO gli argomenti che l'utente ha approvato."
+    risultato = llm.invoke([{"role": "user", "content": prompt}])
+
+    return Command(
+        update={"pending_posts": risultato.posts_to_write},
+        goto="drafting_router"
+    )
+
+def save_draft_node(state: State):
+    final_article = state.get("final_article")
+    approved_articles = state.get("approved_articles", [])
+    approved_articles.append(final_article)
+
+    # --- AGGIORNAMENTO NEO4J (Taglialo da decision_node e incollalo qui) ---
+    print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
+    llm = get_llm().with_structured_output(KGExtraction)
+    prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {final_article.title}\nTesto: {final_article.text}"
+    estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
+    save_to_neo4j(final_article.title, estrazione.topic, estrazione.claims, estrazione.sources)
+    # -------------------------------------------------------------
+
+    return Command(
+        update={"approved_articles": approved_articles},
+        goto="drafting_router" # Torniamo su a scrivere il prossimo!
     )

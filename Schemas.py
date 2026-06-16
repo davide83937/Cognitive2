@@ -19,6 +19,8 @@ class State(MessagesState):
     editorial_plan: Optional[list[dict]] = None  # Conterrà la sequenza di post pianificati
     justification: Optional[str] = None  # La giustificazione editoriale dell'agente
     current_topic: Optional[str] = None
+    pending_posts: list[str] = []
+    approved_articles: list[ArticleData] = []
 
 class RouterSchema(BaseModel):
     ragionamento: str = Field(
