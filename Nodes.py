@@ -8,7 +8,7 @@ from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Notion_Stuff import add_row_to_notion, controlla_disponibilita_data
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
 from Schemas import State, ArticleData, KGExtraction
-from Tools import save_to_neo4j
+from Tools import save_to_neo4j, get_covered_context_from_neo4j
 from base import get_tools_by_name
 import re
 
@@ -36,7 +36,7 @@ def refine_node(state: MessagesState):
     )
 
 def accept_node(state: MessagesState):
-    last_input = state["messages"][-1].content
+    last_input = state.get("current_topic") # <--- Legge il topic pulito!
     llm = get_llm_with_tools()
     accept_prompt = get_accept_prompt(last_input.__str__())
     response = llm.invoke([{"role": "system", "content": accept_prompt}])
@@ -261,3 +261,63 @@ def decision_node(state: State) -> Command:
             update={"messages": [ai_msg, human_msg]},
             goto="scheduling_node_router"
         )
+
+
+import datetime
+from langgraph.types import interrupt, Command
+from langchain_core.messages import HumanMessage
+
+
+def planning_node(state: State) -> Command:
+    print("\n--- [planning_node] Generazione Piano Editoriale basato su KG ---")
+
+    last_input = state["messages"][-1].content
+    n = state.get("n_days", 3)  # Recupera n (default 3)
+
+    try:
+        # Questa funzione eseguirà un "MATCH (t:Topic) RETURN t.name" su Neo4j
+
+        knowledge_graph_context = get_covered_context_from_neo4j()
+        print(f"DEBUG KG - Topic reali recuperati da Neo4j: {knowledge_graph_context}")
+    except Exception as e:
+        print(f"⚠️ Errore connessione Neo4j: {e}. Uso fallback.")
+        covered_topics = ["Nessun post precedente trovato"]
+
+    llm = get_llm()
+    prompt_planning = (
+        f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto di scrivere un articolo su: '{last_input}'.\n"
+        f"Ecco l'analisi dettagliata dei contenuti e dei CLAIMS già presenti nel Knowledge Graph:\n"
+        f"{knowledge_graph_context}\n\n"
+
+        f"COMPITO TASSATIVO:\n"
+        f"1. Analizza i Claims già trattati nel Knowledge Graph. Se l'argomento centrale richiesto dall'utente ripropone concetti o affermazioni chiave già coperte, NON inserire la richiesta originale come Post 1.\n"
+        f"2. Trova un vero e proprio GAP editoriale (un punto di vista non ancora espresso, una tecnologia specifica non menzionata nei claims precedenti) e usa quel sotto-argomento non coperto per il Post 1.\n"
+        f"3. Pianifica una sequenza futura di 3 post totali con una cadenza di uscita di esattamente ogni {n} giorni.\n\n"
+
+        f"Rispondi formattando chiaramente:\n"
+        f"PIANO EDITORIALE:\n- Post 1 (Oggi): Titolo\n- Post 2 (Oggi+{n}gg): Titolo\n- Post 3 (Oggi+{2 * n}gg): Titolo\n"
+        f"GIUSTIFICAZIONE:\n[Spiega quale claim o argomento del KG rischiava di essere duplicato e come il nuovo Post 1 vada a coprire un reale gap informativo]"
+    )
+    response = llm.invoke([{"role": "system", "content": prompt_planning}])
+    piano_generato = response.content
+
+    # 2. INTERRUPT: Mostriamo il piano all'utente per l'approvazione (Human-in-the-loop)
+    feedback_utente = interrupt({
+        "proposta_piano": piano_generato,
+        "schedule_result": f"Il sistema ha pianificato i post con cadenza ogni {n} giorni. Approvi?"
+    })
+
+    # Calcoliamo la data di oggi come punto di partenza per il primo articolo
+    data_oggi = datetime.date.today().strftime("%Y-%m-%d")
+
+    # Ritorniamo il comando aggiornando lo stato e spostandoci su accept_node per scrivere l'articolo
+    return Command(
+        update={
+            "messages": [HumanMessage(content=feedback_utente)],
+            "editorial_plan": piano_generato,
+            "justification": piano_generato,
+            "data_proposta": data_oggi,
+            "current_topic": last_input
+        },
+        goto="accept_node"  # Va al tuo nodo esistente che genera l'articolo
+    )

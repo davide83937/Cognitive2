@@ -4,18 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="FUNZIONA!!!!!">
-      <change afterPath="$PROJECT_DIR$/test_neo4j.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/Models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Prompt.py" beforeDir="false" afterPath="$PROJECT_DIR$/Prompt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/Schemas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/base.py" afterDir="false" />
-    </list>
+    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="neo4j" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,61 +38,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="2.75040779484202E-5" />
-      <entry key="MS500" value="0.13235747227106637" />
-      <entry key="S2" value="0.907192862760974" />
-      <entry key="S5" value="1.441078984501086" />
-      <entry key="S10" value="1.6943629323703484" />
-      <entry key="S30" value="1.8916118253467544" />
-      <entry key="S60" value="1.9449445465971555" />
-      <entry key="M2" value="1.972298294024721" />
-      <entry key="M5" value="2.0081812770342915" />
-      <entry key="M10" value="2.2684158206678915" />
-      <entry key="M15" value="3.3115067254214487" />
-      <entry key="M30" value="14.306433488463055" />
-      <entry key="H1" value="52.37565807087146" />
-      <entry key="H2" value="130.5824939842272" />
-      <entry key="H4" value="257.7397305625182" />
-      <entry key="D1" value="561.6385467391722" />
-      <entry key="W1" value="656.3119153227485" />
+      <entry key="MS100" value="1.000000023382535" />
+      <entry key="MS500" value="1.0325215852616962" />
+      <entry key="S2" value="1.7598563355872372" />
+      <entry key="S5" value="2.6819845700029514" />
+      <entry key="S10" value="3.234901428552923" />
+      <entry key="S30" value="3.716468009397574" />
+      <entry key="S60" value="3.854308037481814" />
+      <entry key="M2" value="3.9261872375821163" />
+      <entry key="M5" value="3.989419221081347" />
+      <entry key="M10" value="4.258181470425512" />
+      <entry key="M15" value="5.302438104382126" />
+      <entry key="M30" value="16.29007350425005" />
+      <entry key="H1" value="54.34700170762493" />
+      <entry key="H2" value="132.54713066297683" />
+      <entry key="H4" value="259.70494751135834" />
+      <entry key="D1" value="563.6259374333692" />
+      <entry key="W1" value="658.3098108193155" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.0" />
-      <entry key="S60" value="1.0" />
-      <entry key="M2" value="1.0000000037016046" />
-      <entry key="M5" value="1.0010401573014913" />
-      <entry key="M10" value="1.0840058202031009" />
-      <entry key="M15" value="1.4046960013180732" />
-      <entry key="M30" value="3.2917327786320882" />
-      <entry key="H1" value="7.778237787335061" />
-      <entry key="H2" value="17.823967171643137" />
-      <entry key="H4" value="37.11488838839314" />
-      <entry key="D1" value="87.68104126419415" />
-      <entry key="W1" value="103.94520302203436" />
+      <entry key="MS100" value="3.8834875853401426E-9" />
+      <entry key="MS500" value="0.02078951626688572" />
+      <entry key="S2" value="0.3797179224536324" />
+      <entry key="S5" value="0.6788665943101992" />
+      <entry key="S10" value="0.8239336103778018" />
+      <entry key="S30" value="0.9374844504927873" />
+      <entry key="S60" value="0.9682378067875616" />
+      <entry key="M2" value="0.9839907590804036" />
+      <entry key="M5" value="0.9945987454845611" />
+      <entry key="M10" value="1.080512555330035" />
+      <entry key="M15" value="1.401676574431882" />
+      <entry key="M30" value="3.2881930471529386" />
+      <entry key="H1" value="7.774054537845865" />
+      <entry key="H2" value="17.819173532553688" />
+      <entry key="H4" value="37.10989714985549" />
+      <entry key="D1" value="87.67907591849958" />
+      <entry key="W1" value="103.94487017565525" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="5.370540036959862E-5" />
-      <entry key="MS500" value="0.25326446102166905" />
-      <entry key="S2" value="1.4945567563060531" />
-      <entry key="S5" value="2.248676496359191" />
-      <entry key="S10" value="2.5928653134421884" />
-      <entry key="S30" value="2.856522555921257" />
-      <entry key="S60" value="2.9272375077825403" />
-      <entry key="M2" value="2.9634037567721627" />
-      <entry key="M5" value="3.0056469102596015" />
-      <entry key="M10" value="3.3503823763795206" />
-      <entry key="M15" value="4.714097016208823" />
-      <entry key="M30" value="17.59434993388234" />
-      <entry key="H1" value="60.148160073757225" />
-      <entry key="H2" value="148.3994223998789" />
-      <entry key="H4" value="294.84725345176" />
-      <entry key="D1" value="649.3166906372605" />
-      <entry key="W1" value="760.2566275065042" />
+      <entry key="MS100" value="0.8585654403214499" />
+      <entry key="MS500" value="0.9960166722408547" />
+      <entry key="S2" value="1.939632283633025" />
+      <entry key="S5" value="3.2023727475652066" />
+      <entry key="S10" value="3.9587587276138745" />
+      <entry key="S30" value="4.61492175038506" />
+      <entry key="S60" value="4.802245709597394" />
+      <entry key="M2" value="4.899825587823116" />
+      <entry key="M5" value="4.979820869690016" />
+      <entry key="M10" value="5.33633762888479" />
+      <entry key="M15" value="6.701797487665134" />
+      <entry key="M30" value="19.57434621638661" />
+      <entry key="H1" value="62.11526946740759" />
+      <entry key="H2" value="150.35924028696954" />
+      <entry key="H4" value="296.8074666281828" />
+      <entry key="D1" value="651.3021137964183" />
+      <entry key="W1" value="762.2541898362172" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -281,7 +270,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781515695940</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="neo4j">
+      <option name="closed" value="true" />
+      <created>1781591197146</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1781591197146</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -292,6 +289,7 @@
     <MESSAGE value="si vede uno spiraglio di luce" />
     <MESSAGE value="notion" />
     <MESSAGE value="FUNZIONA!!!!!" />
-    <option name="LAST_COMMIT_MESSAGE" value="FUNZIONA!!!!!" />
+    <MESSAGE value="neo4j" />
+    <option name="LAST_COMMIT_MESSAGE" value="neo4j" />
   </component>
 </project>

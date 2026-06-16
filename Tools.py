@@ -158,3 +158,34 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list):
         print("🧠 Knowledge Graph aggiornato con successo!")
     except Exception as e:
         print(f"❌ Errore durante il salvataggio nel KG: {e}")
+
+
+def get_covered_context_from_neo4j():
+    """
+    Estrarre sia i Topic che i singoli Claims dal Knowledge Graph
+    usando lo schema esatto definito in save_to_neo4j per evitare warning ed elementi vuoti.
+    """
+    # Seguiamo esattamente la relazione (c:Claim)-[:RELATED_TO]->(t:Topic)
+    # e prendiamo la proprietà c.text definita nel tuo salvataggio.
+    query = """
+    MATCH (t:Topic)
+    OPTIONAL MATCH (c:Claim)-[:RELATED_TO]->(t)
+    RETURN t.name AS topic_name, collect(c.text) AS claims
+    """
+
+    try:
+        records = graph.query(query)
+
+        contesto_kg = []
+        for r in records:
+            topic = r.get("topic_name")
+            # Filtriamo eventuali valori nulli o stringhe vuote
+            claims_associati = [claim for claim in r.get("claims", []) if claim]
+
+            info = f"Macro-Topic: '{topic}' (Claims già trattati: {claims_associati})"
+            contesto_kg.append(info)
+
+        return contesto_kg if contesto_kg else ["Nessun contenuto precedente nel KG"]
+    except Exception as e:
+        print(f"⚠️ Errore estrazione dettagliata Cypher: {e}")
+        return ["Nessun contenuto precedente nel KG"]

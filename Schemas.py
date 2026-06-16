@@ -14,6 +14,11 @@ class State(MessagesState):
     classification_decision: Literal["accept", "refine", "reject"]
     final_article: Optional[ArticleData] = None  # <--- Il nostro nuovo oggetto
     data_proposta: Optional[str] = None  # <-- Aggiungi questa riga
+    # --- NUOVI CAMPI PER LA PIANIFICAZIONE ---
+    n_days: int = 3  # Valore di default per 'n' giorni di intervallo
+    editorial_plan: Optional[list[dict]] = None  # Conterrà la sequenza di post pianificati
+    justification: Optional[str] = None  # La giustificazione editoriale dell'agente
+    current_topic: Optional[str] = None
 
 class RouterSchema(BaseModel):
     ragionamento: str = Field(

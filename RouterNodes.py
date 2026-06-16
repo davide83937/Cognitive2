@@ -32,7 +32,8 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
 
     if classification == "accept":
         print("📧 Classification: ACCEPT")
-        goto = "accept_node"
+        #goto = "accept_node"
+        goto = "planning_node"
 
     elif result.classification == "reject":
         print("🚫 Classification: REJECT")

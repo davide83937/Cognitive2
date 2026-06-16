@@ -5,7 +5,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START
-from Nodes import refine_node, accept_node, tool_node, update_article_node, check_schedule_node, decision_node
+from Nodes import refine_node, accept_node, tool_node, update_article_node, check_schedule_node, decision_node, \
+    planning_node
 from RouterNodes import triage_router, tool_node_router, scheduling_node_router
 from Schemas import State
 
@@ -27,6 +28,7 @@ builder.add_node("update_article_node", update_article_node)
 builder.add_node("scheduling_node_router", scheduling_node_router)
 builder.add_node("check_schedule_node", check_schedule_node)
 builder.add_node("decision_node", decision_node)
+builder.add_node("planning_node", planning_node)
 
 # 4. Definisci l'arco di ingresso
 builder.add_edge(START, "triage_router")
@@ -68,6 +70,14 @@ if __name__ == "__main__":
             if "proposta" in dati:
                 print(f"🤖 Suggerimento: {dati['proposta']}")
                 new_input = input("Inserisci il tuo topic raffinato: ")
+                # --- NUOVO CASO: L'interrupt proviene da planning_node ---
+            elif "proposta_piano" in dati:
+                print("\n" + "=" * 50)
+                print("📅 PROPOSTA CALENDARIO EDITORIALE (Ogni n giorni):")
+                print("=" * 50)
+                print(dati["proposta_piano"])
+                print("=" * 50 + "\n")
+                new_input = input("Scrivi 'ok' per approvare o inserisci modifiche: ")
             elif "articolo_generato" in dati:
                 print("\n" + "=" * 50)
                 print("📝 ARTICOLO GENERATO:")
