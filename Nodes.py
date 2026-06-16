@@ -7,7 +7,8 @@ from langchain_core.messages import ToolMessage
 from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Notion_Stuff import add_row_to_notion, controlla_disponibilita_data
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
-from Schemas import State, ArticleData
+from Schemas import State, ArticleData, KGExtraction
+from Tools import save_to_neo4j
 from base import get_tools_by_name
 import re
 
@@ -226,6 +227,18 @@ def decision_node(state: State) -> Command:
 
             # Aggiorniamo la data nello stato dell'articolo
             final_article.date = target_date
+
+            # --- NOVITÀ: Estrazione e salvataggio nel Knowledge Graph ---
+            print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
+            llm = get_llm().with_structured_output(KGExtraction)
+
+            # Chiediamo al LLM di analizzare il testo finale e restituirci l'oggetto strutturato
+            prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {titolo}\nTesto: {testo}"
+            estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
+
+            # Salviamo tutto in Neo4j
+            save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources)
+            # -------------------------------------------------------------
         else:
             print("⚠️ Errore: Nessun articolo finale trovato nello stato da pubblicare.")
 

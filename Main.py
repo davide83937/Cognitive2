@@ -38,23 +38,23 @@ serde = JsonPlusSerializer(
 
 # Inizializza il MemorySaver passandogli il serializzatore personalizzato
 memory = MemorySaver(serde=serde)
-app = builder.compile()#"""checkpointer=memory"""
+app = builder.compile(checkpointer=memory)#"""checkpointer=memory"""
 
-"""
+
 print("Inviando la domanda al grafo locale...")
 content = input()
 config = {"configurable": {"thread_id": "1"}}
 output = app.invoke(Command(update={"messages": [HumanMessage(content=content)],
                                         "classification_decision": None}), config=config)
-print(output["messages"][-1].content)"""
+print(output["messages"][-1].content)
 
 if __name__ == "__main__":
-    print("Inviando la domanda al grafo locale...")
+    """print("Inviando la domanda al grafo locale...")
     content = input()
     config = {"configurable": {"thread_id": "1"}}
     output = app.invoke(Command(update={"messages": [HumanMessage(content=content)],
                                         "classification_decision": None}), config=config)
-    print(output["messages"][-1].content)
+    print(output["messages"][-1].content)"""
     while True:
 
         # 2. Controlla lo stato DOPO l'esecuzione

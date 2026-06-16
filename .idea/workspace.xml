@@ -5,17 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="FUNZIONA!!!!!">
-      <change beforePath="$PROJECT_DIR$/.idea/PROGETTO2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PROGETTO2.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test_neo4j.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.venv/Scripts/activate" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/activate" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.venv/Scripts/activate.bat" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/activate.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.venv/Scripts/activate.fish" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/activate.fish" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.venv/Scripts/python.exe" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/python.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.venv/Scripts/pythonw.exe" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/Scripts/pythonw.exe" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.venv/pyvenv.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/.venv/pyvenv.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/Models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Prompt.py" beforeDir="false" afterPath="$PROJECT_DIR$/Prompt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/Schemas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/base.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,61 +49,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000035102373146" />
-      <entry key="MS500" value="1.081108672933699" />
-      <entry key="S2" value="1.53366266901998" />
-      <entry key="S5" value="1.7778694754407782" />
-      <entry key="S10" value="1.8819690898442976" />
-      <entry key="S30" value="1.958998191704475" />
-      <entry key="S60" value="1.9792845325862232" />
-      <entry key="M2" value="1.9896335829547502" />
-      <entry key="M5" value="2.0152230184870588" />
-      <entry key="M10" value="2.272389470714862" />
-      <entry key="M15" value="3.3153728390785857" />
-      <entry key="M30" value="14.31478228079493" />
-      <entry key="H1" value="52.390938249422454" />
-      <entry key="H2" value="130.60154079326495" />
-      <entry key="H4" value="257.75852688153947" />
-      <entry key="D1" value="561.645373016019" />
-      <entry key="W1" value="656.3130548821733" />
+      <entry key="MS100" value="2.75040779484202E-5" />
+      <entry key="MS500" value="0.13235747227106637" />
+      <entry key="S2" value="0.907192862760974" />
+      <entry key="S5" value="1.441078984501086" />
+      <entry key="S10" value="1.6943629323703484" />
+      <entry key="S30" value="1.8916118253467544" />
+      <entry key="S60" value="1.9449445465971555" />
+      <entry key="M2" value="1.972298294024721" />
+      <entry key="M5" value="2.0081812770342915" />
+      <entry key="M10" value="2.2684158206678915" />
+      <entry key="M15" value="3.3115067254214487" />
+      <entry key="M30" value="14.306433488463055" />
+      <entry key="H1" value="52.37565807087146" />
+      <entry key="H2" value="130.5824939842272" />
+      <entry key="H4" value="257.7397305625182" />
+      <entry key="D1" value="561.6385467391722" />
+      <entry key="W1" value="656.3119153227485" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="0.0" />
-      <entry key="S2" value="0.0" />
-      <entry key="S5" value="5.044347971831208E-212" />
-      <entry key="S10" value="3.1589624056529364E-106" />
-      <entry key="S30" value="1.086231626945382E-35" />
-      <entry key="S60" value="4.911393376672035E-18" />
-      <entry key="M2" value="3.734139484364095E-9" />
-      <entry key="M5" value="0.0010438046409376575" />
-      <entry key="M10" value="0.08415297564451263" />
-      <entry key="M15" value="0.40516847529062266" />
-      <entry key="M30" value="2.2930701630378088" />
-      <entry key="H1" value="6.7802152838948455" />
-      <entry key="H2" value="16.826421121481268" />
-      <entry key="H4" value="36.117522157591566" />
-      <entry key="D1" value="86.68209480439091" />
-      <entry key="W1" value="102.94538176658189" />
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.0" />
+      <entry key="S30" value="1.0" />
+      <entry key="S60" value="1.0" />
+      <entry key="M2" value="1.0000000037016046" />
+      <entry key="M5" value="1.0010401573014913" />
+      <entry key="M10" value="1.0840058202031009" />
+      <entry key="M15" value="1.4046960013180732" />
+      <entry key="M30" value="3.2917327786320882" />
+      <entry key="H1" value="7.778237787335061" />
+      <entry key="H2" value="17.823967171643137" />
+      <entry key="H4" value="37.11488838839314" />
+      <entry key="D1" value="87.68104126419415" />
+      <entry key="W1" value="103.94520302203436" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.952640949789912" />
-      <entry key="MS500" value="1.0686886857105677" />
-      <entry key="S2" value="1.5266357331143567" />
-      <entry key="S5" value="1.7742083161404323" />
-      <entry key="S10" value="1.8799569919775945" />
-      <entry key="S30" value="1.9582826913164328" />
-      <entry key="S60" value="1.978920881059067" />
-      <entry key="M2" value="1.989450253134105" />
-      <entry key="M5" value="2.016186291680194" />
-      <entry key="M10" value="2.356251338747871" />
-      <entry key="M15" value="3.719600624193529" />
-      <entry key="M30" value="16.60461745261304" />
-      <entry key="H1" value="59.16570781748575" />
-      <entry key="H2" value="147.42106799243513" />
-      <entry key="H4" value="293.86875593035086" />
-      <entry key="D1" value="648.3245825733061" />
-      <entry key="W1" value="759.257947545932" />
+      <entry key="MS100" value="5.370540036959862E-5" />
+      <entry key="MS500" value="0.25326446102166905" />
+      <entry key="S2" value="1.4945567563060531" />
+      <entry key="S5" value="2.248676496359191" />
+      <entry key="S10" value="2.5928653134421884" />
+      <entry key="S30" value="2.856522555921257" />
+      <entry key="S60" value="2.9272375077825403" />
+      <entry key="M2" value="2.9634037567721627" />
+      <entry key="M5" value="3.0056469102596015" />
+      <entry key="M10" value="3.3503823763795206" />
+      <entry key="M15" value="4.714097016208823" />
+      <entry key="M30" value="17.59434993388234" />
+      <entry key="H1" value="60.148160073757225" />
+      <entry key="H2" value="148.3994223998789" />
+      <entry key="H4" value="294.84725345176" />
+      <entry key="D1" value="649.3166906372605" />
+      <entry key="W1" value="760.2566275065042" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -116,29 +115,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.Main.executor": "Run",
-    "Python.Notion_Test.executor": "Run",
-    "Python.Notion_Test2.executor": "Run",
-    "Python.Notion_Test3.executor": "Run",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/Desktop/Universita/Magistrale/COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE/PROGETTO2",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.Main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Notion_Test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Notion_Test2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Notion_Test3.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_neo4j.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Desktop/Universita/Magistrale/COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE/PROGETTO2&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="Main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PROGETTO2" />
@@ -273,7 +273,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779975174158</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="FUNZIONA!!!!!">
+      <option name="closed" value="true" />
+      <created>1781515695940</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1781515695940</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

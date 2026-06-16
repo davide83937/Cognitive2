@@ -59,3 +59,9 @@ class RouterSchemaScheduling(BaseModel):
         None,
         description="La data YYYY-MM-DD se l'utente ne ha menzionata una, altrimenti None."
     )
+
+# Aggiungi in fondo a Schemas.py
+class KGExtraction(BaseModel):
+    topic: str = Field(description="Il macro-argomento principale dell'articolo (es. Robotica, Droni, AI, STM32)")
+    claims: list[str] = Field(description="Lista di massimo 3 affermazioni o fatti chiave (claims) estratti dall'articolo")
+    sources: list[str] = Field(description="Lista delle fonti, aziende, o tecnologie menzionate (es. 'Wikipedia', 'Boston Dynamics', 'ROS2')")

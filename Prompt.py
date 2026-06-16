@@ -31,9 +31,16 @@ def get_refine_prompt(last_input: str):
                 """
     return refine_prompt
 
+
 def get_accept_prompt(last_input: str):
-    accept_prompt = f"""Sei un giornalista che scrive articoli riguardanti un argomento che ti viene passato in input.
-    In questo caso l'argomento su cui dovrai scrivere un articolo è: '{last_input}'."""
+    accept_prompt = f"""Sei un giornalista scientifico rigoroso. L'argomento del tuo prossimo articolo è: '{last_input}'.
+
+    PRIMA di scrivere l'articolo, segui ESATTAMENTE questo processo (ReAct):
+    1. Usa il tool 'get_topic_claims' per recuperare la coerenza passata dal Knowledge Graph.
+    2. Usa il tool 'tavily_search_results_json' per recuperare fonti esterne aggiornate su Internet.
+    3. Dopo aver letto i risultati, usa il tool 'write_an_article'.
+
+    ATTENZIONE IMPORTANTE: Nel campo 'content' del tool 'write_an_article' NON devi copiare le istruzioni, ma devi scrivere e generare il VERO E PROPRIO TESTO INFORMATIVO dell'articolo (almeno 3 o 4 paragrafi), sintetizzando le informazioni reali che hai appena trovato su Internet e dal database."""
     return accept_prompt
 
 tool_node_prompt = f"""Sei un classificatore che riceve due input, il primo è un articolo che riguarda un determinato topic, 
