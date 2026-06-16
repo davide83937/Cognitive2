@@ -116,17 +116,17 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
 
 
 def drafting_router(state: State) -> Command:
-    pending_posts = state.get("pending_posts", [])
+    # 1. Usiamo la variabile corretta 'pending_topics'
+    pending_topics = state.get("pending_topics", [])
 
-    if not pending_posts:
+    if not pending_topics:
         print("\n✅ Tutti gli articoli scelti sono stati scritti e approvati! Passiamo alla schedulazione.")
         return Command(goto="scheduling_queue_router")
 
-    next_post = pending_posts.pop(0)
-    return Command(
-        update={"pending_posts": pending_posts, "current_topic": next_post},
-        goto="accept_node"
-    )
+    print(f"\n⏳ Ci sono ancora {len(pending_topics)} articoli in coda. Riprendo la stesura...")
+
+    # 2. Non facciamo alcun '.pop()' qui perché accept_node lo fa già all'inizio del suo ciclo
+    return Command(goto="accept_node")
 
 
 def scheduling_queue_router(state: State) -> Command:
@@ -136,13 +136,16 @@ def scheduling_queue_router(state: State) -> Command:
         print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
         return Command(goto=END)
 
-    next_article = approved_articles.pop(0)
+    # 3. Creiamo liste nuove (slice) invece di fare un .pop() in-place
+    next_article = approved_articles[0]
+    rimanenti = approved_articles[1:]
+
     print(f"\n📅 Passiamo alla schedulazione di: {next_article.title}")
 
     return Command(
         update={
-            "approved_articles": approved_articles,
-            "final_article": next_article,  # Lo impostiamo come articolo corrente per il salvataggio su Notion
+            "approved_articles": rimanenti,  # Aggiorniamo con la nuova lista rimpicciolita
+            "final_article": next_article,
             "messages": ["Per quando vuoi schedulare questo articolo?"]
         },
         goto="scheduling_node_router"

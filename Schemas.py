@@ -20,6 +20,7 @@ class State(MessagesState):
     justification: Optional[str] = None  # La giustificazione editoriale dell'agente
     current_topic: Optional[str] = None
     pending_topics: list[str] = Field(default_factory=list)
+    approved_articles: list[ArticleData] = Field(default_factory=list)
 
 class RouterSchema(BaseModel):
     ragionamento: str = Field(

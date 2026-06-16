@@ -41,28 +41,42 @@ def refine_node(state: MessagesState):
 
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
+    current_topic = state.get("current_topic")
 
-    # 1. Peschiamo dalla coda il prossimo articolo
-    if pending:
+    # Controlliamo se stiamo riprendendo l'esecuzione dopo un tool
+    # Se l'ultimo messaggio è di tipo 'tool', NON dobbiamo pescare un nuovo topic
+    is_resuming = False
+    if state.get("messages") and len(state["messages"]) > 0:
+        if getattr(state["messages"][-1], "type", "") == "tool":
+            is_resuming = True
+
+    # 1. Peschiamo dalla coda SOLO se stiamo iniziando un topic nuovo
+    if not is_resuming and pending:
         topic_da_scrivere = pending[0]
-        nuovi_pending = pending[1:]  # Rimuoviamo il primo elemento dalla lista
+        nuovi_pending = pending[1:]
     else:
-        topic_da_scrivere = state.get("current_topic", "Argomento generico")
-        nuovi_pending = []
+        # Continuiamo a lavorare sul topic corrente
+        topic_da_scrivere = current_topic if current_topic else "Argomento generico"
+        nuovi_pending = pending
 
-    print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
+    print(f"\n⚙️ Avvio/Ripresa stesura articolo su: '{topic_da_scrivere}'")
 
     llm = get_llm_with_tools()
     accept_prompt = get_accept_prompt(topic_da_scrivere)
-    response = llm.invoke([{"role": "system", "content": accept_prompt}])
+
+    # 2. CRITICO: Dobbiamo passare tutti i messaggi precedenti all'LLM!
+    # In questo modo l'LLM può leggere il ToolMessage restituito dal tool_node
+    messages = [{"role": "system", "content": accept_prompt}] + state.get("messages", [])
+
+    response = llm.invoke(messages)
 
     return Command(
         update={
             "messages": [response],
-            "current_topic": topic_da_scrivere,  # Aggiorniamo il topic corrente
-            "pending_topics": nuovi_pending  # Aggiorniamo la coda diminuita
+            "current_topic": topic_da_scrivere,
+            "pending_topics": nuovi_pending
         },
-        goto="tool_node"  # Passa obbligatoriamente alla stesura
+        goto="tool_node"
     )
 
 
@@ -231,83 +245,38 @@ def check_schedule_node(state: State):
 
 # --- Il Nodo Decisionale Definitivo ---
 # --- Il Nodo Decisionale Definitivo ---
-def decision_node(state: State) -> Command:
-    print("--- [decision_node] Verifica disponibilità finale (Senza LLM) ---")
+from langgraph.constants import END
 
-    # 1. Recuperiamo la data salvata dal router
+
+def decision_node(state: State) -> Command:
+    print("--- [decision_node] Conferma Data e Schedulazione ---")
+
+    # 1. Recuperiamo la data
     target_date = state.get("data_proposta")
     if not target_date:
-        target_date = "2026-01-01"  # Data fallback di emergenza se manca
+        target_date = "2026-01-01"
 
-    # 2. Chiamiamo la tua funzione di controllo
-    risultato_disponibilita = controlla_disponibilita_data(target_date)
+    final_article = state.get("final_article")
 
-    # Se il risultato esiste ed è true
-    is_available = risultato_disponibilita and risultato_disponibilita.get("is_available", False)
-
-    if is_available:
-        print("🚀 PUBBLICAZIONE ARTICOLO SU NOTION IN CORSO...")
-        time.sleep(2)
-
-        # Recuperiamo l'articolo generato per avere titolo, autore e testo
-        final_article = state.get("final_article")
-
-        if final_article:
-            # Estraiamo i dati dall'oggetto Pydantic ArticleData
-            titolo = final_article.title
-            testo = final_article.text
-            autore = final_article.author
-
-            # Eseguiamo la pubblicazione
-            add_row_to_notion(titolo, target_date, autore, testo)
-
-            # Aggiorniamo la data nello stato dell'articolo
-            final_article.date = target_date
-
-            # Estrazione e salvataggio nel Knowledge Graph
-            print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
-            llm = get_llm().with_structured_output(KGExtraction)
-
-            # Chiediamo al LLM di analizzare il testo finale e restituirci l'oggetto strutturato
-            prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {titolo}\nTesto: {testo}"
-            estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
-
-            # Salviamo tutto in Neo4j
-            save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources)
-        else:
-            print("⚠️ Errore: Nessun articolo finale trovato nello stato da pubblicare.")
-
-        # --- NUOVA LOGICA: CONTROLLO CODA ---
-        # Controlliamo se ci sono altri articoli da scrivere
-        pending = state.get("pending_topics", [])
-        if pending:
-            print(f"\n🔁 Ci sono ancora {len(pending)} articoli in coda da generare. Riavvio stesura...")
-            return Command(
-                update={"final_article": final_article},
-                goto="accept_node"  # Torna all'inizio per scrivere il prossimo articolo della lista
-            )
-        else:
-            print("\n✅ Tutti gli articoli richiesti sono stati scritti, schedulati e pubblicati!")
-            return Command(
-                update={"final_article": final_article},
-                goto=END  # Termina il grafo solo quando la coda è vuota
-            )
-
+    if final_article:
+        # Assegniamo la data all'articolo
+        final_article.date = target_date
+        print(f"✅ Articolo '{final_article.title}' confermato per la data {target_date}.")
+        print("💾 I dati sono già stati storicizzati nel Knowledge Graph.")
     else:
-        # La data è piena, dobbiamo chiedere all'utente una nuova data
-        msg_testo = f"Purtroppo la data {target_date} è già piena. Inserisci una nuova data in formato YYYY-MM-DD."
-        ai_msg = AIMessage(content=msg_testo)
+        print("⚠️ Errore: Nessun articolo finale trovato nello stato.")
 
-        # L'interruzione che aspetta il tuo input da terminale
-        user_feedback = interrupt({"schedule_result": msg_testo})
+    # 2. CONTROLLO CODA DI SCHEDULAZIONE
+    approved_articles = state.get("approved_articles", [])
 
-        human_msg = HumanMessage(content=user_feedback)
-
-        # Ritorniamo al router aggiungendo i messaggi in modo che l'LLM rianalizzi la nuova data
+    if approved_articles:
+        print(f"\n🔁 Ci sono ancora {len(approved_articles)} articoli in coda da schedulare. Passo al prossimo...")
         return Command(
-            update={"messages": [ai_msg, human_msg]},
-            goto="scheduling_node_router"
+            goto="scheduling_queue_router"
         )
+    else:
+        print("\n✅ Tutti gli articoli richiesti sono stati scritti, schedulati e salvati nel Knowledge Graph!")
+        return Command(goto=END)
 
 
 import datetime
@@ -395,20 +364,22 @@ def process_plan_node(state: State):
         goto="drafting_router"
     )
 
+
 def save_draft_node(state: State):
     final_article = state.get("final_article")
     approved_articles = state.get("approved_articles", [])
-    approved_articles.append(final_article)
 
-    # --- AGGIORNAMENTO NEO4J (Taglialo da decision_node e incollalo qui) ---
+    # Creiamo esplicitamente una NUOVA lista per forzare l'aggiornamento dello stato
+    nuova_lista = list(approved_articles)
+    nuova_lista.append(final_article)
+
     print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
     llm = get_llm().with_structured_output(KGExtraction)
     prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {final_article.title}\nTesto: {final_article.text}"
     estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
     save_to_neo4j(final_article.title, estrazione.topic, estrazione.claims, estrazione.sources)
-    # -------------------------------------------------------------
 
     return Command(
-        update={"approved_articles": approved_articles},
-        goto="drafting_router" # Torniamo su a scrivere il prossimo!
+        update={"approved_articles": nuova_lista},  # Passiamo la nuova lista aggiornata
+        goto="drafting_router"
     )
