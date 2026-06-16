@@ -1,13 +1,7 @@
-import time
-from langchain_core.messages import HumanMessage, AIMessage
-from langgraph.constants import END
 from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
-from pydantic import BaseModel
-
-from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
-from Notion_Stuff import add_row_to_notion, controlla_disponibilita_data
+from Models import get_llm, get_llm_with_tools
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
 from RouterNodes import FinalPlan
 from Schemas import State, ArticleData, KGExtraction
@@ -243,8 +237,7 @@ def check_schedule_node(state: State):
     )
 
 
-# --- Il Nodo Decisionale Definitivo ---
-# --- Il Nodo Decisionale Definitivo ---
+
 from langgraph.constants import END
 
 

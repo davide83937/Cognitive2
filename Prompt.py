@@ -43,6 +43,7 @@ def get_accept_prompt(last_input: str):
     ATTENZIONE IMPORTANTE: Nel campo 'content' del tool 'write_an_article' NON devi copiare le istruzioni, ma devi scrivere e generare il VERO E PROPRIO TESTO INFORMATIVO dell'articolo (almeno 3 o 4 paragrafi), sintetizzando le informazioni reali che hai appena trovato su Internet e dal database."""
     return accept_prompt
 
+
 tool_node_prompt = f"""Sei un classificatore che riceve due input, il primo è un articolo che riguarda un determinato topic, 
 il secondo input invece è il feedback dell'utente riguardante quell'articolo. Il feedback può essere di tipo positivo, il che significa
 che l'utente approva l'articolo così come è, oppure l'utente chiedere di fare delle modifiche.
@@ -55,6 +56,7 @@ Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATT
     "classification": "approve" oppure "refine"
 }}
 Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
+
 
 def get_update_prompt():
     update_prompt = """Sei un giornalista esperto. Hai appena generato un articolo, ma l'utente ha richiesto delle modifiche fornendo un feedback.
