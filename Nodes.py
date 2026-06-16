@@ -1,7 +1,7 @@
 from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
-from Models import get_llm, get_llm_with_tools
+from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
 from RouterNodes import FinalPlan
 from Schemas import State, ArticleData, KGExtraction
@@ -240,11 +240,13 @@ def check_schedule_node(state: State):
 
 from langgraph.constants import END
 
+from Models import get_llm  # Assicurati che sia importato
+from Schemas import KGExtraction  # Assicurati che sia importato
+
 
 def decision_node(state: State) -> Command:
     print("--- [decision_node] Conferma Data e Schedulazione ---")
 
-    # 1. Recuperiamo la data
     target_date = state.get("data_proposta")
     if not target_date:
         target_date = "2026-01-01"
@@ -252,10 +254,18 @@ def decision_node(state: State) -> Command:
     final_article = state.get("final_article")
 
     if final_article:
-        # Assegniamo la data all'articolo
         final_article.date = target_date
         print(f"✅ Articolo '{final_article.title}' confermato per la data {target_date}.")
-        print("💾 I dati sono già stati storicizzati nel Knowledge Graph.")
+
+        # 🧩 ESTRAZIONE E SALVATAGGIO SPOSTATI QUI
+        print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
+        llm = get_llm().with_structured_output(KGExtraction)
+        prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {final_article.title}\nTesto: {final_article.text}"
+        estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
+
+        # Salviamo su Neo4j passando anche la data target!
+        save_to_neo4j(final_article.title, estrazione.topic, estrazione.claims, estrazione.sources, target_date)
+
     else:
         print("⚠️ Errore: Nessun articolo finale trovato nello stato.")
 
@@ -365,12 +375,6 @@ def save_draft_node(state: State):
     # Creiamo esplicitamente una NUOVA lista per forzare l'aggiornamento dello stato
     nuova_lista = list(approved_articles)
     nuova_lista.append(final_article)
-
-    print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
-    llm = get_llm().with_structured_output(KGExtraction)
-    prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {final_article.title}\nTesto: {final_article.text}"
-    estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
-    save_to_neo4j(final_article.title, estrazione.topic, estrazione.claims, estrazione.sources)
 
     return Command(
         update={"approved_articles": nuova_lista},  # Passiamo la nuova lista aggiornata

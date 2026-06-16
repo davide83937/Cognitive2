@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from langchain_core.tools import tool
 #from Notion_Stuff import trova_prima_data_disponibile, controlla_disponibilita_data
 from test_neo4j import graph
@@ -9,51 +11,70 @@ def write_an_article(about: str, author: str, content: str):
     """Write an article about the topic given by user, author is IA"""
     return f"My article about: {about}. \n{content} \n Written by {author}"
 
-"""
 @tool
-def find_first_available_date_tool(data_partenza: Optional[str] = None) -> str:
+def find_first_available_date_tool(data_partenza: str = None) -> str:
+    """
+    Trova la prima data disponibile nel Knowledge Graph per pubblicare un articolo.
+    Accetta opzionalmente una 'data_partenza' (YYYY-MM-DD). Se non fornita, cerca da oggi.
+    Una giornata è piena se ci sono già 3 articoli schedulati.
+    """
+    if not graph:
+        return "Errore: Database Neo4j non connesso."
 
-    
-    #Trova la prima data disponibile su Notion per pubblicare un articolo.
-    #Accetta opzionalmente una 'data_partenza' (YYYY-MM-DD). Se non fornita, cerca da oggi.
-    #Restituisce la data trovata o un messaggio se il calendario è pieno.
-    #Una giornata è piena se ci sono già 3 articoli schedulati
-
-    
-    # Se il modello passa la stringa 'null' o un valore nullo, forziamolo a None
-    if data_partenza == 'null':
-        data_partenza = None
-
-    data_trovata = trova_prima_data_disponibile(data_partenza)
-    if data_trovata:
-        return f"La prima data disponibile trovata su Notion è: {data_trovata}"
+    if data_partenza == 'null' or not data_partenza:
+        oggi = datetime.now().date()
     else:
-        return "Non ci sono date disponibili su Notion per l'arco di tempo richiesto."
+        oggi = datetime.strptime(data_partenza, "%Y-%m-%d").date()
+
+    # Cerchiamo tutti i Post da 'oggi' in poi e li raggruppiamo per data
+    query = """
+    MATCH (p:Post)
+    WHERE p.date >= $oggi
+    RETURN p.date AS post_date, count(p) AS count
+    """
+    try:
+        risultati = graph.query(query, params={"oggi": oggi.strftime("%Y-%m-%d")})
+        # Creiamo un dizionario { "YYYY-MM-DD": count }
+        conteggio_giornaliero = {res["post_date"]: res["count"] for res in risultati if res.get("post_date")}
+
+        giorno_corrente = oggi
+        for _ in range(365):
+            data_str = giorno_corrente.strftime("%Y-%m-%d")
+            articoli_presenti = conteggio_giornaliero.get(data_str, 0)
+
+            if articoli_presenti < 3:
+                return f"La prima data disponibile trovata nel Knowledge Graph è: {data_str}"
+
+            giorno_corrente += timedelta(days=1)
+
+        return "Non ci sono date disponibili nell'arco di un anno."
+    except Exception as e:
+        return f"Errore durante l'interrogazione del KG: {e}"
 
 
 @tool
 def check_specific_date_tool(data_target: str) -> str:
-    
-    
-    #Verifica se una data specifica è disponibile su Notion per schedulare un articolo.
-    #L'argomento 'data_target' deve essere rigorosamente nel formato stringa 'YYYY-MM-DD' (es. '2026-06-01').
-    #Da usare quando l'utente propone una data precisa o chiede se un determinato giorno è libero.
-    #Una giornata è piena se ci sono già 3 articoli schedulati.
-    
-    
-    risultato = controlla_disponibilita_data(data_target)
+    """
+    Verifica se una data specifica è disponibile nel Knowledge Graph per schedulare un articolo.
+    L'argomento 'data_target' deve essere rigorosamente 'YYYY-MM-DD'.
+    Una giornata è piena se ci sono già 3 articoli schedulati.
+    """
+    if not graph:
+        return "Errore: Database Neo4j non connesso."
 
-    if risultato is None:
-        return f"Impossibile verificare la disponibilità per la data {data_target} a causa di un errore di comunicazione con Notion."
+    query = "MATCH (p:Post {date: $date}) RETURN count(p) AS current_count"
+    try:
+        risultato = graph.query(query, params={"date": data_target})
+        current_count = risultato[0]["current_count"] if risultato else 0
 
-    if risultato["is_available"]:
-        return (f"La data {data_target} è DISPONIBILE su Notion. "
-                f"Attualmente ci sono {risultato['current_count']} articoli pianificati per questo giorno.")
-    else:
-        return (f"La data {data_target} è OCCUPATA/PIENA. "
-                f"Ci sono già {risultato['current_count']} articoli pianificati, raggiungendo il limite massimo.")
-
-"""
+        if current_count < 3:
+            return (f"La data {data_target} è DISPONIBILE. "
+                    f"Attualmente ci sono {current_count} articoli pianificati.")
+        else:
+            return (f"La data {data_target} è OCCUPATA. "
+                    f"Ci sono già {current_count} articoli pianificati (limite massimo).")
+    except Exception as e:
+        return f"Errore durante l'interrogazione del KG: {e}"
 
 import os
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -122,23 +143,23 @@ def get_topic_claims(topic_name: str) -> str:
 
 # Aggiungi in Tools.py (assicurati che non abbia @tool sopra)
 
-def save_to_neo4j(title: str, topic: str, claims: list, sources: list):
+def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_date: str):
     """
-    Salva il post approvato e le sue entità nel Knowledge Graph Neo4j,
-    creando tutte le relazioni necessarie.
+    Salva il post, le entità e la DATA DI PUBBLICAZIONE nel Knowledge Graph.
     """
     if not graph:
-        print("⚠️ Errore: Database Neo4j non connesso, salto il salvataggio nel KG.")
+        print("⚠️ Errore: Database Neo4j non connesso, salto il salvataggio.")
         return
 
-    # Usiamo MERGE in Cypher, che crea il nodo/relazione solo se non esiste già
     query = """
-    // 1. Crea/Trova il Post e il Topic
+    // 1. Crea/Trova il Post e imposta la data
     MERGE (p:Post {title: $title})
+    ON CREATE SET p.date = $date
+    ON MATCH SET p.date = $date
     MERGE (t:Topic {name: toLower($topic)})
     MERGE (p)-[:COVERS]->(t)
 
-    // 2. Aggiungi le Claims (usiamo UNWIND per iterare sulla lista)
+    // 2. Aggiungi le Claims
     WITH p, t
     UNWIND $claims AS claim_text
     MERGE (c:Claim {text: claim_text})
@@ -157,7 +178,8 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list):
             "title": title,
             "topic": topic,
             "claims": claims,
-            "sources": sources
+            "sources": sources,
+            "date": publish_date
         })
         print("🧠 Knowledge Graph aggiornato con successo!")
     except Exception as e:
