@@ -19,8 +19,7 @@ class State(MessagesState):
     editorial_plan: Optional[list[dict]] = None  # Conterrà la sequenza di post pianificati
     justification: Optional[str] = None  # La giustificazione editoriale dell'agente
     current_topic: Optional[str] = None
-    pending_posts: list[str] = []
-    approved_articles: list[ArticleData] = []
+    pending_topics: list[str] = Field(default_factory=list)
 
 class RouterSchema(BaseModel):
     ragionamento: str = Field(
@@ -72,3 +71,8 @@ class KGExtraction(BaseModel):
     topic: str = Field(description="Il macro-argomento principale dell'articolo (es. Robotica, Droni, AI, STM32)")
     claims: list[str] = Field(description="Lista di massimo 3 affermazioni o fatti chiave (claims) estratti dall'articolo")
     sources: list[str] = Field(description="Lista delle fonti, aziende, o tecnologie menzionate (es. 'Wikipedia', 'Boston Dynamics', 'ROS2')")
+
+class TopicSelection(BaseModel):
+    selected_topics: list[str] = Field(
+        description="Lista dei titoli esatti degli articoli scelti o approvati dall'utente, estratti dal piano editoriale."
+    )

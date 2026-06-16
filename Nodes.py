@@ -39,34 +39,31 @@ def refine_node(state: MessagesState):
     )
 
 
-def accept_node(state: State):
-    # 1. Recuperiamo il topic e il piano
-    last_input = state.get("current_topic")
-    piano_approvato = state.get("editorial_plan", "Nessun piano specifico")
+def accept_node(state: State):  # <--- Attenzione: usa State e non MessagesState
+    pending = state.get("pending_topics", [])
 
-    if not last_input:
-        last_input = state["messages"][0].content
+    # 1. Peschiamo dalla coda
+    if pending:
+        topic_da_scrivere = pending[0]
+        nuovi_pending = pending[1:]  # Rimuoviamo il primo elemento
+    else:
+        topic_da_scrivere = state.get("current_topic", "Argomento generico")
+        nuovi_pending = []
+
+    print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
 
     llm = get_llm_with_tools()
+    accept_prompt = get_accept_prompt(topic_da_scrivere)
+    response = llm.invoke([{"role": "system", "content": accept_prompt}])
 
-    # 2. Otteniamo il prompt di base (assicurati di aver importato get_accept_prompt)
-    accept_prompt_base = get_accept_prompt(str(last_input))
-
-    # 3. Istruzione mirata
-    istruzione_mirata = (
-        f"{accept_prompt_base}\n\n"
-        f"ATTENZIONE: È stato approvato il seguente piano editoriale:\n{piano_approvato}\n\n"
-        f"Il tuo compito ORA è scrivere ESCLUSIVAMENTE l'articolo corrispondente al 'Post 1' (quello di oggi) descritto nel piano."
+    return Command(
+        update={
+            "messages": [response],
+            "current_topic": topic_da_scrivere,  # Aggiorniamo il topic corrente
+            "pending_topics": nuovi_pending  # Aggiorniamo la coda diminuita
+        },
+        goto="tool_node"
     )
-
-    # 🎯 IL FIX È QUI: Concateniamo il system prompt con tutto lo storico della chat
-    # Così l'LLM "legge" i risultati di Tavily/Neo4j che il tool_node ha appena aggiunto
-    messages_to_pass = [{"role": "system", "content": istruzione_mirata}] + state["messages"]
-
-    # 4. Invochiamo l'LLM con la memoria completa
-    response = llm.invoke(messages_to_pass)
-
-    return Command(update={"messages": [response]}, goto="tool_node")
 
 
 
@@ -233,6 +230,7 @@ def check_schedule_node(state: State):
     )
 
 
+# --- Il Nodo Decisionale Definitivo ---
 def decision_node(state: State) -> Command:
     print("--- [decision_node] Verifica disponibilità finale (Senza LLM) ---")
 
@@ -251,11 +249,11 @@ def decision_node(state: State) -> Command:
         print("🚀 PUBBLICAZIONE ARTICOLO SU NOTION IN CORSO...")
         time.sleep(2)
 
-        # Recuperiamo l'articolo corrente in fase di schedulazione
+        # Recuperiamo l'articolo generato per avere titolo, autore e testo
         final_article = state.get("final_article")
 
         if final_article:
-            # Estraiamo i dati dall'oggetto
+            # Estraiamo i dati dall'oggetto Pydantic ArticleData
             titolo = final_article.title
             testo = final_article.text
             autore = final_article.author
@@ -266,19 +264,36 @@ def decision_node(state: State) -> Command:
             # Aggiorniamo la data nello stato dell'articolo
             final_article.date = target_date
 
-            print(f"✅ Articolo '{titolo}' pubblicato con successo per il {target_date}!")
+            # --- NOVITÀ: Estrazione e salvataggio nel Knowledge Graph ---
+            print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
+            llm = get_llm().with_structured_output(KGExtraction)
 
-            # NOTA: L'estrazione per Neo4j è stata rimossa da qui,
-            # ora viene fatta subito dopo l'approvazione del testo in 'save_draft_node'.
+            # Chiediamo al LLM di analizzare il testo finale e restituirci l'oggetto strutturato
+            prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {titolo}\nTesto: {testo}"
+            estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
 
+            # Salviamo tutto in Neo4j
+            save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources)
+            # -------------------------------------------------------------
         else:
             print("⚠️ Errore: Nessun articolo finale trovato nello stato da pubblicare.")
 
-        # Invece di finire (END), torniamo al gestore della coda per vedere se ci sono altri articoli da schedulare
-        return Command(
-            update={"final_article": final_article},
-            goto="scheduling_queue_router"
-        )
+        # --- NUOVA LOGICA: CONTROLLO CODA ---
+        # Controlliamo se ci sono altri articoli da scrivere (letti dallo State)
+        pending = state.get("pending_topics", [])
+        if pending:
+            print(f"\n🔁 Ci sono ancora {len(pending)} articoli in coda da generare. Passo al prossimo...")
+            return Command(
+                update={"final_article": final_article},
+                goto="accept_node"  # Torna all'inizio per scrivere il prossimo articolo della lista
+            )
+        else:
+            print("\n✅ Tutti gli articoli richiesti sono stati scritti, schedulati e pubblicati!")
+            return Command(
+                update={"final_article": final_article},
+                goto=END  # Termina il grafo solo quando la coda è vuota
+            )
+
     else:
         # La data è piena, dobbiamo chiedere all'utente una nuova data
         msg_testo = f"Purtroppo la data {target_date} è già piena. Inserisci una nuova data in formato YYYY-MM-DD."
@@ -300,16 +315,16 @@ import datetime
 from langgraph.types import interrupt, Command
 from langchain_core.messages import HumanMessage
 
+from Schemas import TopicSelection
+
 
 def planning_node(state: State) -> Command:
     print("\n--- [planning_node] Generazione Piano Editoriale basato su KG ---")
 
     last_input = state["messages"][-1].content
-    n = state.get("n_days", 3)  # Recupera n (default 3)
+    n = state.get("n_days", 3)
 
     try:
-        # Questa funzione eseguirà un "MATCH (t:Topic) RETURN t.name" su Neo4j
-
         knowledge_graph_context = get_covered_context_from_neo4j()
         print(f"DEBUG KG - Topic reali recuperati da Neo4j: {knowledge_graph_context}")
     except Exception as e:
@@ -321,12 +336,10 @@ def planning_node(state: State) -> Command:
         f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto di scrivere un articolo su: '{last_input}'.\n"
         f"Ecco l'analisi dettagliata dei contenuti e dei CLAIMS già presenti nel Knowledge Graph:\n"
         f"{knowledge_graph_context}\n\n"
-
         f"COMPITO TASSATIVO:\n"
         f"1. Analizza i Claims già trattati nel Knowledge Graph. Se l'argomento centrale richiesto dall'utente ripropone concetti o affermazioni chiave già coperte, NON inserire la richiesta originale come Post 1.\n"
         f"2. Trova un vero e proprio GAP editoriale (un punto di vista non ancora espresso, una tecnologia specifica non menzionata nei claims precedenti) e usa quel sotto-argomento non coperto per il Post 1.\n"
         f"3. Pianifica una sequenza futura di 3 post totali con una cadenza di uscita di esattamente ogni {n} giorni.\n\n"
-
         f"Rispondi formattando chiaramente:\n"
         f"PIANO EDITORIALE:\n- Post 1 (Oggi): Titolo\n- Post 2 (Oggi+{n}gg): Titolo\n- Post 3 (Oggi+{2 * n}gg): Titolo\n"
         f"GIUSTIFICAZIONE:\n[Spiega quale claim o argomento del KG rischiava di essere duplicato e come il nuovo Post 1 vada a coprire un reale gap informativo]"
@@ -334,25 +347,38 @@ def planning_node(state: State) -> Command:
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
     piano_generato = response.content
 
-    # 2. INTERRUPT: Mostriamo il piano all'utente per l'approvazione (Human-in-the-loop)
     feedback_utente = interrupt({
         "proposta_piano": piano_generato,
         "schedule_result": f"Il sistema ha pianificato i post con cadenza ogni {n} giorni. Approvi?"
     })
 
-    # Calcoliamo la data di oggi come punto di partenza per il primo articolo
+    # --- NUOVA LOGICA: ESTRAZIONE DEI TOPIC SCELTI DAL FEEDBACK ---
+    print("🧠 Estrazione dei titoli selezionati in base al feedback...")
+    extractor = get_llm().with_structured_output(TopicSelection)
+    estrazione_prompt = (
+        f"Questo è il piano editoriale proposto:\n{piano_generato}\n\n"
+        f"L'utente ha risposto così: '{feedback_utente}'.\n"
+        f"Estrai solo ed esclusivamente i titoli completi degli articoli che l'utente ha scelto o approvato di scrivere."
+    )
+    scelta = extractor.invoke([{"role": "user", "content": estrazione_prompt}])
+
+    pending = scelta.selected_topics
+    if not pending:  # Fallback di sicurezza se non capisce il feedback
+        pending = [last_input]
+
+    print(f"📌 Articoli messi in coda di scrittura: {pending}")
+
     data_oggi = datetime.date.today().strftime("%Y-%m-%d")
 
-    # Ritorniamo il comando aggiornando lo stato e spostandoci su accept_node per scrivere l'articolo
     return Command(
         update={
-            "messages": [HumanMessage(content=feedback_utente)],
+            "messages": [HumanMessage(content=str(feedback_utente))],
             "editorial_plan": piano_generato,
             "justification": piano_generato,
             "data_proposta": data_oggi,
-            "current_topic": last_input
+            "pending_topics": pending  # <--- Carichiamo la coda!
         },
-        goto="accept_node"  # Va al tuo nodo esistente che genera l'articolo
+        goto="accept_node"
     )
 
 
