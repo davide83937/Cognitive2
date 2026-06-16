@@ -39,13 +39,13 @@ def refine_node(state: MessagesState):
     )
 
 
-def accept_node(state: State):  # <--- Attenzione: usa State e non MessagesState
+def accept_node(state: State):
     pending = state.get("pending_topics", [])
 
-    # 1. Peschiamo dalla coda
+    # 1. Peschiamo dalla coda il prossimo articolo
     if pending:
         topic_da_scrivere = pending[0]
-        nuovi_pending = pending[1:]  # Rimuoviamo il primo elemento
+        nuovi_pending = pending[1:]  # Rimuoviamo il primo elemento dalla lista
     else:
         topic_da_scrivere = state.get("current_topic", "Argomento generico")
         nuovi_pending = []
@@ -62,9 +62,8 @@ def accept_node(state: State):  # <--- Attenzione: usa State e non MessagesState
             "current_topic": topic_da_scrivere,  # Aggiorniamo il topic corrente
             "pending_topics": nuovi_pending  # Aggiorniamo la coda diminuita
         },
-        goto="tool_node"
+        goto="tool_node"  # Passa obbligatoriamente alla stesura
     )
-
 
 
 # Assicurati di importare i tuoi tool
@@ -231,6 +230,7 @@ def check_schedule_node(state: State):
 
 
 # --- Il Nodo Decisionale Definitivo ---
+# --- Il Nodo Decisionale Definitivo ---
 def decision_node(state: State) -> Command:
     print("--- [decision_node] Verifica disponibilità finale (Senza LLM) ---")
 
@@ -264,7 +264,7 @@ def decision_node(state: State) -> Command:
             # Aggiorniamo la data nello stato dell'articolo
             final_article.date = target_date
 
-            # --- NOVITÀ: Estrazione e salvataggio nel Knowledge Graph ---
+            # Estrazione e salvataggio nel Knowledge Graph
             print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
             llm = get_llm().with_structured_output(KGExtraction)
 
@@ -274,15 +274,14 @@ def decision_node(state: State) -> Command:
 
             # Salviamo tutto in Neo4j
             save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources)
-            # -------------------------------------------------------------
         else:
             print("⚠️ Errore: Nessun articolo finale trovato nello stato da pubblicare.")
 
         # --- NUOVA LOGICA: CONTROLLO CODA ---
-        # Controlliamo se ci sono altri articoli da scrivere (letti dallo State)
+        # Controlliamo se ci sono altri articoli da scrivere
         pending = state.get("pending_topics", [])
         if pending:
-            print(f"\n🔁 Ci sono ancora {len(pending)} articoli in coda da generare. Passo al prossimo...")
+            print(f"\n🔁 Ci sono ancora {len(pending)} articoli in coda da generare. Riavvio stesura...")
             return Command(
                 update={"final_article": final_article},
                 goto="accept_node"  # Torna all'inizio per scrivere il prossimo articolo della lista
