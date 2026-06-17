@@ -2,8 +2,8 @@ from typing import Literal
 
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.constants import END, START
-from langgraph.types import Command
-from packaging.metadata import parse_email
+from langgraph.types import Command, interrupt
+
 from pydantic import BaseModel, Field
 
 from Models import get_llm
@@ -80,16 +80,22 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
         raise ValueError(f"Invalid classification: {result.classification}")
 
 
-
 def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
     feedback_input = state["messages"][-1].content
 
-    system_prompt = scheduling_node_prompt
-    user_prompt = feedback_input
+    # Arricchiamo il prompt per FORZARE l'estrazione della data dell'utente
+    system_prompt = (
+        f"{scheduling_node_prompt}\n\n"
+        f"ATTENZIONE: Leggi attentamente l'ultimo messaggio dell'utente: '{feedback_input}'.\n"
+        f"Se l'utente APPROVA o SPECIFICA chiaramente una data (es. 'approvo la data del 23 giugno 2026', 'sposta al 26'), "
+        f"devi OBBLIGATORIAMENTE estrarla nel formato YYYY-MM-DD (es. '2026-06-23') e inserirla nel campo 'data_proposta'. "
+        f"La volontà scritta dell'utente ha priorità assoluta su qualsiasi altra precedente elaborazione."
+    )
+
+#    user_prompt = feedback_input
 
     llm = get_llm()
     llm = llm.with_structured_output(RouterSchemaScheduling, method="json_mode")
-    # 🎯 LA SVOLTA: Concateniamo il System Prompt con TUTTI i messaggi della storia ()
     result = llm.invoke(
         [{"role": "system", "content": system_prompt}] + state["messages"]
     )
@@ -99,22 +105,17 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
         print("📧 Classification: DECISION")
         print("User has approved")
         goto = "decision_node"
-
     elif classification == "scheduling":
-        # If real life, this would do something else
         print("🔔 Classification: SCHEDULING")
         print("You are talking about the schedule")
         goto = "check_schedule_node"
 
+    # Se l'LLM ha estratto la tua data (es. 2026-06-23), la sovrascrive annullando l'errore del tool
     if result.data_proposta and result.data_proposta != "NESSUNA":
-        print(f"🎯 Trasferisco la nuova data allo stato: {result.data_proposta}")
+        print(f"🎯 Trasferisco la nuova data confermata dall'utente allo stato: {result.data_proposta}")
         return Command(update={"data_proposta": result.data_proposta}, goto=goto)
-    # Passiamo sia l'aggiornamento della data che la destinazione
-    return Command(
 
-        goto=goto
-    )
-
+    return Command(goto=goto)
 
 def drafting_router(state: State) -> Command:
     # 1. Usiamo la variabile corretta 'pending_topics'

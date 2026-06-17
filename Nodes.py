@@ -113,7 +113,8 @@ def tool_node(state: State):
             articolo_generato = ArticleData(
                 title=titolo_estratto,
                 text=testo_articolo,
-                author=autore_estratto
+                author=autore_estratto,
+                date=state.get("data_proposta")
             )
 
     # --- FUORI DAL CICLO FOR: DECIDIAMO DOVE ANDARE ---
@@ -172,8 +173,9 @@ def check_schedule_node(state: State):
     context_prompt = (
         f"{check_date_prompt}\n\n"
         f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
-        f"La data attualmente pianificata/proposta per questo articolo dal piano editoriale è: {data_testo}. "
-        f"Se l'utente ti chiede quale data avevi pianificato o qual è la data proposta, rispondi comunicando questa esatta data."
+        f"La data attualmente pianificata/proposta per questo articolo è: {data_testo}.\n"
+        f"⚠️ REGOLA SCHEDULAZIONE: Il piano prevede di pubblicare con una cadenza di {n_days} giorni.\n"
+        f"Se l'utente chiede la 'prossima data disponibile' o di 'spostare' la data, calcola o usa i tool tenendo in considerazione questo stacco obbligatorio di {n_days} giorni rispetto alla data attuale."
     )
 
     # 3. Invoca l'LLM con il prompt arricchito
