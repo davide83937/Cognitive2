@@ -5,7 +5,7 @@ from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
 from RouterNodes import FinalPlan
 from Schemas import State, ArticleData, KGExtraction
-from Tools import save_to_neo4j, get_covered_context_from_neo4j
+from Tools import save_to_neo4j, get_covered_context_from_neo4j, get_smart_schedule_dates
 from base import get_tools_by_name
 import re
 
@@ -35,40 +35,34 @@ def refine_node(state: MessagesState):
 
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
-    current_topic = state.get("current_topic")
 
-    # Controlliamo se stiamo riprendendo l'esecuzione dopo un tool
-    # Se l'ultimo messaggio è di tipo 'tool', NON dobbiamo pescare un nuovo topic
-    is_resuming = False
-    if state.get("messages") and len(state["messages"]) > 0:
-        if getattr(state["messages"][-1], "type", "") == "tool":
-            is_resuming = True
-
-    # 1. Peschiamo dalla coda SOLO se stiamo iniziando un topic nuovo
-    if not is_resuming and pending:
-        topic_da_scrivere = pending[0]
-        nuovi_pending = pending[1:]
+    # Leggiamo semplicemente il primo elemento in coda senza rimuoverlo
+    if pending:
+        elemento = pending[0]
+        # Ora sappiamo per certo che è un dizionario
+        if isinstance(elemento, dict):
+            topic_da_scrivere = elemento.get("title", "Argomento generico")
+            data_assegnata = elemento.get("date")
+        else:
+            topic_da_scrivere = getattr(elemento, "title", "Argomento generico")
+            data_assegnata = getattr(elemento, "date", None)
     else:
-        # Continuiamo a lavorare sul topic corrente
-        topic_da_scrivere = current_topic if current_topic else "Argomento generico"
-        nuovi_pending = pending
+        topic_da_scrivere = state.get("current_topic", "Argomento generico")
+        data_assegnata = state.get("data_proposta", None)
 
     print(f"\n⚙️ Avvio/Ripresa stesura articolo su: '{topic_da_scrivere}'")
 
     llm = get_llm_with_tools()
     accept_prompt = get_accept_prompt(topic_da_scrivere)
-
-    # 2. CRITICO: Dobbiamo passare tutti i messaggi precedenti all'LLM!
-    # In questo modo l'LLM può leggere il ToolMessage restituito dal tool_node
     messages = [{"role": "system", "content": accept_prompt}] + state.get("messages", [])
-
     response = llm.invoke(messages)
 
     return Command(
         update={
             "messages": [response],
             "current_topic": topic_da_scrivere,
-            "pending_topics": nuovi_pending
+            "data_proposta": data_assegnata
+            # NON ELIMINIAMO NIENTE DA PENDING_TOPICS QUI!
         },
         goto="tool_node"
     )
@@ -255,6 +249,15 @@ def decision_node(state: State) -> Command:
 
     if final_article:
         final_article.date = target_date
+        # Estrazione sicura dict vs Pydantic
+        if isinstance(final_article, dict):
+            titolo = final_article.get("title", "Senza Titolo")
+            testo = final_article.get("text", "")
+            final_article["date"] = target_date
+        else:
+            titolo = final_article.title
+            testo = final_article.text
+            final_article.date = target_date
         print(f"✅ Articolo '{final_article.title}' confermato per la data {target_date}.")
 
         # 🧩 ESTRAZIONE E SALVATAGGIO SPOSTATI QUI
@@ -295,25 +298,22 @@ def planning_node(state: State) -> Command:
     last_input = state["messages"][-1].content
     n = state.get("n_days", 3)
 
-    try:
-        knowledge_graph_context = get_covered_context_from_neo4j()
-        print(f"DEBUG KG - Topic reali recuperati da Neo4j: {knowledge_graph_context}")
-    except Exception as e:
-        print(f"⚠️ Errore connessione Neo4j: {e}. Uso fallback.")
-        covered_topics = ["Nessun post precedente trovato"]
+    # 1. Calcoliamo in modo intelligente le prossime 3 date disponibili
+    date_sicure = get_smart_schedule_dates(n_days=n, total_posts=3)
+    data_1, data_2, data_3 = date_sicure[0], date_sicure[1], date_sicure[2]
+
+    # ... logica Knowledge Graph ...
 
     llm = get_llm()
     prompt_planning = (
-        f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto di scrivere un articolo su: '{last_input}'.\n"
-        f"Ecco l'analisi dettagliata dei contenuti e dei CLAIMS già presenti nel Knowledge Graph:\n"
-        f"{knowledge_graph_context}\n\n"
-        f"COMPITO TASSATIVO:\n"
-        f"1. Analizza i Claims già trattati nel Knowledge Graph. Se l'argomento centrale richiesto dall'utente ripropone concetti o affermazioni chiave già coperte, NON inserire la richiesta originale come Post 1.\n"
-        f"2. Trova un vero e proprio GAP editoriale (un punto di vista non ancora espresso, una tecnologia specifica non menzionata nei claims precedenti) e usa quel sotto-argomento non coperto per il Post 1.\n"
-        f"3. Pianifica una sequenza futura di 3 post totali con una cadenza di uscita di esattamente ogni {n} giorni.\n\n"
+        f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto un articolo su: '{last_input}'.\n"
+        # ... ometto parti esistenti per brevità ...
+        f"DEVI ASSOLUTAMENTE ASSEGNARE QUESTE DATE ESATTE AI 3 POST, perché sono le uniche disponibili a sistema:\n"
+        f"- Post 1: {data_1}\n"
+        f"- Post 2: {data_2}\n"
+        f"- Post 3: {data_3}\n\n"
         f"Rispondi formattando chiaramente:\n"
-        f"PIANO EDITORIALE:\n- Post 1 (Oggi): Titolo\n- Post 2 (Oggi+{n}gg): Titolo\n- Post 3 (Oggi+{2 * n}gg): Titolo\n"
-        f"GIUSTIFICAZIONE:\n[Spiega quale claim o argomento del KG rischiava di essere duplicato e come il nuovo Post 1 vada a coprire un reale gap informativo]"
+        f"PIANO EDITORIALE:\n- Post 1 ({data_1}): Titolo\n- Post 2 ({data_2}): Titolo\n- Post 3 ({data_3}): Titolo\n"
     )
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
     piano_generato = response.content
@@ -337,6 +337,8 @@ def planning_node(state: State) -> Command:
     if not pending:  # Fallback di sicurezza se non capisce il feedback
         pending = [last_input]
 
+        # TRASFORMIAMO GLI OGGETTI IN DIZIONARI SICURI PER IL SALVATAGGIO
+        pending_dicts = [{"title": p.title, "date": p.date} for p in pending]
     print(f"📌 Articoli messi in coda di scrittura: {pending}")
 
     data_oggi = datetime.date.today().strftime("%Y-%m-%d")
@@ -367,16 +369,21 @@ def process_plan_node(state: State):
         goto="drafting_router"
     )
 
-
 def save_draft_node(state: State):
     final_article = state.get("final_article")
     approved_articles = state.get("approved_articles", [])
 
-    # Creiamo esplicitamente una NUOVA lista per forzare l'aggiornamento dello stato
     nuova_lista = list(approved_articles)
     nuova_lista.append(final_article)
 
+    # RIMUOVIAMO L'ARTICOLO DALLA CODA SOLO DOPO CHE L'UTENTE HA APPROVATO
+    pending = state.get("pending_topics", [])
+    nuovi_pending = pending[1:] if pending else []
+
     return Command(
-        update={"approved_articles": nuova_lista},  # Passiamo la nuova lista aggiornata
+        update={
+            "approved_articles": nuova_lista,
+            "pending_topics": nuovi_pending   # <--- Ora si passa al successivo in modo sicuro
+        },
         goto="drafting_router"
     )

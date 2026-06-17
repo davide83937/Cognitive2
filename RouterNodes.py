@@ -1,5 +1,6 @@
 from typing import Literal
 
+from langchain_core.messages import HumanMessage
 from langgraph.constants import END, START
 from langgraph.types import Command
 from packaging.metadata import parse_email
@@ -140,13 +141,31 @@ def scheduling_queue_router(state: State) -> Command:
     next_article = approved_articles[0]
     rimanenti = approved_articles[1:]
 
+    # Gestione sicura Oggetto/Dizionario
+    if isinstance(next_article, dict):
+        titolo_articolo = next_article.get("title", "Articolo")
+        data_precalcolata = next_article.get("date")
+    else:
+        titolo_articolo = next_article.title
+        data_precalcolata = getattr(next_article, "date", None)
+
     print(f"\n📅 Passiamo alla schedulazione di: {next_article.title}")
+
+    # 🧠 RECUPERO DELLA DATA IN MEMORIA
+    # Estraiamo la data che l'articolo si porta dietro dal planning intelligente
+    data_precalcolata = getattr(next_article, "date", None)
+
+    if data_precalcolata:
+        testo_guida = f"L'articolo '{next_article.title}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
+    else:
+        testo_guida = f"Per quando vuoi schedulare l'articolo '{next_article.title}'?"
 
     return Command(
         update={
-            "approved_articles": rimanenti,  # Aggiorniamo con la nuova lista rimpicciolita
+            "approved_articles": rimanenti,
             "final_article": next_article,
-            "messages": ["Per quando vuoi schedulare questo articolo?"]
+            "data_proposta": data_precalcolata,
+            "messages": [HumanMessage(content=testo_guida)]
         },
         goto="scheduling_node_router"
     )

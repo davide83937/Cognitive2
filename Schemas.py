@@ -73,7 +73,10 @@ class KGExtraction(BaseModel):
     claims: list[str] = Field(description="Lista di massimo 3 affermazioni o fatti chiave (claims) estratti dall'articolo")
     sources: list[str] = Field(description="Lista delle fonti, aziende, o tecnologie menzionate (es. 'Wikipedia', 'Boston Dynamics', 'ROS2')")
 
+
+class PlannedArticle(BaseModel):
+    title: str = Field(description="Il titolo completo dell'articolo pianificato")
+    date: str = Field(description="La data esatta assegnata nel piano editoriale (formato YYYY-MM-DD)")
+
 class TopicSelection(BaseModel):
-    selected_topics: list[str] = Field(
-        description="Lista dei titoli esatti degli articoli scelti o approvati dall'utente, estratti dal piano editoriale."
-    )
+    selected_topics: list[PlannedArticle] = Field(description="Lista degli articoli approvati dall'utente, ognuno con la sua data")

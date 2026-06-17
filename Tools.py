@@ -215,3 +215,58 @@ def get_covered_context_from_neo4j():
     except Exception as e:
         print(f"⚠️ Errore estrazione dettagliata Cypher: {e}")
         return ["Nessun contenuto precedente nel KG"]
+
+
+def get_smart_schedule_dates(n_days: int, total_posts: int = 3) -> list[str]:
+    """
+    Calcola una sequenza di date disponibili, garantendo che ci siano
+    almeno 'n_days' tra una pubblicazione e l'altra, saltando i giorni pieni.
+    """
+    from test_neo4j import graph  # Assicurati di importare l'istanza del tuo graph
+
+    if not graph:
+        print("⚠️ Graph non connesso, fallback date sequenziali.")
+        # Fallback basico se Neo4j è spento
+        base = datetime.now().date()
+        return [(base + timedelta(days=i * n_days)).strftime("%Y-%m-%d") for i in range(total_posts)]
+
+    oggi = datetime.now().date()
+
+    # Recuperiamo l'occupazione di tutte le date future
+    query = """
+    MATCH (p:Post)
+    WHERE p.date >= $oggi
+    RETURN p.date AS post_date, count(p) AS count
+    """
+    try:
+        risultati = graph.query(query, params={"oggi": oggi.strftime("%Y-%m-%d")})
+        # Mappa { "2026-06-18": 3, "2026-06-20": 1, ... }
+        conteggio = {res["post_date"]: res["count"] for res in risultati if res.get("post_date")}
+    except Exception as e:
+        print(f"Errore query conteggio: {e}")
+        conteggio = {}
+
+    date_pianificate = []
+    giorno_corrente = oggi
+
+    for _ in range(total_posts):
+        # Cerca il primo giorno con meno di 3 articoli a partire da 'giorno_corrente'
+        while True:
+            data_str = giorno_corrente.strftime("%Y-%m-%d")
+            occupazione_attuale = conteggio.get(data_str, 0)
+
+            if occupazione_attuale < 3:
+                # Trovato! Aggiungiamo alla pianificazione
+                date_pianificate.append(data_str)
+                # Aggiorniamo virtualmente il dizionario per non sovraccaricare il giorno
+                # se l'LLM dovesse pianificare più post nello stesso giorno (se n_days=0)
+                conteggio[data_str] = occupazione_attuale + 1
+
+                # Il prossimo post dovrà essere schedulato almeno 'n_days' dopo questo
+                giorno_corrente += timedelta(days=n_days)
+                break
+            else:
+                # Giorno pieno, proviamo il giorno successivo
+                giorno_corrente += timedelta(days=1)
+
+    return date_pianificate

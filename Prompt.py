@@ -64,19 +64,23 @@ def get_update_prompt():
     Assicurati di passare al tool i nuovi parametri (about, author, content) aggiornati in base alle richieste."""
     return update_prompt
 
-scheduling_node_prompt = """Sei un classificatore che parla con l'utente per quanto riguarda la 
-schedulazione di un articolo, il tuo compito è analizzare l'input dell'utente, è stabilire se sta chiedendo informazioni
-riguardanti le date disponibili o se è deciso per una data specifica.
-Rispondi:
-scheduling, se l'utente ti ha chiesto informazioni riguardanti una data o le date disponibili
-decision, se l'utente è deciso a pubblicare l'articolo in una specifica data
-Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATTAMENTE questa struttura:
-{{
-    "ragionamento": "Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo",
+scheduling_node_prompt = """Sei un classificatore intelligente per un blog di robotica. Il tuo compito è analizzare la cronologia della conversazione e l'ultimo messaggio dell'utente per decidere se la data proposta per l'articolo è stata confermata o se si deve discutere/verificare la disponibilità di altre date.
+
+Regole di classificazione:
+1. "decision": Scegli questa opzione se l'utente accetta, approva o conferma la data che gli è stata appena proposta dall'assistente (es. "Sì, va bene", "Ok", "Confermo", "Perfetto", "Procedi pure").
+2. "scheduling": Scegli questa opzione se l'utente esprime incertezza, fa domande sulle date libere, vuole cambiare giorno o vuole controllare il calendario (es. "Il 20 è libero?", "Quali sono le date disponibili?", "No, cambiamo giorno", "Dimmi la prima data utile").
+
+REGOLE SULLA PROPRIETÀ 'data_proposta':
+- Se l'utente specifica chiaramente una NUOVA data nel suo messaggio (es. "Spostalo al 2026-06-25"), estrai quella data nel formato YYYY-MM-DD.
+- Se l'utente si limita a confermare la data proposta dicendo semplicemente "Sì" o "Va bene", imposta 'data_proposta' a null (o "NESSUNA"), in modo da non sovrascrivere la data già salvata nel contesto.
+
+Devi rispondere UNICAMENTE restituendo un oggetto JSON valido con questa struttura esatta:
+{
+    "ragionamento": "Spiega brevemente come hai interpretato l'intento dell'utente basandoti sull'ultimo messaggio",
     "classification": "decision" oppure "scheduling",
-    "data_proposta": "La data in formato YYYY-MM-DD se l'utente ne specifica una nuova nel suo messaggio, altrimenti null"
-}}
-Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
+    "data_proposta": "La nuova data in formato YYYY-MM-DD se esplicitata, altrimenti null"
+}
+Non aggiungere testo prima o dopo il JSON."""
 
 check_date_prompt = """Sei l'assistente editoriale responsabile della pianificazione del blog di robotica.
     Il tuo compito è aiutare l'utente a trovare una data disponibile per pubblicare il suo articolo.

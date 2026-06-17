@@ -40,7 +40,10 @@ builder.add_edge(START, "triage_router")
 
 # 5. Compila il grafo (punto di accesso vero e proprio)
 serde = JsonPlusSerializer(
-    allowed_msgpack_modules=[('Schemas', 'ArticleData')]
+    allowed_msgpack_modules=[
+        ('Schemas', 'ArticleData'),
+        ('Schemas', 'PlannedArticle')  # <--- AGGIUNGI QUESTA RIGA
+    ]
 )
 
 # Inizializza il MemorySaver passandogli il serializzatore personalizzato
