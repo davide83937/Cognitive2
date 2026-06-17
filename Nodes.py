@@ -161,14 +161,24 @@ def update_article_node(state: MessagesState):
 
 
 def check_schedule_node(state: State):
-
     last_message = state["messages"][-1]
     llm = get_llm_with_calendar_tools()
 
-    ai_msg = llm.invoke([{"role": "system", "content": check_date_prompt}] + [last_message])
-    new_messages = [ai_msg]
-
+    # 1. Recupera la data pre-calcolata dallo State
     data_estratta = state.get("data_proposta")
+    data_testo = data_estratta if data_estratta else "Nessuna data attualmente assegnata"
+
+    # 2. Arricchisci il System Prompt dinamicamente
+    context_prompt = (
+        f"{check_date_prompt}\n\n"
+        f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
+        f"La data attualmente pianificata/proposta per questo articolo dal piano editoriale è: {data_testo}. "
+        f"Se l'utente ti chiede quale data avevi pianificato o qual è la data proposta, rispondi comunicando questa esatta data."
+    )
+
+    # 3. Invoca l'LLM con il prompt arricchito
+    ai_msg = llm.invoke([{"role": "system", "content": context_prompt}] + [last_message])
+    new_messages = [ai_msg]
 
     # 3. Verifichiamo se l'LLM ha deciso di chiamare uno o più tool
     if hasattr(ai_msg, "tool_calls") and len(ai_msg.tool_calls) > 0:
@@ -216,7 +226,10 @@ def check_schedule_node(state: State):
     # 2. Lanciamo l'interrupt.
     # Passiamo un dizionario in modo che Main.py possa riconoscerlo,
     # esattamente come hai fatto per "proposta" e "articolo_generato".
-    user_feedback = interrupt({"schedule_result": "In attesa di feedback sulle date..."})
+    #user_feedback = interrupt({"schedule_result": "In attesa di feedback sulle date..."})
+    # Usa questo:
+    testo_assistente = ai_msg.content if ai_msg.content else "Ho elaborato le date. Come procediamo?"
+    user_feedback = interrupt({"schedule_result": testo_assistente})
 
     # 3. Aggiorniamo lo stato con l'input dell'utente
     print(f"👤 Utente ha risposto: {user_feedback}")

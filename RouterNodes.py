@@ -1,6 +1,6 @@
 from typing import Literal
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.constants import END, START
 from langgraph.types import Command
 from packaging.metadata import parse_email
@@ -137,7 +137,6 @@ def scheduling_queue_router(state: State) -> Command:
         print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
         return Command(goto=END)
 
-    # 3. Creiamo liste nuove (slice) invece di fare un .pop() in-place
     next_article = approved_articles[0]
     rimanenti = approved_articles[1:]
 
@@ -149,23 +148,26 @@ def scheduling_queue_router(state: State) -> Command:
         titolo_articolo = next_article.title
         data_precalcolata = getattr(next_article, "date", None)
 
-    print(f"\n📅 Passiamo alla schedulazione di: {next_article.title}")
-
-    # 🧠 RECUPERO DELLA DATA IN MEMORIA
-    # Estraiamo la data che l'articolo si porta dietro dal planning intelligente
-    data_precalcolata = getattr(next_article, "date", None)
+    print(f"\n📅 Passiamo alla schedulazione di: {titolo_articolo}")
 
     if data_precalcolata:
-        testo_guida = f"L'articolo '{next_article.title}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
+        testo_guida = f"L'articolo '{titolo_articolo}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
     else:
-        testo_guida = f"Per quando vuoi schedulare l'articolo '{next_article.title}'?"
+        testo_guida = f"Per quando vuoi schedulare l'articolo '{titolo_articolo}'?"
+
+    # 🛑 INSERIAMO L'INTERRUPT QUI!
+    # Mettiamo in pausa il grafo e mostriamo all'utente il testo_guida
+    risposta_utente = interrupt({"schedule_result": testo_guida})
 
     return Command(
         update={
             "approved_articles": rimanenti,
             "final_article": next_article,
             "data_proposta": data_precalcolata,
-            "messages": [HumanMessage(content=testo_guida)]
+            "messages": [
+                AIMessage(content=testo_guida),         # Ora il testo_guida è correttamente registrato come messaggio dell'AI
+                HumanMessage(content=risposta_utente)   # Salviamo la tua risposta ("confermo", "cambia data", ecc.)
+            ]
         },
         goto="scheduling_node_router"
     )
