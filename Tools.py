@@ -286,3 +286,80 @@ def get_smart_schedule_dates(n_days: int, total_posts: int = 3) -> list[str]:
                 giorno_corrente += timedelta(days=1)
 
     return date_pianificate
+
+
+import os
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings  # Usa OpenAIEmbeddings se preferisci
+from langchain_chroma import Chroma
+from langchain_core.tools import create_retriever_tool
+
+
+# --- 1. SETUP DEL DATABASE VETTORIALE ---
+def setup_vector_database(cartella_documenti="./knowledge_base", db_path="./chroma_db"):
+    # Se la cartella non esiste, la crea
+    if not os.path.exists(cartella_documenti):
+        os.makedirs(cartella_documenti)
+        print(f"📁 Cartella '{cartella_documenti}' creata. Inserisci qui i tuoi PDF.")
+        return None
+
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+    # Se il DB esiste già, lo carica senza rifare tutto
+    if os.path.exists(db_path):
+        return Chroma(persist_directory=db_path, embedding_function=embeddings)
+
+    print("📚 Costruzione del Vector Database in corso dai PDF...")
+    documenti = []
+    for file in os.listdir(cartella_documenti):
+        if file.endswith(".pdf"):
+            loader = PyPDFLoader(os.path.join(cartella_documenti, file))
+            documenti.extend(loader.load())
+
+    if not documenti:
+        print("⚠️ Nessun PDF trovato. Il RAG non avrà documenti.")
+        return None
+
+    # Dividiamo i documenti in frammenti più piccoli (chunking)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splits = text_splitter.split_documents(documenti)
+
+    # Creiamo e salviamo il vector store locale
+    vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings, persist_directory=db_path)
+    return vectorstore
+
+
+from langchain_core.tools import tool
+
+# --- 2. CREAZIONE DEL TOOL PER L'AGENTE (Versione con DEBUG) ---
+vectorstore_db = setup_vector_database()
+
+if vectorstore_db:
+    # Impostiamo il retriever per restituire i 3 chunk più rilevanti
+    retriever = vectorstore_db.as_retriever(search_kwargs={"k": 3})
+
+
+    @tool
+    def rag_document_retriever(query: str) -> str:
+        """Usa questo tool per cercare informazioni, definizioni e concetti approfonditi all'interno dei documenti e manuali locali del blog. Restituisce frammenti di testo da usare come citazioni per supportare l'articolo."""
+
+        # 🟢 ECCO LA SPIA! Questa riga stamperà in rosso/visibile sul terminale l'uso del RAG
+        print(f"\n📚 [DEBUG RAG] L'agente ha attivato il tool sui PDF locali con la query: '{query}'\n")
+
+        # Facciamo la vera ricerca vettoriale
+        documenti_trovati = retriever.invoke(query)
+
+        if not documenti_trovati:
+            return "Nessuna informazione rilevante trovata nei PDF."
+
+        # Uniamo i frammenti trovati in un unico testo da passare all'LLM
+        testo_risultati = "\n\n--- FRAMMENTO --- \n".join([doc.page_content for doc in documenti_trovati])
+        return testo_risultati
+
+else:
+    # Fallback se non ci sono PDF
+    @tool
+    def rag_document_retriever(query: str) -> str:
+        """Tool fittizio per quando non ci sono documenti"""
+        return "Nessun documento locale disponibile nel database vettoriale."

@@ -32,16 +32,22 @@ def get_refine_prompt(last_input: str):
     return refine_prompt
 
 
-def get_accept_prompt(last_input: str):
-    accept_prompt = f"""Sei un giornalista scientifico rigoroso. L'argomento del tuo prossimo articolo è: '{last_input}'.
+def get_accept_prompt(topic: str) -> str:
+    return f"""
+    Sei un AI Blogger Assistant esperto. Devi scrivere un articolo sul topic: '{topic}'.
 
-    PRIMA di scrivere l'articolo, segui ESATTAMENTE questo processo (ReAct):
-    1. Usa il tool 'get_topic_claims' per recuperare la coerenza passata dal Knowledge Graph.
-    2. Usa il tool 'tavily_search_results_json' per recuperare fonti esterne aggiornate su Internet.
-    3. Dopo aver letto i risultati, usa il tool 'write_an_article'.
+    OBBLIGO DI RAGIONAMENTO K-RAG (Knowledge-augmented RAG):
+    Prima di scrivere l'articolo, DEVI seguire rigorosamente questi step usando i tool a tua disposizione:
 
-    ATTENZIONE IMPORTANTE: Nel campo 'content' del tool 'write_an_article' NON devi copiare le istruzioni, ma devi scrivere e generare il VERO E PROPRIO TESTO INFORMATIVO dell'articolo (almeno 3 o 4 paragrafi), sintetizzando le informazioni reali che hai appena trovato su Internet e dal database."""
-    return accept_prompt
+    1. QUERY EXPANSION (Knowledge Graph): Usa il tool 'get_topic_claims' per controllare se abbiamo già parlato di concetti legati a '{topic}'. 
+    2. RETRIEVAL (Documenti Locali): Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con le parole chiave trovate al punto 1. Usa questa query espansa con il tool 'rag_document_retriever' per trovare materiale e fonti locali.
+    3. SEARCH (Internet): Se il RAG locale non basta, usa 'tavily_search_results_json' per cercare notizie aggiornate.
+    4. DRAFTING: Solo dopo aver consultato le fonti, scrivi l'articolo usando 'write_an_article'.
+
+    REGOLE PER LA STESURA:
+    - Devi esplicitamente includere le fonti nel testo usando la formattazione (es. [Fonte: Nome Documento/Sito]).
+    - Ogni affermazione forte deve essere supportata dai dati recuperati.
+    """
 
 
 tool_node_prompt = f"""Sei un classificatore che riceve due input, il primo è un articolo che riguarda un determinato topic, 
