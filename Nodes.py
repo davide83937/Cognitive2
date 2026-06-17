@@ -181,6 +181,7 @@ def check_schedule_node(state: State):
     data_estratta = state.get("data_proposta")
     data_testo = data_estratta if data_estratta else "Nessuna data attualmente assegnata"
 
+    n_days = state.get("n_days", 3)
     # 2. Arricchisci il System Prompt dinamicamente
     context_prompt = (
         f"{check_date_prompt}\n\n"
