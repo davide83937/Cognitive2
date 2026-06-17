@@ -143,34 +143,49 @@ def get_topic_claims(topic_name: str) -> str:
 
 # Aggiungi in Tools.py (assicurati che non abbia @tool sopra)
 
-def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_date: str):
+def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_date: str, related_topics: list = None):
     """
-    Salva il post, le entità e la DATA DI PUBBLICAZIONE nel Knowledge Graph.
+    Salva il post, le entità, la data di pubblicazione e genera le relazioni semantiche tra Topic decise dall'AI.
     """
     if not graph:
         print("⚠️ Errore: Database Neo4j non connesso, salto il salvataggio.")
         return
+
+    if related_topics is None:
+        related_topics = []
 
     query = """
     // 1. Crea/Trova il Post e imposta la data
     MERGE (p:Post {title: $title})
     ON CREATE SET p.date = $date
     ON MATCH SET p.date = $date
+
+    // 2. Crea/Trova il Topic principale (normalizzato in minuscolo per sicurezza di indicizzazione)
     MERGE (t:Topic {name: toLower($topic)})
     MERGE (p)-[:COVERS]->(t)
 
-    // 2. Aggiungi le Claims
+    // 3. Aggiungi le Claims
     WITH p, t
     UNWIND $claims AS claim_text
     MERGE (c:Claim {text: claim_text})
     MERGE (p)-[:EXTRACTS]->(c)
     MERGE (c)-[:RELATED_TO]->(t)
 
-    // 3. Aggiungi le Fonti
-    WITH p
+    // 4. Aggiungi le Fonti
+    WITH p, t
     UNWIND $sources AS source_name
     MERGE (s:Source {name: source_name})
     MERGE (p)-[:USES]->(s)
+
+    // 5. DINAMICITÀ AI: Generazione relazioni tra topic
+    WITH t
+    UNWIND $related_topics AS rel_topic_name
+    // Cerchiamo nel grafo il topic correlato segnalato dall'LLM
+    MATCH (old_t:Topic {name: toLower(rel_topic_name)})
+    // Evitiamo che un nodo si colleghi a se stesso
+    WHERE old_t <> t
+    // Creiamo una relazione bidirezionale o direzionale di correlazione semantica
+    MERGE (t)-[:RELATED_TO]->(old_t)
     """
 
     try:
@@ -179,9 +194,10 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_d
             "topic": topic,
             "claims": claims,
             "sources": sources,
-            "date": publish_date
+            "date": publish_date,
+            "related_topics": related_topics  # Passato a Cypher
         })
-        print("🧠 Knowledge Graph aggiornato con successo!")
+        print("🧠 Knowledge Graph aggiornato con successo con relazioni AI-driven!")
     except Exception as e:
         print(f"❌ Errore durante il salvataggio nel KG: {e}")
 

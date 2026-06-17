@@ -294,13 +294,44 @@ def decision_node(state: State) -> Command:
 
     print(f"✅ Articolo '{titolo}' confermato per la data {target_date}.")
 
-    # 2. SALVATAGGIO SUL KNOWLEDGE GRAPH
+    # 1.5 RECUPERO DEI TOPIC ESISTENTI DAL GRAFO (Memoria Semantica)
+    from test_neo4j import graph  # Assicurati di importare l'istanza del grafo
+    existing_topics = []
+    if graph:
+        try:
+            records = graph.query("MATCH (t:Topic) RETURN t.name AS name")
+            existing_topics = [r["name"] for r in records]
+        except Exception as e:
+            print(f"⚠️ Impossibile recuperare i topic esistenti: {e}")
+
+    # 2. SALVATAGGIO SUL KNOWLEDGE GRAPH CON LOGICA AI-DRIVEN
     print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
     llm = get_llm().with_structured_output(KGExtraction)
-    prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {titolo}\nTesto: {testo}"
+
+    # Prompt arricchito con i topic esistenti
+    prompt_estrazione = (
+        f"Sei un esperto di Knowledge Graph industriali.\n"
+        f"Estrai le entità dal seguente testo.\n\n"
+        f"Titolo: {titolo}\n"
+        f"Testo: {testo}\n\n"
+        f"--- TOPIC GIÀ PRESENTI NEL DATABASE ---\n"
+        f"{existing_topics if existing_topics else 'Nessun topic presente, questo è il primo articolo.'}\n\n"
+        f"Istruzioni speciali per i Topic:\n"
+        f"- Scegli un 'topic' principale chiaro per questo articolo.\n"
+        f"- Analizza la lista dei TOPIC GIÀ PRESENTI: se noti connessioni logiche, concettuali o di dipendenza tra l'articolo attuale e i vecchi topic, inserisci i nomi dei vecchi topic nella lista 'related_topics'. L'intelligenza artificiale deve mappare le correlazioni semantiche."
+    )
+
     estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
 
-    save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources, target_date)
+    # Passiamo anche i related_topics estratti dall'AI alla funzione di salvataggio
+    save_to_neo4j(
+        title=titolo,
+        topic=estrazione.topic,
+        claims=estrazione.claims,
+        sources=estrazione.sources,
+        publish_date=target_date,
+        related_topics=estrazione.related_topics  # <--- Nuovo parametro
+    )
 
     # 3. CONTROLLO CODA E AGGIORNAMENTO STATO
     if approved_articles:

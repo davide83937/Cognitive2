@@ -1,7 +1,7 @@
 from langgraph.graph import add_messages, MessagesState
 from pydantic import BaseModel, Field
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 
 class ArticleData(BaseModel):
@@ -67,12 +67,14 @@ class RouterSchemaScheduling(BaseModel):
         description="La data YYYY-MM-DD se l'utente ne ha menzionata una, altrimenti None."
     )
 
-# Aggiungi in fondo a Schemas.py
 class KGExtraction(BaseModel):
-    topic: str = Field(description="Il macro-argomento principale dell'articolo (es. Robotica, Droni, AI, STM32)")
-    claims: list[str] = Field(description="Lista di massimo 3 affermazioni o fatti chiave (claims) estratti dall'articolo")
-    sources: list[str] = Field(description="Lista delle fonti, aziende, o tecnologie menzionate (es. 'Wikipedia', 'Boston Dynamics', 'ROS2')")
-
+    topic: str = Field(description="Il topic principale di questo specifico articolo")
+    claims: List[str] = Field(description="Massimo 3 affermazioni chiave dell'articolo")
+    sources: List[str] = Field(description="Fonti citate")
+    related_topics: List[str] = Field(
+        default=[],
+        description="Lista di topic esistenti (tra quelli forniti nel contesto) che sono semanticamente correlati a questo articolo"
+    )
 
 class PlannedArticle(BaseModel):
     title: str = Field(description="Il titolo completo dell'articolo pianificato")
