@@ -36,10 +36,8 @@ def refine_node(state: MessagesState):
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
 
-    # Leggiamo semplicemente il primo elemento in coda senza rimuoverlo
     if pending:
         elemento = pending[0]
-        # Ora sappiamo per certo che è un dizionario
         if isinstance(elemento, dict):
             topic_da_scrivere = elemento.get("title", "Argomento generico")
             data_assegnata = elemento.get("date")
@@ -54,7 +52,22 @@ def accept_node(state: State):
 
     llm = get_llm_with_tools()
     accept_prompt = get_accept_prompt(topic_da_scrivere)
-    messages = [{"role": "system", "content": accept_prompt}] + state.get("messages", [])
+
+    # CORREZIONE 1: Filtriamo lo storico dei messaggi.
+    # Evitiamo di passare al LLM le stesure degli articoli precedenti,
+    # andando a ritroso e fermandoci appena troviamo la vecchia stesura.
+    storico_pulito = []
+    for msg in reversed(state.get("messages", [])):
+        # Se incontriamo la chiamata al tool di stesura del post precedente, ci fermiamo
+        if hasattr(msg, "tool_calls") and any(tc.get("name") == "write_an_article" for tc in msg.tool_calls):
+            break
+        # Se incontriamo il messaggio effettivo del tool, ci fermiamo
+        if getattr(msg, "name", "") == "write_an_article":
+            break
+        storico_pulito.insert(0, msg)
+
+    # Passiamo al LLM solo il prompt di sistema e lo storico "pulito"
+    messages = [{"role": "system", "content": accept_prompt}] + storico_pulito
     response = llm.invoke(messages)
 
     return Command(
@@ -62,7 +75,6 @@ def accept_node(state: State):
             "messages": [response],
             "current_topic": topic_da_scrivere,
             "data_proposta": data_assegnata
-            # NON ELIMINIAMO NIENTE DA PENDING_TOPICS QUI!
         },
         goto="tool_node"
     )
@@ -260,45 +272,50 @@ def decision_node(state: State) -> Command:
     if not target_date:
         target_date = "2026-01-01"
 
-    final_article = state.get("final_article")
-
-    if final_article:
-        final_article.date = target_date
-        # Estrazione sicura dict vs Pydantic
-        if isinstance(final_article, dict):
-            titolo = final_article.get("title", "Senza Titolo")
-            testo = final_article.get("text", "")
-            final_article["date"] = target_date
-        else:
-            titolo = final_article.title
-            testo = final_article.text
-            final_article.date = target_date
-        print(f"✅ Articolo '{final_article.title}' confermato per la data {target_date}.")
-
-        # 🧩 ESTRAZIONE E SALVATAGGIO SPOSTATI QUI
-        print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
-        llm = get_llm().with_structured_output(KGExtraction)
-        prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {final_article.title}\nTesto: {final_article.text}"
-        estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
-
-        # Salviamo su Neo4j passando anche la data target!
-        save_to_neo4j(final_article.title, estrazione.topic, estrazione.claims, estrazione.sources, target_date)
-
-    else:
-        print("⚠️ Errore: Nessun articolo finale trovato nello stato.")
-
-    # 2. CONTROLLO CODA DI SCHEDULAZIONE
     approved_articles = state.get("approved_articles", [])
 
+    if not approved_articles:
+        print("⚠️ Errore: Nessun articolo da schedulare trovato nella coda.")
+        from langgraph.constants import END
+        return Command(goto=END)
+
+    # 1. ESTRAZIONE: Ora prendiamo e rimuoviamo l'articolo dalla coda (pop)
+    current_article = approved_articles.pop(0)
+
+    # Estrazione sicura dict vs Pydantic
+    if isinstance(current_article, dict):
+        titolo = current_article.get("title", "Senza Titolo")
+        testo = current_article.get("text", "")
+        current_article["date"] = target_date
+    else:
+        titolo = current_article.title
+        testo = current_article.text
+        current_article.date = target_date
+
+    print(f"✅ Articolo '{titolo}' confermato per la data {target_date}.")
+
+    # 2. SALVATAGGIO SUL KNOWLEDGE GRAPH
+    print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
+    llm = get_llm().with_structured_output(KGExtraction)
+    prompt_estrazione = f"Estrai il topic principale, massimo 3 affermazioni chiave (claims) e le fonti da questo testo.\nTitolo: {titolo}\nTesto: {testo}"
+    estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
+
+    save_to_neo4j(titolo, estrazione.topic, estrazione.claims, estrazione.sources, target_date)
+
+    # 3. CONTROLLO CODA E AGGIORNAMENTO STATO
     if approved_articles:
         print(f"\n🔁 Ci sono ancora {len(approved_articles)} articoli in coda da schedulare. Passo al prossimo...")
         return Command(
+            update={"approved_articles": approved_articles},  # Salviamo la coda ridotta
             goto="scheduling_queue_router"
         )
     else:
         print("\n✅ Tutti gli articoli richiesti sono stati scritti, schedulati e salvati nel Knowledge Graph!")
-        return Command(goto=END)
-
+        from langgraph.constants import END
+        return Command(
+            update={"approved_articles": []},  # Svuotiamo definitivamente
+            goto=END
+        )
 
 import datetime
 from langgraph.types import interrupt, Command

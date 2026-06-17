@@ -136,10 +136,11 @@ def scheduling_queue_router(state: State) -> Command:
 
     if not approved_articles:
         print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
+        from langgraph.constants import END
         return Command(goto=END)
 
+    # GUARDAMO il primo elemento SENZA rimuoverlo dalla coda
     next_article = approved_articles[0]
-    rimanenti = approved_articles[1:]
 
     # Gestione sicura Oggetto/Dizionario
     if isinstance(next_article, dict):
@@ -156,18 +157,16 @@ def scheduling_queue_router(state: State) -> Command:
     else:
         testo_guida = f"Per quando vuoi schedulare l'articolo '{titolo_articolo}'?"
 
-    # 🛑 INSERIAMO L'INTERRUPT QUI!
-    # Mettiamo in pausa il grafo e mostriamo all'utente il testo_guida
+    # Mettiamo in pausa il grafo
     risposta_utente = interrupt({"schedule_result": testo_guida})
 
     return Command(
         update={
-            "approved_articles": rimanenti,
-            "final_article": next_article,
+            # NON AGGIORNIAMO LA CODA QUI. Passiamo solo i messaggi e la data
             "data_proposta": data_precalcolata,
             "messages": [
-                AIMessage(content=testo_guida),         # Ora il testo_guida è correttamente registrato come messaggio dell'AI
-                HumanMessage(content=risposta_utente)   # Salviamo la tua risposta ("confermo", "cambia data", ecc.)
+                AIMessage(content=testo_guida),
+                HumanMessage(content=risposta_utente)
             ]
         },
         goto="scheduling_node_router"
