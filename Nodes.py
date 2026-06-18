@@ -7,9 +7,11 @@ from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, chec
     get_topic_extraction_from_feedback_prompt, get_final_plan_extraction_prompt
 from RouterNodes import FinalPlan
 from Schemas import State, ArticleData, KGExtraction
-from Tools import save_to_neo4j, get_covered_context_from_neo4j, get_smart_schedule_dates
+
 from base import get_tools_by_name
 import re
+
+from function_tool import save_to_neo4j, get_smart_schedule_dates
 
 
 def call_llm(state: MessagesState):
