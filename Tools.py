@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from langchain_core.tools import tool
 from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date
+from query_neo4j import get_post_count_by_date_query, get_all_topics_query, get_claims_by_topic_query
 from test_neo4j import graph
 
 
@@ -32,7 +33,7 @@ def find_first_available_date_tool(data_partenza: str = None) -> str:
     # Troviamo il prossimo giorno consentito dal palinsesto
     giorno_corrente = get_next_fixed_publish_date(base_date_str)
 
-    query = "MATCH (p:Post {date: $date}) RETURN count(p) AS current_count"
+    query = get_post_count_by_date_query()
 
     # Cerchiamo in avanti saltando ai soli giorni consentiti
     for _ in range(50):  # Limite di tentativi per non creare loop infiniti
@@ -110,7 +111,7 @@ def get_previous_topics() -> str:
         return "Errore: Database Neo4j non connesso."
 
     # Cypher query per recuperare tutti i nomi dei nodi Topic
-    query = "MATCH (t:Topic) RETURN t.name AS topic_name"
+    query = get_all_topics_query()
 
     try:
         risultati = graph.query(query)
@@ -133,11 +134,7 @@ def get_topic_claims(topic_name: str) -> str:
         return "Errore: Database Neo4j non connesso."
 
     # Cypher query per recuperare le Claim collegate a un Topic specifico (ignorando maiuscole/minuscole)
-    query = """
-    MATCH (c:Claim)-[:RELATED_TO]->(t:Topic)
-    WHERE toLower(t.name) = toLower($topic)
-    RETURN c.text AS claim_text
-    """
+    query = get_claims_by_topic_query()
 
     try:
         risultati = graph.query(query, params={"topic": topic_name})

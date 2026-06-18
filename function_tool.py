@@ -1,4 +1,6 @@
 from Prompt import tavily_prompt
+from query_neo4j import get_latest_scheduled_date_query, get_save_post_to_neo4j_query, get_covered_context_query, \
+    get_future_post_counts_query
 from test_neo4j import graph
 from datetime import datetime, timedelta
 
@@ -6,13 +8,7 @@ def get_latest_scheduled_date_from_db():
     """Recupera l'ultima data di pubblicazione assoluta presente nel database Neo4j."""
     if not graph:
         return None
-    query = """
-    MATCH (p:Post)
-    WHERE p.date IS NOT NULL
-    RETURN p.date AS latest_date
-    ORDER BY p.date DESC
-    LIMIT 1
-    """
+    query = get_latest_scheduled_date_query
     try:
         res = graph.query(query)
         if res and res[0].get("latest_date"):
@@ -63,39 +59,7 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_d
     if related_topics is None:
         related_topics = []
 
-    query = """
-    // 1. Crea/Trova il Post e imposta la data
-    MERGE (p:Post {title: $title})
-    ON CREATE SET p.date = $date
-    ON MATCH SET p.date = $date
-
-    // 2. Crea/Trova il Topic principale (normalizzato in minuscolo per sicurezza di indicizzazione)
-    MERGE (t:Topic {name: toLower($topic)})
-    MERGE (p)-[:COVERS]->(t)
-
-    // 3. Aggiungi le Claims
-    WITH p, t
-    UNWIND $claims AS claim_text
-    MERGE (c:Claim {text: claim_text})
-    MERGE (p)-[:EXTRACTS]->(c)
-    MERGE (c)-[:RELATED_TO]->(t)
-
-    // 4. Aggiungi le Fonti
-    WITH p, t
-    UNWIND $sources AS source_name
-    MERGE (s:Source {name: source_name})
-    MERGE (p)-[:USES]->(s)
-
-    // 5. DINAMICITÀ AI: Generazione relazioni tra topic
-    WITH t
-    UNWIND $related_topics AS rel_topic_name
-    // Cerchiamo nel grafo il topic correlato segnalato dall'LLM
-    MATCH (old_t:Topic {name: toLower(rel_topic_name)})
-    // Evitiamo che un nodo si colleghi a se stesso
-    WHERE old_t <> t
-    // Creiamo una relazione bidirezionale o direzionale di correlazione semantica
-    MERGE (t)-[:RELATED_TO]->(old_t)
-    """
+    query = get_save_post_to_neo4j_query()
 
     try:
         graph.query(query, params={
@@ -118,11 +82,7 @@ def get_covered_context_from_neo4j():
     """
     # Seguiamo esattamente la relazione (c:Claim)-[:RELATED_TO]->(t:Topic)
     # e prendiamo la proprietà c.text definita nel tuo salvataggio.
-    query = """
-    MATCH (t:Topic)
-    OPTIONAL MATCH (c:Claim)-[:RELATED_TO]->(t)
-    RETURN t.name AS topic_name, collect(c.text) AS claims
-    """
+    query = get_covered_context_query()
 
     try:
         records = graph.query(query)
@@ -169,11 +129,7 @@ def get_smart_schedule_dates(n_days: int = 0, total_posts: int = 3) -> list[str]
 
     # Recuperiamo l'occupazione di tutte le date future
     oggi = datetime.now().date()
-    query = """
-    MATCH (p:Post)
-    WHERE p.date >= $oggi
-    RETURN p.date AS post_date, count(p) AS count
-    """
+    query = get_future_post_counts_query()
     try:
         risultati = graph.query(query, params={"oggi": oggi.strftime("%Y-%m-%d")})
         conteggio = {res["post_date"]: res["count"] for res in risultati if res.get("post_date")}
