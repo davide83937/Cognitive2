@@ -139,6 +139,55 @@ def scheduling_queue_router(state: State) -> Command:
         from langgraph.constants import END
         return Command(goto=END)
 
+    print(f"\n📅 Passiamo alla schedulazione del prossimo articolo in coda...")
+
+    # Invece di interrompere qui, rimandiamo al nuovo nodo dedicato
+    return Command(goto="ask_schedule_node")
+
+
+def ask_schedule_node(state: State) -> Command:
+    approved_articles = state.get("approved_articles", [])
+
+    # GUARDAMO il primo elemento SENZA rimuoverlo dalla coda
+    next_article = approved_articles[0]
+
+    # Gestione sicura Oggetto/Dizionario
+    if isinstance(next_article, dict):
+        titolo_articolo = next_article.get("title", "Articolo")
+        data_precalcolata = next_article.get("date")
+    else:
+        titolo_articolo = next_article.title
+        data_precalcolata = getattr(next_article, "date", None)
+
+    if data_precalcolata:
+        testo_guida = f"L'articolo '{titolo_articolo}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
+    else:
+        testo_guida = f"Per quando vuoi schedulare l'articolo '{titolo_articolo}'?"
+
+    # Mettiamo in pausa il grafo nel nodo corretto
+    risposta_utente = interrupt({"schedule_result": testo_guida})
+
+    return Command(
+        update={
+            # NON AGGIORNIAMO LA CODA QUI. Passiamo solo i messaggi e la data
+            "data_proposta": data_precalcolata,
+            "messages": [
+                AIMessage(content=testo_guida),
+                HumanMessage(content=risposta_utente)
+            ]
+        },
+        goto="scheduling_node_router"
+    )
+
+
+"""def scheduling_queue_router(state: State) -> Command:
+    approved_articles = state.get("approved_articles", [])
+
+    if not approved_articles:
+        print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
+        from langgraph.constants import END
+        return Command(goto=END)
+
     # GUARDAMO il primo elemento SENZA rimuoverlo dalla coda
     next_article = approved_articles[0]
 
@@ -170,4 +219,4 @@ def scheduling_queue_router(state: State) -> Command:
             ]
         },
         goto="scheduling_node_router"
-    )
+    )"""

@@ -24,7 +24,7 @@ def refine_node(state: MessagesState):
     refinement_prompt = get_refine_prompt(last_input.__str__())
     llm = get_llm()
     response = llm.invoke([{"role": "system", "content": refinement_prompt}])
-    print(response.content)
+    #print(response.content)
 
     risposta_utente = interrupt({"proposta": response.content})
     return Command(
@@ -48,7 +48,19 @@ def accept_node(state: State):
         topic_da_scrivere = state.get("current_topic", "Argomento generico")
         data_assegnata = state.get("data_proposta", None)
 
-    print(f"\n⚙️ Avvio/Ripresa stesura articolo su: '{topic_da_scrivere}'")
+    # --- MODIFICA QUI LA LOGICA DELLA PRINT ---
+    # Controlliamo l'ultimo messaggio per capire se stiamo rientrando da un tool
+    messaggi = state.get("messages", [])
+    sta_tornando_da_ricerca = False
+    if messaggi:
+        ultimo_messaggio = messaggi[-1]
+        # Se l'ultimo messaggio è di tipo ToolMessage, stiamo ciclando in background
+        if getattr(ultimo_messaggio, "type", "") == "tool":
+            sta_tornando_da_ricerca = True
+
+    if not sta_tornando_da_ricerca:
+        print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
+    # ------------------------------------------
 
     llm = get_llm_with_tools()
     accept_prompt = get_accept_prompt(topic_da_scrivere)
@@ -83,7 +95,7 @@ def accept_node(state: State):
 # Assicurati di importare i tuoi tool
 # dalla tua mappa, ad esempio: get_tools_by_name = {"write_an_article": write_an_article}
 
-def tool_node(state: State):
+"""def tool_node(state: State):
     result = []
     last_message = state["messages"][-1]
 
@@ -158,6 +170,90 @@ def tool_node(state: State):
             update={"messages": result},
             goto="accept_node"
         )
+"""
+
+
+def tool_node(state: State):
+    result = []
+    last_message = state["messages"][-1]
+
+    testo_articolo = ""
+    articolo_generato = None
+
+    # Eseguiamo TUTTI i tool che l'LLM ha richiesto
+    for tool_call in last_message.tool_calls:
+        tool_name = tool_call["name"]
+        tool_args = tool_call.get("args", {})
+
+        tool = get_tools_by_name[tool_name]
+        observation = tool.invoke(tool_args)
+
+        tool_message = ToolMessage(
+            content=str(observation),
+            tool_call_id=tool_call["id"],
+            name=tool_name
+        )
+        result.append(tool_message)
+
+        # 🎯 Se è il tool di scrittura, estraiamo i dati
+        if tool_name == "write_an_article":
+            titolo_estratto = tool_args.get("about", "Nuovo Articolo")
+            autore_estratto = tool_args.get("author", "Agente AI")
+            testo_articolo = str(observation)
+
+            # (Ho rimosso le lunghe print qui per evitare che stampi due volte
+            # dato che Main.py le stampa già durante l'interrupt)
+            print(f"\n✅ Articolo '{titolo_estratto}' generato con successo! Passo alla revisione umana...")
+
+            articolo_generato = ArticleData(
+                title=titolo_estratto,
+                text=testo_articolo,
+                author=autore_estratto,
+                date=state.get("data_proposta")
+            )
+
+    # --- DECIDIAMO DOVE ANDARE ---
+    if articolo_generato is not None:
+        # Passiamo la palla al NUOVO nodo interattivo invece di fare interrupt qui
+        return Command(
+            update={
+                "messages": result,
+                "final_article": articolo_generato
+            },
+            goto="ask_feedback_node"  # <--- NUOVO NODO
+        )
+    else:
+        print(f"\n🔍 L'agente ha consultato {len(last_message.tool_calls)} fonte/i in background. Torno a elaborare...")
+        return Command(
+            update={"messages": result},
+            goto="accept_node"
+        )
+
+
+def ask_feedback_node(state: State):
+    # Recuperiamo l'articolo appena generato dallo stato
+    articolo = state.get("final_article")
+
+    # Estraiamo il testo in modo sicuro
+    if isinstance(articolo, dict):
+        testo_articolo = articolo.get("text", "")
+    else:
+        testo_articolo = getattr(articolo, "text", "")
+
+    # Mettiamo in pausa il grafo.
+    # Main.py intercetterà "articolo_generato" e si occuperà di stamparlo a schermo in modo pulito.
+    feedback_utente = interrupt({"articolo_generato": testo_articolo})
+
+    # Una volta ripreso, confezioniamo il feedback
+    messaggio_feedback = HumanMessage(
+        content=f"Questo è il feedback dell'utente sull'articolo appena scritto: {feedback_utente}"
+    )
+
+    # Andiamo al router che deciderà se approvare o riscrivere
+    return Command(
+        update={"messages": [messaggio_feedback]},
+        goto="tool_node_router"
+    )
 
 def update_article_node(state: MessagesState):
     llm = get_llm_with_tools()
@@ -172,8 +268,90 @@ def update_article_node(state: MessagesState):
     return Command(update={"messages": [response]}, goto="tool_node")
 
 
-
 def check_schedule_node(state: State):
+    last_message = state["messages"][-1]
+    llm = get_llm_with_calendar_tools()
+
+    data_estratta = state.get("data_proposta")
+    data_testo = data_estratta if data_estratta else "Nessuna data attualmente assegnata"
+    n_days = state.get("n_days", 3)
+
+    context_prompt = (
+        f"{check_date_prompt}\n\n"
+        f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
+        f"La data attualmente pianificata/proposta per questo articolo è: {data_testo}.\n"
+        f"⚠️ REGOLA SCHEDULAZIONE: Il piano prevede di pubblicare con una cadenza di {n_days} giorni.\n"
+        f"Se l'utente chiede la 'prossima data disponibile' o di 'spostare' la data, calcola o usa i tool tenendo in considerazione questo stacco obbligatorio di {n_days} giorni rispetto alla data attuale."
+    )
+
+    ai_msg = llm.invoke([{"role": "system", "content": context_prompt}] + [last_message])
+    new_messages = [ai_msg]
+
+    if hasattr(ai_msg, "tool_calls") and len(ai_msg.tool_calls) > 0:
+        print(f"🔧 L'LLM ha richiesto {len(ai_msg.tool_calls)} tool(s). Esecuzione in corso...")
+        for tool_call in ai_msg.tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+            tool_id = tool_call["id"]
+
+            selected_tool = get_tools_by_name[tool_name]
+            tool_result = selected_tool.invoke(tool_args)
+
+            tool_msg = ToolMessage(
+                content=str(tool_result),
+                name=tool_name,
+                tool_call_id=tool_id
+            )
+            new_messages.append(tool_msg)
+
+            match = re.search(r"\d{4}-\d{2}-\d{2}", str(tool_result))
+            if match:
+                data_estratta = match.group(0)
+    else:
+        print("✅ Nessun tool richiesto dall'LLM. Risposta generata direttamente.")
+
+    print("\n" + "=" * 50)
+    print("📅 RISULTATO SCHEDULING (Tool/LLM):")
+    for msg in new_messages:
+        msg.pretty_print()
+    print("=" * 50 + "\n")
+
+    # Passiamo al nuovo nodo di interazione invece che al router
+    return Command(
+        update={
+            "messages": new_messages,
+            "data_proposta": data_estratta
+        },
+        goto="ask_user_schedule_node"  # <-- NUOVO NODO
+    )
+
+
+def ask_user_schedule_node(state: State):
+    # Recuperiamo i messaggi per capire cosa ha detto l'AI
+    messaggi = state.get("messages", [])
+
+    # Cerchiamo l'ultimo AIMessage per estrarne il testo
+    # (Potrebbe esserci un ToolMessage alla fine, quindi dobbiamo assicurarci di avere il testo giusto)
+    testo_assistente = "Ho elaborato le date. Come procediamo?"
+    for msg in reversed(messaggi):
+        if hasattr(msg, "content") and msg.content and getattr(msg, "type", "") == "ai":
+            testo_assistente = msg.content
+            break
+
+    # Lanciamo l'interrupt
+    user_feedback = interrupt({"schedule_result": testo_assistente})
+
+    print(f"👤 Utente ha risposto: {user_feedback}")
+
+    # Aggiorniamo lo stato con la risposta e andiamo al router decisionale
+    return Command(
+        update={
+            "messages": [HumanMessage(content=user_feedback)]
+        },
+        goto="scheduling_node_router"
+    )
+
+"""def check_schedule_node(state: State):
     last_message = state["messages"][-1]
     llm = get_llm_with_calendar_tools()
 
@@ -257,7 +435,7 @@ def check_schedule_node(state: State):
         },
         goto="scheduling_node_router"
     )
-
+"""
 
 
 from langgraph.constants import END
