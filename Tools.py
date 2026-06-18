@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from langchain_core.tools import tool
-from function_tool import setup_vector_database
+from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date
 from test_neo4j import graph
 
 
@@ -10,44 +10,6 @@ def write_an_article(about: str, author: str, content: str):
     return f"My article about: {about}. \n{content} \n Written by {author}"
 
 
-def get_latest_scheduled_date_from_db():
-    """Recupera l'ultima data di pubblicazione assoluta presente nel database Neo4j."""
-    if not graph:
-        return None
-    query = """
-    MATCH (p:Post)
-    WHERE p.date IS NOT NULL
-    RETURN p.date AS latest_date
-    ORDER BY p.date DESC
-    LIMIT 1
-    """
-    try:
-        res = graph.query(query)
-        if res and res[0].get("latest_date"):
-            return res[0]["latest_date"]
-    except Exception as e:
-        print(f"Errore query ultima data: {e}")
-    return None
-
-
-def get_next_fixed_publish_date(base_date_str=None):
-    """Trova il prossimo giorno utile (0=Lun, 2=Mer, 4=Ven, 6=Dom) partendo da una data base."""
-    # 0 = Lunedì, 2 = Mercoledì, 4 = Venerdì, 6 = Domenica
-    giorni_pubblicazione = [0, 2, 4, 6]
-
-    if base_date_str:
-        base_date = datetime.strptime(base_date_str, "%Y-%m-%d").date()
-    else:
-        # Fallback alla data odierna solo se il DB è completamente vuoto
-        base_date = datetime.now().date()
-
-    next_date = base_date + timedelta(days=1)
-
-    # Scorre i giorni finché non trova un giorno del palinsesto
-    while next_date.weekday() not in giorni_pubblicazione:
-        next_date += timedelta(days=1)
-
-    return next_date
 
 
 @tool
