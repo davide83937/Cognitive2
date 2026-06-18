@@ -7,7 +7,7 @@ from langgraph.types import Command, interrupt
 from pydantic import BaseModel, Field
 
 from Models import get_llm
-from Prompt import triage_system_prompt, tool_node_prompt, scheduling_node_prompt
+from Prompt import triage_system_prompt, tool_node_prompt, scheduling_node_prompt, get_scheduling_router_system_prompt
 from Schemas import State, RouterSchema, RouterSchemaToolNode, RouterSchemaScheduling
 
 
@@ -84,13 +84,7 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
     feedback_input = state["messages"][-1].content
 
     # Arricchiamo il prompt per FORZARE l'estrazione della data dell'utente
-    system_prompt = (
-        f"{scheduling_node_prompt}\n\n"
-        f"ATTENZIONE: Leggi attentamente l'ultimo messaggio dell'utente: '{feedback_input}'.\n"
-        f"Se l'utente APPROVA o SPECIFICA chiaramente una data (es. 'approvo la data del 23 giugno 2026', 'sposta al 26'), "
-        f"devi OBBLIGATORIAMENTE estrarla nel formato YYYY-MM-DD (es. '2026-06-23') e inserirla nel campo 'data_proposta'. "
-        f"La volontà scritta dell'utente ha priorità assoluta su qualsiasi altra precedente elaborazione."
-    )
+    system_prompt = get_scheduling_router_system_prompt(scheduling_node_prompt, feedback_input)
 
 #    user_prompt = feedback_input
 
@@ -179,44 +173,3 @@ def ask_schedule_node(state: State) -> Command:
         goto="scheduling_node_router"
     )
 
-
-"""def scheduling_queue_router(state: State) -> Command:
-    approved_articles = state.get("approved_articles", [])
-
-    if not approved_articles:
-        print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
-        from langgraph.constants import END
-        return Command(goto=END)
-
-    # GUARDAMO il primo elemento SENZA rimuoverlo dalla coda
-    next_article = approved_articles[0]
-
-    # Gestione sicura Oggetto/Dizionario
-    if isinstance(next_article, dict):
-        titolo_articolo = next_article.get("title", "Articolo")
-        data_precalcolata = next_article.get("date")
-    else:
-        titolo_articolo = next_article.title
-        data_precalcolata = getattr(next_article, "date", None)
-
-    print(f"\n📅 Passiamo alla schedulazione di: {titolo_articolo}")
-
-    if data_precalcolata:
-        testo_guida = f"L'articolo '{titolo_articolo}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
-    else:
-        testo_guida = f"Per quando vuoi schedulare l'articolo '{titolo_articolo}'?"
-
-    # Mettiamo in pausa il grafo
-    risposta_utente = interrupt({"schedule_result": testo_guida})
-
-    return Command(
-        update={
-            # NON AGGIORNIAMO LA CODA QUI. Passiamo solo i messaggi e la data
-            "data_proposta": data_precalcolata,
-            "messages": [
-                AIMessage(content=testo_guida),
-                HumanMessage(content=risposta_utente)
-            ]
-        },
-        goto="scheduling_node_router"
-    )"""

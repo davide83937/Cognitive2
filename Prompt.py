@@ -93,3 +93,72 @@ check_date_prompt = """Sei l'assistente editoriale responsabile della pianificaz
     L'utente ti chiederà informazioni sulle date disponibili, hai dei tool a disposizione per poter cercare e fornire
     le informazioni, scegli sempre il tool più adatto alla richiesta che ti viene fatta.
 """
+
+tavily_prompt = """Un motore di ricerca ottimizzato per agenti AI. 
+    Usa questo tool per cercare su internet informazioni aggiornate, notizie o per 
+    verificare l'accuratezza scientifica e tecnologica di un argomento prima di scriverci un articolo."""
+
+def get_check_schedule_context_prompt(check_date_prompt_base: str, data_testo: str, n_days: int) -> str:
+    """Genera il prompt di contesto per la verifica della schedulazione."""
+    return (
+        f"{check_date_prompt_base}\n\n"
+        f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
+        f"La data attualmente pianificata/proposta per questo articolo è: {data_testo}.\n"
+        f"⚠️ REGOLA SCHEDULAZIONE: Il piano prevede di pubblicare con una cadenza di {n_days} giorni.\n"
+        f"Se l'utente chiede la 'prossima data disponibile' o di 'spostare' la data, calcola o usa i tool tenendo in considerazione questo stacco obbligatorio di {n_days} giorni rispetto alla data attuale."
+    )
+
+def get_kg_extraction_prompt(titolo: str, testo: str, existing_topics: list) -> str:
+    """Genera il prompt per estrarre entità e relazioni per il Knowledge Graph."""
+    topics_str = existing_topics if existing_topics else 'Nessun topic presente, questo è il primo articolo.'
+    return (
+        f"Sei un esperto di Knowledge Graph industriali.\n"
+        f"Estrai le entità dal seguente testo.\n\n"
+        f"Titolo: {titolo}\n"
+        f"Testo: {testo}\n\n"
+        f"--- TOPIC GIÀ PRESENTI NEL DATABASE ---\n"
+        f"{topics_str}\n\n"
+        f"Istruzioni speciali per i Topic:\n"
+        f"- Scegli un 'topic' principale chiaro per questo articolo.\n"
+        f"- Analizza la lista dei TOPIC GIÀ PRESENTI: se noti connessioni logiche, concettuali o di dipendenza tra l'articolo attuale e i vecchi topic, inserisci i nomi dei vecchi topic nella lista 'related_topics'. L'intelligenza artificiale deve mappare le correlazioni semantiche."
+    )
+
+def get_planning_prompt(last_input: str, data_1: str, data_2: str, data_3: str) -> str:
+    """Genera il prompt per il piano editoriale con date fisse."""
+    return (
+        f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto un articolo su: '{last_input}'.\n"
+        f"DEVI ASSOLUTAMENTE ASSEGNARE QUESTE DATE ESATTE AI 3 POST, perché sono le uniche disponibili a sistema:\n"
+        f"- Post 1: {data_1}\n"
+        f"- Post 2: {data_2}\n"
+        f"- Post 3: {data_3}\n\n"
+        f"Rispondi formattando chiaramente:\n"
+        f"PIANO EDITORIALE:\n- Post 1 ({data_1}): Titolo\n- Post 2 ({data_2}): Titolo\n- Post 3 ({data_3}): Titolo\n"
+    )
+
+
+def get_topic_extraction_from_feedback_prompt(piano_generato: str, feedback_utente: str) -> str:
+    """Genera il prompt per estrarre i titoli scelti dall'utente (nodo planning)."""
+    return (
+        f"Questo è il piano editoriale proposto:\n{piano_generato}\n\n"
+        f"L'utente ha risposto così: '{feedback_utente}'.\n"
+        f"Estrai solo ed esclusivamente i titoli completi degli articoli che l'utente ha scelto o approvato di scrivere."
+    )
+
+
+def get_final_plan_extraction_prompt(original_plan: str, user_feedback: str) -> str:
+    """Genera il prompt per elaborare l'approvazione finale del piano (nodo process_plan)."""
+    return (
+        f"Piano originale:\n{original_plan}\n\n"
+        f"Feedback utente:\n{user_feedback}\n\n"
+        f"Estrai SOLO gli argomenti che l'utente ha approvato."
+    )
+
+def get_scheduling_router_system_prompt(scheduling_node_prompt_base: str, feedback_input: str) -> str:
+    """Genera il system prompt per il router di schedulazione, forzando l'estrazione della data dall'input dell'utente."""
+    return (
+        f"{scheduling_node_prompt_base}\n\n"
+        f"ATTENZIONE: Leggi attentamente l'ultimo messaggio dell'utente: '{feedback_input}'.\n"
+        f"Se l'utente APPROVA o SPECIFICA chiaramente una data (es. 'approvo la data del 23 giugno 2026', 'sposta al 26'), "
+        f"devi OBBLIGATORIAMENTE estrarla nel formato YYYY-MM-DD (es. '2026-06-23') e inserirla nel campo 'data_proposta'. "
+        f"La volontà scritta dell'utente ha priorità assoluta su qualsiasi altra precedente elaborazione."
+    )

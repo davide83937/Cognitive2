@@ -2,7 +2,9 @@ from langgraph.graph import MessagesState
 from langgraph.types import interrupt, Command
 from langchain_core.messages import ToolMessage
 from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
-from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt
+from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt, \
+    get_check_schedule_context_prompt, get_kg_extraction_prompt, get_planning_prompt, \
+    get_topic_extraction_from_feedback_prompt, get_final_plan_extraction_prompt
 from RouterNodes import FinalPlan
 from Schemas import State, ArticleData, KGExtraction
 from Tools import save_to_neo4j, get_covered_context_from_neo4j, get_smart_schedule_dates
@@ -95,82 +97,7 @@ def accept_node(state: State):
 # Assicurati di importare i tuoi tool
 # dalla tua mappa, ad esempio: get_tools_by_name = {"write_an_article": write_an_article}
 
-"""def tool_node(state: State):
-    result = []
-    last_message = state["messages"][-1]
 
-    # Variabili di appoggio
-    testo_articolo = ""
-    articolo_generato = None  # Lo usiamo come "bandierina" per capire se ha scritto l'articolo
-
-    # Eseguiamo TUTTI i tool che l'LLM ha richiesto in questo turno
-    for tool_call in last_message.tool_calls:
-        tool_name = tool_call["name"]
-        tool_args = tool_call.get("args", {})
-
-        # Eseguiamo il tool
-        tool = get_tools_by_name[tool_name]
-        observation = tool.invoke(tool_args)
-
-        # Creiamo il messaggio di risposta del tool per l'LLM
-        tool_message = ToolMessage(
-            content=str(observation),
-            tool_call_id=tool_call["id"],
-            name=tool_name
-        )
-        result.append(tool_message)
-
-        # 🎯 CONTROLLO CRITICO: È il tool di scrittura?
-        # Sostituisci "write_an_article" con il VERO NOME del tuo tool di scrittura se diverso
-        if tool_name == "write_an_article":
-            titolo_estratto = tool_args.get("about", "Nuovo Articolo")
-            autore_estratto = tool_args.get("author", "Agente AI")
-            testo_articolo = str(observation)
-
-            print("\n" + "=" * 50)
-            print(f"📝 ARTICOLO GENERATO (Titolo: {titolo_estratto} | Autore: {autore_estratto}):")
-            print("=" * 50)
-            print(testo_articolo)
-            print("=" * 50 + "\n")
-
-            # Valorizziamo l'oggetto finale
-            articolo_generato = ArticleData(
-                title=titolo_estratto,
-                text=testo_articolo,
-                author=autore_estratto,
-                date=state.get("data_proposta")
-            )
-
-    # --- FUORI DAL CICLO FOR: DECIDIAMO DOVE ANDARE ---
-
-    # CASO A: L'LLM ha usato il tool per scrivere l'articolo
-    if articolo_generato is not None:
-        # Chiediamo il feedback all'utente
-        feedback_utente = interrupt({"articolo_generato": testo_articolo})
-
-        messaggio_feedback = HumanMessage(
-            content=f"Questo è il feedback dell'utente sull'articolo appena scritto: {feedback_utente}"
-        )
-        result.append(messaggio_feedback)
-
-        # Aggiorniamo lo stato e andiamo alla fase di router per eventuale riscrittura
-        return Command(
-            update={
-                "messages": result,
-                "final_article": articolo_generato
-            },
-            goto="tool_node_router"
-        )
-
-    # CASO B: L'LLM ha fatto solo ricerche (Tavily, Neo4j, ecc.)
-    else:
-        print(f"\n🔍 L'agente ha consultato {len(last_message.tool_calls)} fonte/i in background. Torno a elaborare...")
-        # Rimandiamo la palla ad accept_node in modo che legga i risultati delle ricerche e scriva l'articolo
-        return Command(
-            update={"messages": result},
-            goto="accept_node"
-        )
-"""
 
 
 def tool_node(state: State):
@@ -276,13 +203,7 @@ def check_schedule_node(state: State):
     data_testo = data_estratta if data_estratta else "Nessuna data attualmente assegnata"
     n_days = state.get("n_days", 3)
 
-    context_prompt = (
-        f"{check_date_prompt}\n\n"
-        f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
-        f"La data attualmente pianificata/proposta per questo articolo è: {data_testo}.\n"
-        f"⚠️ REGOLA SCHEDULAZIONE: Il piano prevede di pubblicare con una cadenza di {n_days} giorni.\n"
-        f"Se l'utente chiede la 'prossima data disponibile' o di 'spostare' la data, calcola o usa i tool tenendo in considerazione questo stacco obbligatorio di {n_days} giorni rispetto alla data attuale."
-    )
+    context_prompt = get_check_schedule_context_prompt(check_date_prompt, data_testo, n_days)
 
     ai_msg = llm.invoke([{"role": "system", "content": context_prompt}] + [last_message])
     new_messages = [ai_msg]
@@ -351,94 +272,7 @@ def ask_user_schedule_node(state: State):
         goto="scheduling_node_router"
     )
 
-"""def check_schedule_node(state: State):
-    last_message = state["messages"][-1]
-    llm = get_llm_with_calendar_tools()
 
-    # 1. Recupera la data pre-calcolata dallo State
-    data_estratta = state.get("data_proposta")
-    data_testo = data_estratta if data_estratta else "Nessuna data attualmente assegnata"
-
-    n_days = state.get("n_days", 3)
-    # 2. Arricchisci il System Prompt dinamicamente
-    context_prompt = (
-        f"{check_date_prompt}\n\n"
-        f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
-        f"La data attualmente pianificata/proposta per questo articolo è: {data_testo}.\n"
-        f"⚠️ REGOLA SCHEDULAZIONE: Il piano prevede di pubblicare con una cadenza di {n_days} giorni.\n"
-        f"Se l'utente chiede la 'prossima data disponibile' o di 'spostare' la data, calcola o usa i tool tenendo in considerazione questo stacco obbligatorio di {n_days} giorni rispetto alla data attuale."
-    )
-
-    # 3. Invoca l'LLM con il prompt arricchito
-    ai_msg = llm.invoke([{"role": "system", "content": context_prompt}] + [last_message])
-    new_messages = [ai_msg]
-
-    # 3. Verifichiamo se l'LLM ha deciso di chiamare uno o più tool
-    if hasattr(ai_msg, "tool_calls") and len(ai_msg.tool_calls) > 0:
-        print(f"🔧 L'LLM ha richiesto {len(ai_msg.tool_calls)} tool(s). Esecuzione in corso...")
-
-        # 4. Eseguiamo ogni tool richiesto
-        for tool_call in ai_msg.tool_calls:
-            tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
-            tool_id = tool_call["id"]
-
-            print(f"   -> Eseguo '{tool_name}' con argomenti: {tool_args}")
-
-            # Richiamiamo la funzione Python vera e propria
-            selected_tool = get_tools_by_name[tool_name]
-            tool_result = selected_tool.invoke(tool_args)
-
-            # Creiamo il ToolMessage con il risultato da dare in pasto all'LLM
-            tool_msg = ToolMessage(
-                content=str(tool_result),
-                name=tool_name,
-                tool_call_id=tool_id
-            )
-            new_messages.append(tool_msg)
-            # 🎯 ESTRAZIONE DATA: Cerca il formato YYYY-MM-DD nel testo restituito dal tool
-            match = re.search(r"\d{4}-\d{2}-\d{2}", str(tool_result))
-            if match:
-                data_estratta = match.group(0)
-
-    else:
-        print("✅ Nessun tool richiesto dall'LLM. Risposta generata direttamente.")
-
-    # 6. Restituiamo tutti i nuovi messaggi generati (AIMessage(s) e ToolMessage(s))
-    # LangGraph li appenderà automaticamente alla lista 'messages' dello State
-        # --- NUOVA SEZIONE: STAMPA, INTERRUPT E AGGIORNAMENTO STATO ---
-
-    # 1. Stampiamo il risultato (l'ultimo messaggio aggiunto, che sia il ToolMessage o l'AIMessage)
-    print("\n" + "=" * 50)
-    print("📅 RISULTATO SCHEDULING (Tool/LLM):")
-    for msg in new_messages:
-        # pretty_print() è un metodo comodo di LangChain per stampare i messaggi in modo leggibile
-        msg.pretty_print()
-    print("=" * 50 + "\n")
-
-    # 2. Lanciamo l'interrupt.
-    # Passiamo un dizionario in modo che Main.py possa riconoscerlo,
-    # esattamente come hai fatto per "proposta" e "articolo_generato".
-    #user_feedback = interrupt({"schedule_result": "In attesa di feedback sulle date..."})
-    # Usa questo:
-    testo_assistente = ai_msg.content if ai_msg.content else "Ho elaborato le date. Come procediamo?"
-    user_feedback = interrupt({"schedule_result": testo_assistente})
-
-    # 3. Aggiorniamo lo stato con l'input dell'utente
-    print(f"👤 Utente ha risposto: {user_feedback}")
-    new_messages.append(HumanMessage(content=user_feedback))
-
-    return Command(
-        update={
-            "messages": new_messages,
-            "data_proposta": data_estratta  # Usa il nome della variabile in cui hai salvato la data
-        },
-        goto="scheduling_node_router"
-    )
-"""
-
-
-from langgraph.constants import END
 
 from Models import get_llm  # Assicurati che sia importato
 from Schemas import KGExtraction  # Assicurati che sia importato
@@ -488,17 +322,7 @@ def decision_node(state: State) -> Command:
     llm = get_llm().with_structured_output(KGExtraction)
 
     # Prompt arricchito con i topic esistenti
-    prompt_estrazione = (
-        f"Sei un esperto di Knowledge Graph industriali.\n"
-        f"Estrai le entità dal seguente testo.\n\n"
-        f"Titolo: {titolo}\n"
-        f"Testo: {testo}\n\n"
-        f"--- TOPIC GIÀ PRESENTI NEL DATABASE ---\n"
-        f"{existing_topics if existing_topics else 'Nessun topic presente, questo è il primo articolo.'}\n\n"
-        f"Istruzioni speciali per i Topic:\n"
-        f"- Scegli un 'topic' principale chiaro per questo articolo.\n"
-        f"- Analizza la lista dei TOPIC GIÀ PRESENTI: se noti connessioni logiche, concettuali o di dipendenza tra l'articolo attuale e i vecchi topic, inserisci i nomi dei vecchi topic nella lista 'related_topics'. L'intelligenza artificiale deve mappare le correlazioni semantiche."
-    )
+    prompt_estrazione = get_kg_extraction_prompt(titolo, testo, existing_topics)
 
     estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
 
@@ -547,16 +371,8 @@ def planning_node(state: State) -> Command:
     # ... logica Knowledge Graph ...
 
     llm = get_llm()
-    prompt_planning = (
-        f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto un articolo su: '{last_input}'.\n"
-        # ... ometto parti esistenti per brevità ...
-        f"DEVI ASSOLUTAMENTE ASSEGNARE QUESTE DATE ESATTE AI 3 POST, perché sono le uniche disponibili a sistema:\n"
-        f"- Post 1: {data_1}\n"
-        f"- Post 2: {data_2}\n"
-        f"- Post 3: {data_3}\n\n"
-        f"Rispondi formattando chiaramente:\n"
-        f"PIANO EDITORIALE:\n- Post 1 ({data_1}): Titolo\n- Post 2 ({data_2}): Titolo\n- Post 3 ({data_3}): Titolo\n"
-    )
+    prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3)
+
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
     piano_generato = response.content
 
@@ -568,11 +384,7 @@ def planning_node(state: State) -> Command:
     # --- NUOVA LOGICA: ESTRAZIONE DEI TOPIC SCELTI DAL FEEDBACK ---
     print("🧠 Estrazione dei titoli selezionati in base al feedback...")
     extractor = get_llm().with_structured_output(TopicSelection)
-    estrazione_prompt = (
-        f"Questo è il piano editoriale proposto:\n{piano_generato}\n\n"
-        f"L'utente ha risposto così: '{feedback_utente}'.\n"
-        f"Estrai solo ed esclusivamente i titoli completi degli articoli che l'utente ha scelto o approvato di scrivere."
-    )
+    estrazione_prompt = get_topic_extraction_from_feedback_prompt(piano_generato, feedback_utente)
     scelta = extractor.invoke([{"role": "user", "content": estrazione_prompt}])
 
     pending = scelta.selected_topics
@@ -603,7 +415,7 @@ def process_plan_node(state: State):
     original_plan = state.get("editorial_plan", "")
 
     llm = get_llm().with_structured_output(FinalPlan)
-    prompt = f"Piano originale:\n{original_plan}\n\nFeedback utente:\n{user_feedback}\n\nEstrai SOLO gli argomenti che l'utente ha approvato."
+    prompt = get_final_plan_extraction_prompt(original_plan, user_feedback)
     risultato = llm.invoke([{"role": "user", "content": prompt}])
 
     return Command(
