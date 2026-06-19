@@ -1,7 +1,8 @@
 from typing import Optional, List, Dict
 from langchain_core.tools import BaseTool
-from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, tavily_search_tool, \
+from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, \
     get_previous_topics, get_topic_claims, rag_document_retriever
+from function_tool import tavily_search_tool
 
 
 

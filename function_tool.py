@@ -8,7 +8,7 @@ def get_latest_scheduled_date_from_db():
     """Recupera l'ultima data di pubblicazione assoluta presente nel database Neo4j."""
     if not graph:
         return None
-    query = get_latest_scheduled_date_query
+    query = get_latest_scheduled_date_query()
     try:
         res = graph.query(query)
         if res and res[0].get("latest_date"):
