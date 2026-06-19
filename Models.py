@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 import os
-from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool
+from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, intelligent_topic_matcher
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
@@ -52,6 +52,7 @@ def get_llm_with_tools():
         get_previous_topics,
         get_topic_claims,
         verified_internet_search,
-        rag_document_retriever
+        rag_document_retriever,
+        intelligent_topic_matcher
     ])
     return llm

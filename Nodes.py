@@ -143,16 +143,17 @@ def tool_node(state: State):
 
     # --- DECIDIAMO DOVE ANDARE ---
     if articolo_generato is not None:
-        # Passiamo la palla al NUOVO nodo interattivo invece di fare interrupt qui
         return Command(
             update={
                 "messages": result,
                 "final_article": articolo_generato
             },
-            goto="ask_feedback_node"  # <--- NUOVO NODO
+            goto="ask_feedback_node"
         )
     else:
-        print(f"\n🔍 L'agente ha consultato {len(last_message.tool_calls)} fonte/i in background. Torno a elaborare...")
+        # MODIFICA LA STAMPA QUI:
+        nomi_tools_usati = [tc["name"] for tc in last_message.tool_calls]
+        print(f"\n🛠️ [DEBUG AGENTE] In background l'LLM ha appena usato: {', '.join(nomi_tools_usati)}")
         return Command(
             update={"messages": result},
             goto="accept_node"

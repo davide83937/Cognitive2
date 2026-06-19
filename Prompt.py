@@ -39,22 +39,31 @@ def get_accept_prompt(topic: str) -> str:
     OBBLIGO DI RAGIONAMENTO K-RAG (Knowledge-augmented RAG):
     Prima di scrivere l'articolo, DEVI seguire rigorosamente questi step usando i tool a tua disposizione.
 
-    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente.
+    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente. Scrivi sempre un "Thought:" prima di usare un tool.
 
-    1. QUERY EXPANSION (Knowledge Graph): Usa il tool 'get_topic_claims' per controllare se abbiamo già parlato di concetti legati a '{topic}'. 
+    1. MATCHING SEMANTICO (Knowledge Graph): 
+    Usa il tool 'intelligent_topic_matcher' passandogli il tema '{topic}'. Questo tool ti dirà se l'argomento è già nel database e qual è il suo NOME ESATTO.
     [Aspetta la risposta prima di procedere]
 
-    2. RETRIEVAL (Documenti Locali): Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con le parole chiave trovate al punto 1. Usa questa query espansa con il tool 'rag_document_retriever' per trovare materiale e fonti locali.
+    2. ESTRAZIONE CLAIMS (Knowledge Graph): 
+    - Se il matcher ha trovato una corrispondenza, usa il tool 'get_topic_claims' passandogli il NOME ESATTO che il matcher ti ha suggerito.
+    - Se il matcher ha detto che è un argomento nuovo, salta questo step e procedi direttamente al punto 3.
     [Aspetta la risposta prima di procedere]
 
-    3. SEARCH (Internet): Se il RAG locale non basta, usa 'tavily_search_results_json' per cercare notizie aggiornate.
+    3. RETRIEVAL (Documenti Locali): 
+    Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con eventuali informazioni trovate nei claims (se presenti). Usa questa query espansa con il tool 'rag_document_retriever' per trovare fonti nei PDF.
     [Aspetta la risposta prima di procedere]
 
-    4. DRAFTING: Solo dopo aver consultato le fonti e raccolto le informazioni, scrivi l'articolo usando il tool 'write_an_article'.
+    4. SEARCH E VERIFICA (Internet): 
+    Se le informazioni locali non bastano, usa 'tavily_search_results_json'. 
+    Quando ottieni i risultati, scrivi un "Thought:" in cui valuti l'attendibilità dei link (scarta forum o siti dubbi e tieni solo fonti autorevoli).
+    [Aspetta la risposta prima di procedere]
 
-    REGOLE PER LA STESURA:
-    - Devi esplicitamente includere le fonti nel testo usando la formattazione (es. [Fonte: Nome Documento/Sito]).
-    - Ogni affermazione forte deve essere supportata dai dati recuperati (grounding). Non inventare fonti.
+    5. DRAFTING: 
+    Solo dopo aver completato le ricerche, usa 'write_an_article' per generare il testo. 
+
+    REGOLE DI STESURA: 
+    Devi esplicitamente citare le fonti nel testo (es. [Fonte: Documento RAG] o [Fonte: Sito Web]) e garantire che l'articolo non ripeta cose già dette nei claims precedenti.
     """
 
 

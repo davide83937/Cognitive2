@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from langchain_core.tools import tool
 
-from Models import get_llm
+
 from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date, \
     getRetriever, tavily_search_tool
 from query_neo4j import get_post_count_by_date_query, get_all_topics_query, get_claims_by_topic_query
@@ -133,22 +133,28 @@ def get_topic_claims(topic_name: str) -> str:
     Usa questo tool durante la stesura dell'articolo per recuperare le affermazioni chiave (Claims)
     fatte in passato su un determinato topic (topic_name), così da mantenere coerenza.
     """
+    from test_neo4j import graph  # Assicurati di avere l'import
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    # Cypher query per recuperare le Claim collegate a un Topic specifico (ignorando maiuscole/minuscole)
+    from query_neo4j import get_claims_by_topic_query
     query = get_claims_by_topic_query()
+
+    print(f"\n🧠 [DEBUG KG] L'agente sta interrogando la memoria per il topic: '{topic_name}'")
 
     try:
         risultati = graph.query(query, params={"topic": topic_name})
         if not risultati:
+            print(f"❌ [DEBUG KG] Nessuna informazione precedente trovata. Argomento nuovo.")
             return f"Non ho trovato affermazioni precedenti sul topic '{topic_name}'."
 
         lista_claims = [res["claim_text"] for res in risultati]
-        return f"Affermazioni passate su {topic_name}:\n- " + "\n- ".join(lista_claims)
+        risultato_testuale = f"Affermazioni passate su {topic_name}:\n- " + "\n- ".join(lista_claims)
+
+        print(f"✅ [DEBUG KG] Trovate {len(lista_claims)} informazioni storiche passate al RAG/LLM.")
+        return risultato_testuale
     except Exception as e:
         return f"Errore durante l'interrogazione del KG: {e}"
-
 
 @tool
 def rag_document_retriever(query: str) -> str:
@@ -180,10 +186,10 @@ def verified_internet_search(query: str) -> str:
     Usa questo tool per cercare su internet. Cerca le informazioni e valuta
     dinamicamente l'affidabilità di ogni fonte trovata.
     """
-    # 1. Chiama Tavily per ottenere i risultati (che includono URL e un frammento di testo)
+    print(f"\n🌐 [DEBUG TAVILY] L'agente ha cercato sul web: '{query}'")
     risultati_grezzi = tavily_search_tool.invoke({"query": query})
 
-    # 2. Usiamo un LLM per valutare dinamicamente la qualità delle fonti
+    from Models import get_llm
     llm_giudice = get_llm()
 
     prompt_giudice = f"""
@@ -195,11 +201,77 @@ def verified_internet_search(query: str) -> str:
     (testate giornalistiche, siti istituzionali, portali scientifici/accademici o blog tecnici riconosciuti).
     Scarta tutto ciò che sembra un forum, un social network o un sito promozionale di bassa qualità.
 
-    Rispondi fornendo un breve riepilogo delle fonti salvate e il loro contenuto utile. Se nessuna fonte è buona, scrivi "Nessuna fonte affidabile trovata".
+    Rispondi fornendo un breve riepilogo delle fonti salvate e il loro contenuto utile. E spiega brevemente quali hai scartato e perché.
+    Se nessuna fonte è buona, scrivi "Nessuna fonte affidabile trovata".
     """
 
-    # L'LLM valuta, scarta la spazzatura e restituisce solo il succo
     risposta_filtrata = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}])
+
+    # AGGIUNGIAMO QUESTO PRINT PER VEDERE IL RAGIONAMENTO DEL GIUDICE
+    print(f"\n⚖️ [DEBUG GIUDICE FONTI] Verdetto sulle fonti trovate:\n{risposta_filtrata.content}\n")
 
     return risposta_filtrata.content
 
+
+from langchain_core.tools import tool
+from Models import get_llm
+from test_neo4j import graph
+
+
+@tool
+def intelligent_topic_matcher(new_topic: str) -> str:
+    """
+    Usa questo tool per scoprire SE e COME un nuovo argomento è già stato trattato nel Knowledge Graph.
+    Fornisce la corrispondenza semantica esatta del nome del Topic nel database.
+    """
+    if not graph:
+        return "Errore: Database Neo4j non connesso."
+
+    # 1. Estraiamo TUTTI i Topic esistenti nel database (e magari qualche claim chiave)
+    # Se il DB è piccolo/medio, possiamo portarli tutti in memoria.
+    query = """
+    MATCH (t:Topic)
+    OPTIONAL MATCH (c:Claim)-[:RELATED_TO]->(t)
+    RETURN t.name AS topic_name, collect(c.text)[0..2] AS sample_claims
+    """
+    try:
+        records = graph.query(query)
+        if not records:
+            return f"Il database è vuoto. '{new_topic}' è un argomento 100% nuovo."
+
+        lista_esistenti = []
+        for r in records:
+            nome = r['topic_name']
+            claims = r['sample_claims']
+            lista_esistenti.append(f"- Topic: '{nome}' (Esempi trattati: {claims})")
+
+        contesto_db = "\n".join(lista_esistenti)
+
+    except Exception as e:
+        return f"Errore durante l'interrogazione di Neo4j: {e}"
+
+    # 2. Usiamo un LLM "Giudice" per fare il matching semantico
+    llm_giudice = get_llm()
+    prompt_giudice = f"""
+    Sei un analista semantico. Il tuo compito è confrontare un NUOVO argomento con una lista di argomenti GIA' ESISTENTI nel database.
+
+    NUOVO ARGOMENTO PROPOSTO: "{new_topic}"
+
+    ARGOMENTI ESISTENTI NEL DATABASE:
+    {contesto_db}
+
+    DOMANDA: Il nuovo argomento proposto è concettualmente uguale, o una sotto-categoria molto stretta, di uno degli argomenti esistenti?
+    Considera sinonimi, acronimi (es. 5G e Rete 5G) e concetti correlati.
+
+    REGOLE DI RISPOSTA (IMPORTANTISSIMO):
+    - Se C'E' una corrispondenza semantica, rispondi SOLO con il NOME ESATTO del Topic esistente (copialo identico a come è scritto nel database). Non aggiungere altre parole.
+    - Se NON C'E' nessuna corrispondenza (è un argomento totalmente nuovo), rispondi ESATTAMENTE con la parola: "NESSUNO".
+    """
+
+    risposta_llm = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}]).content.strip()
+
+    # 3. Formattiamo la risposta per l'agente principale
+    if risposta_llm == "NESSUNO":
+        return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
+    else:
+        return f"Trovata corrispondenza semantica! Nel database l'argomento è salvato ESATTAMENTE con il nome: '{risposta_llm}'. Usa questo nome per interrogare i claims."
