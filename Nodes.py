@@ -11,7 +11,7 @@ from Schemas import State, ArticleData, KGExtraction
 from base import get_tools_by_name
 import re
 
-from function_tool import save_to_neo4j, get_smart_schedule_dates
+from function_tool import save_to_neo4j, get_smart_schedule_dates, get_covered_context_from_neo4j
 
 
 def call_llm(state: MessagesState):
@@ -370,10 +370,11 @@ def planning_node(state: State) -> Command:
     date_sicure = get_smart_schedule_dates(n_days=n, total_posts=3)
     data_1, data_2, data_3 = date_sicure[0], date_sicure[1], date_sicure[2]
 
-    # ... logica Knowledge Graph ...
+    contesto_kg_lista = get_covered_context_from_neo4j()
+    contesto_kg_str = "\n".join(contesto_kg_lista)
 
     llm = get_llm()
-    prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3)
+    prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3, contesto_kg_str)
 
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
     piano_generato = response.content

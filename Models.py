@@ -38,8 +38,9 @@ def get_llm_with_calendar_tools():
     return llm
 
 # In Models.py
-from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, get_previous_topics, get_topic_claims, rag_document_retriever
+from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, get_previous_topics, get_topic_claims, rag_document_retriever, verified_internet_search
 from function_tool import tavily_search_tool
+
 
 # ... [resto invariato] ...
 
@@ -50,7 +51,7 @@ def get_llm_with_tools():
         write_an_article,
         get_previous_topics,
         get_topic_claims,
-        tavily_search_tool,
+        verified_internet_search,
         rag_document_retriever
     ])
     return llm

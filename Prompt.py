@@ -37,16 +37,24 @@ def get_accept_prompt(topic: str) -> str:
     Sei un AI Blogger Assistant esperto. Devi scrivere un articolo sul topic: '{topic}'.
 
     OBBLIGO DI RAGIONAMENTO K-RAG (Knowledge-augmented RAG):
-    Prima di scrivere l'articolo, DEVI seguire rigorosamente questi step usando i tool a tua disposizione:
+    Prima di scrivere l'articolo, DEVI seguire rigorosamente questi step usando i tool a tua disposizione.
+
+    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente.
 
     1. QUERY EXPANSION (Knowledge Graph): Usa il tool 'get_topic_claims' per controllare se abbiamo già parlato di concetti legati a '{topic}'. 
+    [Aspetta la risposta prima di procedere]
+
     2. RETRIEVAL (Documenti Locali): Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con le parole chiave trovate al punto 1. Usa questa query espansa con il tool 'rag_document_retriever' per trovare materiale e fonti locali.
+    [Aspetta la risposta prima di procedere]
+
     3. SEARCH (Internet): Se il RAG locale non basta, usa 'tavily_search_results_json' per cercare notizie aggiornate.
-    4. DRAFTING: Solo dopo aver consultato le fonti, scrivi l'articolo usando 'write_an_article'.
+    [Aspetta la risposta prima di procedere]
+
+    4. DRAFTING: Solo dopo aver consultato le fonti e raccolto le informazioni, scrivi l'articolo usando il tool 'write_an_article'.
 
     REGOLE PER LA STESURA:
     - Devi esplicitamente includere le fonti nel testo usando la formattazione (es. [Fonte: Nome Documento/Sito]).
-    - Ogni affermazione forte deve essere supportata dai dati recuperati.
+    - Ogni affermazione forte deve essere supportata dai dati recuperati (grounding). Non inventare fonti.
     """
 
 
@@ -123,18 +131,24 @@ def get_kg_extraction_prompt(titolo: str, testo: str, existing_topics: list) -> 
         f"- Analizza la lista dei TOPIC GIÀ PRESENTI: se noti connessioni logiche, concettuali o di dipendenza tra l'articolo attuale e i vecchi topic, inserisci i nomi dei vecchi topic nella lista 'related_topics'. L'intelligenza artificiale deve mappare le correlazioni semantiche."
     )
 
-def get_planning_prompt(last_input: str, data_1: str, data_2: str, data_3: str) -> str:
-    """Genera il prompt per il piano editoriale con date fisse."""
-    return (
-        f"Sei l'Editor-in-Chief del blog. L'utente ha chiesto un articolo su: '{last_input}'.\n"
-        f"DEVI ASSOLUTAMENTE ASSEGNARE QUESTE DATE ESATTE AI 3 POST, perché sono le uniche disponibili a sistema:\n"
-        f"- Post 1: {data_1}\n"
-        f"- Post 2: {data_2}\n"
-        f"- Post 3: {data_3}\n\n"
-        f"Rispondi formattando chiaramente:\n"
-        f"PIANO EDITORIALE:\n- Post 1 ({data_1}): Titolo\n- Post 2 ({data_2}): Titolo\n- Post 3 ({data_3}): Titolo\n"
-    )
+def get_planning_prompt(user_input: str, data_1: str, data_2: str, data_3: str, contesto_kg: str) -> str:
+    return f"""Sei un Direttore Editoriale AI e un esperto di Content Strategy. 
+Il tuo compito è generare un piano editoriale di 3 articoli basandoti sulla richiesta dell'utente: '{user_input}'.
 
+Ecco le date fisse calcolate dal palinsesto per la pubblicazione:
+- Post 1: {data_1}
+- Post 2: {data_2}
+- Post 3: {data_3}
+
+⚠️ CRUCIALE - CONOSCENZA PREGRESSA DEL BLOG (Dal Knowledge Graph):
+Il database a grafo segnala che il blog ha già trattato i seguenti argomenti e concetti:
+{contesto_kg}
+
+REGOLE DI STRATEGIA EDITORIALE DA SEGUIRE RIGOROSAMENTE:
+1. EVITA LA RIDONDANZA: Non proporre articoli sui macro-argomenti o sui claims già elencati sopra. Se l'utente ti chiede un argomento simile a qualcosa di già trattato, devi identificare un "gap" di conoscenza o proporre un'angolazione completamente diversa e innovativa.
+2. GIUSTIFICAZIONE DELLE SCELTE: Per ogni post inserito nel piano, fornisci una breve giustificazione del perché hai scelto quel topic e perché l'ordine cronologico proposto è coerente.
+3. DIVERSITÀ: Assicurati che i 3 post offrano una buona copertura e varietà del dominio richiesto.
+"""
 
 def get_topic_extraction_from_feedback_prompt(piano_generato: str, feedback_utente: str) -> str:
     """Genera il prompt per estrarre i titoli scelti dall'utente (nodo planning)."""

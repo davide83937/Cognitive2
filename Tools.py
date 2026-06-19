@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 from langchain_core.tools import tool
+
+from Models import get_llm
 from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date, \
-    getRetriever
+    getRetriever, tavily_search_tool
 from query_neo4j import get_post_count_by_date_query, get_all_topics_query, get_claims_by_topic_query
 from test_neo4j import graph
 
@@ -171,4 +173,33 @@ def rag_document_retriever(query: str) -> str:
     testo_risultati = "\n\n--- FRAMMENTO --- \n".join([doc.page_content for doc in documenti_trovati])
     return testo_risultati
 
+
+@tool
+def verified_internet_search(query: str) -> str:
+    """
+    Usa questo tool per cercare su internet. Cerca le informazioni e valuta
+    dinamicamente l'affidabilità di ogni fonte trovata.
+    """
+    # 1. Chiama Tavily per ottenere i risultati (che includono URL e un frammento di testo)
+    risultati_grezzi = tavily_search_tool.invoke({"query": query})
+
+    # 2. Usiamo un LLM per valutare dinamicamente la qualità delle fonti
+    llm_giudice = get_llm()
+
+    prompt_giudice = f"""
+    Sei un revisore di fonti esperto. Ecco i risultati di una ricerca web:
+    {risultati_grezzi}
+
+    Il tuo compito è analizzare l'URL e il contenuto di ciascun risultato. 
+    Seleziona e restituisci SOLO i risultati che provengono da fonti attendibili 
+    (testate giornalistiche, siti istituzionali, portali scientifici/accademici o blog tecnici riconosciuti).
+    Scarta tutto ciò che sembra un forum, un social network o un sito promozionale di bassa qualità.
+
+    Rispondi fornendo un breve riepilogo delle fonti salvate e il loro contenuto utile. Se nessuna fonte è buona, scrivi "Nessuna fonte affidabile trovata".
+    """
+
+    # L'LLM valuta, scarta la spazzatura e restituisce solo il succo
+    risposta_filtrata = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}])
+
+    return risposta_filtrata.content
 
