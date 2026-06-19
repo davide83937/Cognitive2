@@ -201,3 +201,8 @@ def setup_vector_database(cartella_documenti="./knowledge_base", db_path="./chro
     # Creiamo e salviamo il vector store locale
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings, persist_directory=db_path)
     return vectorstore
+
+def getRetriever():
+    vectorstore_db = setup_vector_database()
+    retriever = vectorstore_db.as_retriever(search_kwargs={"k": 3}) if vectorstore_db else None
+    return retriever

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from langchain_core.tools import tool
-from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date
+from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date, \
+    getRetriever
 from query_neo4j import get_post_count_by_date_query, get_all_topics_query, get_claims_by_topic_query
 from test_neo4j import graph
 
@@ -147,38 +148,27 @@ def get_topic_claims(topic_name: str) -> str:
         return f"Errore durante l'interrogazione del KG: {e}"
 
 
+@tool
+def rag_document_retriever(query: str) -> str:
+    """Usa questo tool per cercare informazioni, definizioni e concetti approfonditi all'interno dei documenti e manuali locali del blog.
+    Restituisce frammenti di testo da usare come citazioni per supportare l'articolo."""
 
+    retriever = getRetriever()
+    # 4. Gestisci il fallback internamente se il DB non è stato caricato
+    if not retriever:
+        return "Nessun documento locale disponibile nel database vettoriale. Prosegui senza citazioni dai PDF."
 
-# --- 2. CREAZIONE DEL TOOL PER L'AGENTE (Versione con DEBUG) ---
-vectorstore_db = setup_vector_database()
+    # 🟢 DEBUG VISIVO
+    print(f"\n📚 [DEBUG RAG] L'agente ha attivato il tool sui PDF locali con la query: '{query}'\n")
 
-if vectorstore_db:
-    # Impostiamo il retriever per restituire i 3 chunk più rilevanti
-    retriever = vectorstore_db.as_retriever(search_kwargs={"k": 3})
+    # 5. Ricerca vettoriale
+    documenti_trovati = retriever.invoke(query)
 
+    if not documenti_trovati:
+        return "Nessuna informazione rilevante trovata nei PDF per questa query."
 
-    @tool
-    def rag_document_retriever(query: str) -> str:
-        """Usa questo tool per cercare informazioni, definizioni e concetti approfonditi all'interno dei documenti e manuali locali del blog. Restituisce frammenti di testo da usare come citazioni per supportare l'articolo."""
-
-        # 🟢 ECCO LA SPIA! Questa riga stamperà in rosso/visibile sul terminale l'uso del RAG
-        print(f"\n📚 [DEBUG RAG] L'agente ha attivato il tool sui PDF locali con la query: '{query}'\n")
-
-        # Facciamo la vera ricerca vettoriale
-        documenti_trovati = retriever.invoke(query)
-
-        if not documenti_trovati:
-            return "Nessuna informazione rilevante trovata nei PDF."
-
-        # Uniamo i frammenti trovati in un unico testo da passare all'LLM
-        testo_risultati = "\n\n--- FRAMMENTO --- \n".join([doc.page_content for doc in documenti_trovati])
-        return testo_risultati
-
-else:
-    # Fallback se non ci sono PDF
-    @tool
-    def rag_document_retriever(query: str) -> str:
-        """Tool fittizio per quando non ci sono documenti"""
-        return "Nessun documento locale disponibile nel database vettoriale."
+    # 6. Unione dei risultati
+    testo_risultati = "\n\n--- FRAMMENTO --- \n".join([doc.page_content for doc in documenti_trovati])
+    return testo_risultati
 
 

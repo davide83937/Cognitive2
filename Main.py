@@ -8,6 +8,7 @@ from Nodes import refine_node, accept_node, tool_node, update_article_node, chec
 from RouterNodes import triage_router, tool_node_router, scheduling_node_router, drafting_router, \
     scheduling_queue_router, ask_schedule_node
 from Schemas import State
+from Tools import rag_document_retriever
 
 #load_dotenv()
 #os.environ["HUGGINGFACEHUB_API_TOKEN"] = os.getenv("HF_TOKEN")
@@ -35,7 +36,7 @@ builder.add_node("ask_schedule_node", ask_schedule_node) # <-- NUOVO NODO
 builder.add_node("scheduling_queue_router", scheduling_queue_router)
 builder.add_node("ask_user_schedule_node", ask_user_schedule_node)
 builder.add_node("ask_feedback_node", ask_feedback_node)
-
+builder.add_node("rag_document_retriever", rag_document_retriever)
 # 4. Definisci l'arco di ingresso
 builder.add_edge(START, "triage_router")
 
