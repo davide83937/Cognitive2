@@ -39,7 +39,7 @@ def get_accept_prompt(topic: str) -> str:
     OBBLIGO DI RAGIONAMENTO K-RAG (Knowledge-augmented RAG):
     Prima di scrivere l'articolo, DEVI seguire rigorosamente questi step usando i tool a tua disposizione.
 
-    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente. Scrivi sempre un "Thought:" prima di usare un tool.
+    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente. Scrivi sempre un "Thought:" prima di usare un tool per esplicitare il tuo ragionamento.
 
     1. MATCHING SEMANTICO (Knowledge Graph): 
     Usa il tool 'intelligent_topic_matcher' passandogli il tema '{topic}'. Questo tool ti dirà se l'argomento è già nel database e qual è il suo NOME ESATTO.
@@ -51,19 +51,23 @@ def get_accept_prompt(topic: str) -> str:
     [Aspetta la risposta prima di procedere]
 
     3. RETRIEVAL (Documenti Locali): 
-    Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con eventuali informazioni trovate nei claims (se presenti). Usa questa query espansa con il tool 'rag_document_retriever' per trovare fonti nei PDF.
+    Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con eventuali informazioni trovate nei claims (se presenti). Usa questa query espansa con il tool 'rag_document_retriever' per trovare fonti nei manuali locali in PDF.
+    ⚠️ FASE DI VALUTAZIONE RAG (OBBLIGATORIA): Appena ottieni la risposta dal tool, devi scrivere un "Thought:" esplicito sull'esito. 
+    - Se hai trovato documenti, scrivi "Thought: Ho estratto documenti utili dal RAG locale."
+    - Se il tool non ha trovato nulla, scrivi ESPLICITAMENTE "Thought: Non ho trovato documenti locali pertinenti tramite il RAG per questo argomento."
     [Aspetta la risposta prima di procedere]
 
-    4. SEARCH E VERIFICA (Internet): 
-    Se le informazioni locali non bastano, usa 'tavily_search_results_json'. 
-    Quando ottieni i risultati, scrivi un "Thought:" in cui valuti l'attendibilità dei link (scarta forum o siti dubbi e tieni solo fonti autorevoli).
+    4. SEARCH E VERIFICA (Internet) - FASE DECISIONALE: 
+    Valuta criticamente se il materiale raccolto finora (da KG e RAG) è sufficiente per scrivere un articolo completo. 
+    - Se NON è sufficiente (ad esempio perché il KG e il RAG erano vuoti), usa 'tavily_search_results_json' per cercare notizie aggiornate. Quando ottieni i risultati, scrivi un "Thought:" in cui valuti l'attendibilità dei link (scarta forum o siti dubbi e tieni solo fonti autorevoli).
+    - Se È sufficiente, scrivi ESPLICITAMENTE questo pensiero: "Thought: Il materiale locale recuperato tramite RAG e KG è sufficiente e di alta qualità. Decido di saltare la ricerca su Internet." e passa direttamente al punto 5.
     [Aspetta la risposta prima di procedere]
 
     5. DRAFTING: 
-    Solo dopo aver completato le ricerche, usa 'write_an_article' per generare il testo. 
+    Solo dopo aver completato le ricerche (o aver giustificato il salto dello step 4), usa 'write_an_article' per generare il testo. 
 
     REGOLE DI STESURA: 
-    Devi esplicitamente citare le fonti nel testo (es. [Fonte: Documento RAG] o [Fonte: Sito Web]) e garantire che l'articolo non ripeta cose già dette nei claims precedenti.
+    Devi esplicitamente citare le fonti nel testo (es. [Fonte: Documento RAG] o [Fonte: Sito Web Autorevole]) e garantire che l'articolo non ripeta nozioni già coperte nei claims storici.
     """
 
 

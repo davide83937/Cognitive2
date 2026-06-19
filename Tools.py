@@ -214,7 +214,7 @@ def verified_internet_search(query: str) -> str:
 
 
 from langchain_core.tools import tool
-from Models import get_llm
+
 from test_neo4j import graph
 
 
@@ -224,6 +224,7 @@ def intelligent_topic_matcher(new_topic: str) -> str:
     Usa questo tool per scoprire SE e COME un nuovo argomento è già stato trattato nel Knowledge Graph.
     Fornisce la corrispondenza semantica esatta del nome del Topic nel database.
     """
+    from Models import get_llm
     if not graph:
         return "Errore: Database Neo4j non connesso."
 

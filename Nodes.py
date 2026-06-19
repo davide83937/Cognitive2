@@ -85,6 +85,10 @@ def accept_node(state: State):
     # Passiamo al LLM solo il prompt di sistema e lo storico "pulito"
     messages = [{"role": "system", "content": accept_prompt}] + storico_pulito
     response = llm.invoke(messages)
+    # ---> AGGIUNGI QUESTE DUE RIGHE QUI <---
+    if response.content:
+        print(f"\n💭 [THOUGHT AGENTE]: {response.content}")
+    # ----------------------------------------
 
     return Command(
         update={
