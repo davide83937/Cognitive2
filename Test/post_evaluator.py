@@ -155,7 +155,7 @@ def automated_agent_run(inputs: dict) -> dict:
 if __name__ == "__main__":
     print("🌐 Inizializzazione del client LangSmith...")
     client = Client()
-    dataset_name = "CCAI-Blog-Topics-v3"  # Modificato in v3 per un test pulito
+    dataset_name = "CCAI-Blog-Topics-v4"  # Modificato in v3 per un test pulito
 
     try:
         client.read_dataset(dataset_name=dataset_name)
