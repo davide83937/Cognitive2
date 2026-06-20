@@ -100,12 +100,6 @@ def accept_node(state: State):
     )
 
 
-# Assicurati di importare i tuoi tool
-# dalla tua mappa, ad esempio: get_tools_by_name = {"write_an_article": write_an_article}
-
-
-
-
 def tool_node(state: State):
     result = []
     last_message = state["messages"][-1]
@@ -128,14 +122,11 @@ def tool_node(state: State):
         )
         result.append(tool_message)
 
-        # 🎯 Se è il tool di scrittura, estraiamo i dati
         if tool_name == "write_an_article":
             titolo_estratto = tool_args.get("about", "Nuovo Articolo")
             autore_estratto = tool_args.get("author", "Agente AI")
             testo_articolo = str(observation)
 
-            # (Ho rimosso le lunghe print qui per evitare che stampi due volte
-            # dato che Main.py le stampa già durante l'interrupt)
             print(f"\n✅ Articolo '{titolo_estratto}' generato con successo! Passo alla revisione umana...")
 
             articolo_generato = ArticleData(
@@ -145,7 +136,6 @@ def tool_node(state: State):
                 date=state.get("data_proposta")
             )
 
-    # --- DECIDIAMO DOVE ANDARE ---
     if articolo_generato is not None:
         return Command(
             update={
@@ -155,7 +145,6 @@ def tool_node(state: State):
             goto="ask_feedback_node"
         )
     else:
-        # MODIFICA LA STAMPA QUI:
         nomi_tools_usati = [tc["name"] for tc in last_message.tool_calls]
         print(f"\n🛠️ [DEBUG AGENTE] In background l'LLM ha appena usato: {', '.join(nomi_tools_usati)}")
         return Command(
@@ -168,22 +157,17 @@ def ask_feedback_node(state: State):
     # Recuperiamo l'articolo appena generato dallo stato
     articolo = state.get("final_article")
 
-    # Estraiamo il testo in modo sicuro
     if isinstance(articolo, dict):
         testo_articolo = articolo.get("text", "")
     else:
         testo_articolo = getattr(articolo, "text", "")
 
-    # Mettiamo in pausa il grafo.
-    # Main.py intercetterà "articolo_generato" e si occuperà di stamparlo a schermo in modo pulito.
     feedback_utente = interrupt({"articolo_generato": testo_articolo})
 
-    # Una volta ripreso, confezioniamo il feedback
     messaggio_feedback = HumanMessage(
         content=f"Questo è il feedback dell'utente sull'articolo appena scritto: {feedback_utente}"
     )
 
-    # Andiamo al router che deciderà se approvare o riscrivere
     return Command(
         update={"messages": [messaggio_feedback]},
         goto="tool_node_router"
@@ -193,12 +177,10 @@ def update_article_node(state: MessagesState):
     llm = get_llm_with_tools()
     update_prompt = get_update_prompt()
 
-    # Costruiamo i messaggi da passare al LLM: il system prompt per la modifica + tutta la history
     messages = [{"role": "system", "content": update_prompt}] + state["messages"]
 
     response = llm.invoke(messages)
 
-    # Passiamo il comando a tool_node per eseguire la nuova stesura
     return Command(update={"messages": [response]}, goto="tool_node")
 
 
@@ -244,34 +226,28 @@ def check_schedule_node(state: State):
         msg.pretty_print()
     print("=" * 50 + "\n")
 
-    # Passiamo al nuovo nodo di interazione invece che al router
     return Command(
         update={
             "messages": new_messages,
             "data_proposta": data_estratta
         },
-        goto="ask_user_schedule_node"  # <-- NUOVO NODO
+        goto="ask_user_schedule_node"
     )
 
 
 def ask_user_schedule_node(state: State):
-    # Recuperiamo i messaggi per capire cosa ha detto l'AI
     messaggi = state.get("messages", [])
 
-    # Cerchiamo l'ultimo AIMessage per estrarne il testo
-    # (Potrebbe esserci un ToolMessage alla fine, quindi dobbiamo assicurarci di avere il testo giusto)
     testo_assistente = "Ho elaborato le date. Come procediamo?"
     for msg in reversed(messaggi):
         if hasattr(msg, "content") and msg.content and getattr(msg, "type", "") == "ai":
             testo_assistente = msg.content
             break
 
-    # Lanciamo l'interrupt
     user_feedback = interrupt({"schedule_result": testo_assistente})
 
     print(f"👤 Utente ha risposto: {user_feedback}")
 
-    # Aggiorniamo lo stato con la risposta e andiamo al router decisionale
     return Command(
         update={
             "messages": [HumanMessage(content=user_feedback)]
@@ -281,8 +257,8 @@ def ask_user_schedule_node(state: State):
 
 
 
-from Models import get_llm  # Assicurati che sia importato
-from Schemas import KGExtraction  # Assicurati che sia importato
+from Models import get_llm
+from Schemas import KGExtraction
 
 
 def decision_node(state: State) -> Command:
@@ -299,7 +275,6 @@ def decision_node(state: State) -> Command:
         from langgraph.constants import END
         return Command(goto=END)
 
-    # 1. ESTRAZIONE: Ora prendiamo e rimuoviamo l'articolo dalla coda (pop)
     current_article = approved_articles.pop(0)
 
     # Estrazione sicura dict vs Pydantic
@@ -314,8 +289,7 @@ def decision_node(state: State) -> Command:
 
     print(f"✅ Articolo '{titolo}' confermato per la data {target_date}.")
 
-    # 1.5 RECUPERO DEI TOPIC ESISTENTI DAL GRAFO (Memoria Semantica)
-    from test_neo4j import graph  # Assicurati di importare l'istanza del grafo
+    from test_neo4j import graph
     existing_topics = []
     if graph:
         try:
@@ -324,16 +298,13 @@ def decision_node(state: State) -> Command:
         except Exception as e:
             print(f"⚠️ Impossibile recuperare i topic esistenti: {e}")
 
-    # 2. SALVATAGGIO SUL KNOWLEDGE GRAPH CON LOGICA AI-DRIVEN
     print("🧩 Estrazione Entità per il Knowledge Graph in corso...")
     llm = get_llm().with_structured_output(KGExtraction)
 
-    # Prompt arricchito con i topic esistenti
     prompt_estrazione = get_kg_extraction_prompt(titolo, testo, existing_topics)
 
     estrazione = llm.invoke([{"role": "user", "content": prompt_estrazione}])
 
-    # Passiamo anche i related_topics estratti dall'AI alla funzione di salvataggio
     save_to_neo4j(
         title=titolo,
         topic=estrazione.topic,
@@ -343,7 +314,6 @@ def decision_node(state: State) -> Command:
         related_topics=estrazione.related_topics  # <--- Nuovo parametro
     )
 
-    # 3. CONTROLLO CODA E AGGIORNAMENTO STATO
     if approved_articles:
         print(f"\n🔁 Ci sono ancora {len(approved_articles)} articoli in coda da schedulare. Passo al prossimo...")
         return Command(
@@ -371,7 +341,6 @@ def planning_node(state: State) -> Command:
     last_input = state["messages"][-1].content
     n = state.get("n_days", 3)
 
-    # 1. Calcoliamo in modo intelligente le prossime 3 date disponibili
     date_sicure = get_smart_schedule_dates(n_days=n, total_posts=3)
     data_1, data_2, data_3 = date_sicure[0], date_sicure[1], date_sicure[2]
 
@@ -389,7 +358,6 @@ def planning_node(state: State) -> Command:
         "schedule_result": f"Il sistema ha pianificato i post con cadenza ogni {n} giorni. Approvi?"
     })
 
-    # --- NUOVA LOGICA: ESTRAZIONE DEI TOPIC SCELTI DAL FEEDBACK ---
     print("🧠 Estrazione dei titoli selezionati in base al feedback...")
     extractor = get_llm().with_structured_output(TopicSelection)
     estrazione_prompt = get_topic_extraction_from_feedback_prompt(piano_generato, feedback_utente)
@@ -399,7 +367,6 @@ def planning_node(state: State) -> Command:
     if not pending:  # Fallback di sicurezza se non capisce il feedback
         pending = [last_input]
 
-        # TRASFORMIAMO GLI OGGETTI IN DIZIONARI SICURI PER IL SALVATAGGIO
         pending_dicts = [{"title": p.title, "date": p.date} for p in pending]
     print(f"📌 Articoli messi in coda di scrittura: {pending}")
 

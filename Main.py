@@ -50,7 +50,7 @@ serde = JsonPlusSerializer(
 
 # Inizializza il MemorySaver passandogli il serializzatore personalizzato
 memory = MemorySaver(serde=serde)
-app = builder.compile(checkpointer=memory)#"""checkpointer=memory"""
+app = builder.compile()#checkpointer=memory)#"""checkpointer=memory"""
 
 
 print("Inviando la domanda al grafo locale...")
