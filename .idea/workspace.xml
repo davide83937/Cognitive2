@@ -4,14 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="k-rag fatto">
-      <change afterPath="$PROJECT_DIR$/Test/post_evaluator.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Test/test_models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Test/test_triage_router.py" afterDir="false" />
+    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="inizio test">
+      <change afterPath="$PROJECT_DIR$/Test/extractor_function.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Test/post_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Test/post_evaluator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,61 +44,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.0000000000000004" />
-      <entry key="S60" value="1.0000000406393668" />
-      <entry key="M2" value="1.0004705851328044" />
-      <entry key="M5" value="1.1353015445080943" />
-      <entry key="M10" value="1.9280695136733934" />
-      <entry key="M15" value="2.9082204484739513" />
-      <entry key="M30" value="6.455845313709745" />
-      <entry key="H1" value="15.61531814798992" />
-      <entry key="H2" value="35.94922838778205" />
-      <entry key="H4" value="97.10191918846708" />
-      <entry key="D1" value="499.1863369887257" />
-      <entry key="W1" value="710.6799582396858" />
+      <entry key="MS100" value="1.1054341973931776" />
+      <entry key="MS500" value="1.841993103291521" />
+      <entry key="S2" value="2.9845187301747433" />
+      <entry key="S5" value="3.8782372001968515" />
+      <entry key="S10" value="4.363320615603415" />
+      <entry key="S30" value="4.767905995540538" />
+      <entry key="S60" value="4.881251898630083" />
+      <entry key="M2" value="4.9399331387524885" />
+      <entry key="M5" value="4.976082861812676" />
+      <entry key="M10" value="5.006125427648328" />
+      <entry key="M15" value="5.08123548536952" />
+      <entry key="M30" value="5.717692426036919" />
+      <entry key="H1" value="9.009982623962765" />
+      <entry key="H2" value="21.779441816509376" />
+      <entry key="H4" value="68.96739406435363" />
+      <entry key="D1" value="470.82839672440184" />
+      <entry key="W1" value="713.4124916300786" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
-      <entry key="S2" value="1.9445196365684776E-250" />
-      <entry key="S5" value="1.5423588264804833E-100" />
-      <entry key="S10" value="1.8050831718326368E-50" />
-      <entry key="S30" value="5.871745898550643E-17" />
-      <entry key="S60" value="1.506035489516101E-8" />
-      <entry key="M2" value="2.443503836092347E-4" />
-      <entry key="M5" value="0.0824519015145336" />
-      <entry key="M10" value="0.5875276039935271" />
-      <entry key="M15" value="1.219908667674369" />
-      <entry key="M30" value="3.7662947169497865" />
-      <entry key="H1" value="10.338609995944386" />
-      <entry key="H2" value="20.657155330177666" />
-      <entry key="H4" value="35.976459103468926" />
-      <entry key="D1" value="106.58588686893451" />
-      <entry key="W1" value="142.4817289589478" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="7.388877523848544E-119" />
+      <entry key="S60" value="1.6894323790460676E-59" />
+      <entry key="M2" value="8.184003922585483E-30" />
+      <entry key="M5" value="5.323310484301699E-12" />
+      <entry key="M10" value="4.720835166071803E-6" />
+      <entry key="M15" value="4.893891736118689E-4" />
+      <entry key="M30" value="0.07543585573818033" />
+      <entry key="H1" value="1.4631670514070847" />
+      <entry key="H2" value="7.7711697435109" />
+      <entry key="H4" value="22.066139364539097" />
+      <entry key="D1" value="98.24663696926012" />
+      <entry key="W1" value="140.83305609141718" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.5509525579383053" />
-      <entry key="MS500" value="0.8876113372694978" />
-      <entry key="S2" value="0.9706344697695466" />
-      <entry key="S5" value="0.988148655514205" />
-      <entry key="S10" value="0.9940566661484671" />
-      <entry key="S30" value="0.9980149509035499" />
-      <entry key="S60" value="0.9990070372866788" />
-      <entry key="M2" value="1.0002125149951409" />
-      <entry key="M5" value="1.216811567939184" />
-      <entry key="M10" value="2.512857943137892" />
-      <entry key="M15" value="4.12438675239433" />
-      <entry key="M30" value="10.216603629460085" />
-      <entry key="H1" value="25.946675547264867" />
-      <entry key="H2" value="56.59917086222404" />
-      <entry key="H4" value="133.07191100935603" />
-      <entry key="D1" value="605.7688349072333" />
-      <entry key="W1" value="853.1610337944206" />
+      <entry key="MS100" value="0.9133870855016328" />
+      <entry key="MS500" value="1.7637406930453283" />
+      <entry key="S2" value="2.9516079558507795" />
+      <entry key="S5" value="3.860403262810385" />
+      <entry key="S10" value="4.353087932049765" />
+      <entry key="S30" value="4.764123726015479" />
+      <entry key="S60" value="4.8793083705832645" />
+      <entry key="M2" value="4.938947783409359" />
+      <entry key="M5" value="4.975685367568469" />
+      <entry key="M10" value="5.005930040189785" />
+      <entry key="M15" value="5.08158804547893" />
+      <entry key="M30" value="5.792944331162526" />
+      <entry key="H1" value="10.472081153425952" />
+      <entry key="H2" value="29.547873920427623" />
+      <entry key="H4" value="91.02955342982071" />
+      <entry key="D1" value="569.0719074578551" />
+      <entry key="W1" value="854.2449015236816" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -119,6 +117,7 @@
     "Python.Notion_Test.executor": "Run",
     "Python.Notion_Test2.executor": "Run",
     "Python.Notion_Test3.executor": "Run",
+    "Python.post_evaluator.executor": "Run",
     "Python.test_neo4j.executor": "Run",
     "Python.test_triage_router.executor": "Run",
     "RunOnceActivity.MCP Project settings loaded": "true",
@@ -495,7 +494,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781860548189</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="inizio test">
+      <option name="closed" value="true" />
+      <created>1781943232115</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1781943232115</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -511,6 +518,7 @@
     <MESSAGE value="documenti" />
     <MESSAGE value="piccoli fix" />
     <MESSAGE value="k-rag fatto" />
-    <option name="LAST_COMMIT_MESSAGE" value="k-rag fatto" />
+    <MESSAGE value="inizio test" />
+    <option name="LAST_COMMIT_MESSAGE" value="inizio test" />
   </component>
 </project>
