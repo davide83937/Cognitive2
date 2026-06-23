@@ -50,7 +50,7 @@ tavily_search_tool = TavilySearchResults(
 
 def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_date: str, related_topics: list = None):
     """
-    Salva il post, le entità, la data di pubblicazione e genera le relazioni semantiche tra Topic decise dall'AI.
+    Salva il post, le entità, la data di pubblicazione e genera le relazioni semantiche arricchite tra Topic.
     """
     if not graph:
         print("⚠️ Errore: Database Neo4j non connesso, salto il salvataggio.")
@@ -58,6 +58,16 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_d
 
     if related_topics is None:
         related_topics = []
+
+    # Conversione sicura da oggetti Pydantic a dizionari
+    formatted_relations = []
+    for rel in related_topics:
+        if hasattr(rel, "model_dump"):
+            formatted_relations.append(rel.model_dump())
+        elif hasattr(rel, "dict"):
+            formatted_relations.append(rel.dict())
+        else:
+            formatted_relations.append(rel) # Fallback se è già un dizionario
 
     query = get_save_post_to_neo4j_query()
 
@@ -68,9 +78,9 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_d
             "claims": claims,
             "sources": sources,
             "date": publish_date,
-            "related_topics": related_topics  # Passato a Cypher
+            "related_topics": formatted_relations  # Usiamo la lista convertita
         })
-        print("🧠 Knowledge Graph aggiornato con successo con relazioni AI-driven!")
+        print("🧠 Knowledge Graph aggiornato con successo con relazioni AI-driven arricchite!")
     except Exception as e:
         print(f"❌ Errore durante il salvataggio nel KG: {e}")
 
@@ -102,7 +112,7 @@ def get_covered_context_from_neo4j():
         return ["Nessun contenuto precedente nel KG"]
 
 
-def get_smart_schedule_dates(n_days: int = 0, total_posts: int = 3) -> list[str]:
+def get_smart_schedule_dates(total_posts: int = 3) -> list[str]:
     """
     Calcola una sequenza di date disponibili garantendo ESCLUSIVAMENTE
     il rispetto del palinsesto fisso (Lun, Mer, Ven, Dom).

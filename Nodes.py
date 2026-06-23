@@ -1,17 +1,16 @@
 from langgraph.graph import MessagesState
-from langgraph.types import interrupt, Command
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import ToolMessage, AIMessage, HumanMessage
 from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt, \
     get_check_schedule_context_prompt, get_kg_extraction_prompt, get_planning_prompt, \
-    get_topic_extraction_from_feedback_prompt, get_final_plan_extraction_prompt
-from RouterNodes import FinalPlan
-from Schemas import State, ArticleData, KGExtraction
-
+    get_topic_extraction_from_feedback_prompt
+from Schemas import KGExtraction, State, ArticleData,TopicSelection
 from base import get_tools_by_name
 import re
-
 from function_tool import save_to_neo4j, get_smart_schedule_dates, get_covered_context_from_neo4j
+import datetime
+from langgraph.types import interrupt, Command
+
 
 
 def call_llm(state: MessagesState):
@@ -21,6 +20,78 @@ def call_llm(state: MessagesState):
     llm = get_llm()
     risposta = llm.invoke(state["messages"])
     return {"messages": [risposta]}
+
+
+def planning_node(state: State) -> Command:
+    print("\n--- [planning_node] Generazione Piano Editoriale basato su KG ---")
+
+    last_input = state["messages"][-1].content
+
+    date_sicure = get_smart_schedule_dates(total_posts=3)
+    data_1, data_2, data_3 = date_sicure[0], date_sicure[1], date_sicure[2]
+
+    contesto_kg_lista = get_covered_context_from_neo4j()
+    contesto_kg_str = "\n".join(contesto_kg_lista)
+
+    llm = get_llm()
+    prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3, contesto_kg_str)
+
+    response = llm.invoke([{"role": "system", "content": prompt_planning}])
+    piano_generato = response.content
+
+    return Command(
+        update={
+            "editorial_plan": piano_generato,
+            "justification": piano_generato,
+        },
+        goto="ask_plan_feedback_node"
+    )
+
+
+def ask_plan_feedback_node(state: State) -> Command:
+    print("\n--- [ask_plan_feedback_node] In attesa di approvazione ---")
+    piano_generato = state.get("editorial_plan", "")
+    feedback_utente = interrupt({
+        "proposta_piano": piano_generato,
+        "schedule_result": "Il sistema ha pianificato i post. Approvi la programmazione o vuoi suggerire modifiche?"
+    })
+    return Command(
+        update={
+            "messages": [HumanMessage(content=str(feedback_utente))]
+        },
+        goto="process_plan_node"
+    )
+
+
+def process_plan_node(state: State) -> Command:
+    print("\n🧠 --- [process_plan_node] Elaborazione del feedback e accodamento ---")
+
+    user_feedback = state["messages"][-1].content
+    original_plan = state.get("editorial_plan", "")
+
+    last_input = "Argomento generico"
+    if len(state["messages"]) > 1:
+        last_input = state["messages"][-2].content
+
+    extractor = get_llm().with_structured_output(TopicSelection)
+    estrazione_prompt = get_topic_extraction_from_feedback_prompt(original_plan, user_feedback)
+    scelta = extractor.invoke([{"role": "user", "content": estrazione_prompt}])
+
+    pending = scelta.selected_topics
+    if not pending:
+        pending = [last_input]
+
+    print(f"📌 Articoli messi in coda di scrittura: {pending}")
+
+    data_oggi = datetime.date.today().strftime("%Y-%m-%d")
+
+    return Command(
+        update={
+            "data_proposta": data_oggi,
+            "pending_topics": pending
+        },
+        goto="accept_node"
+    )
 
 
 def refine_node(state: MessagesState):
@@ -39,7 +110,6 @@ def refine_node(state: MessagesState):
 
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
-
     if pending:
         elemento = pending[0]
         if isinstance(elemento, dict):
@@ -51,45 +121,27 @@ def accept_node(state: State):
     else:
         topic_da_scrivere = state.get("current_topic", "Argomento generico")
         data_assegnata = state.get("data_proposta", None)
-
-    # --- MODIFICA QUI LA LOGICA DELLA PRINT ---
-    # Controlliamo l'ultimo messaggio per capire se stiamo rientrando da un tool
     messaggi = state.get("messages", [])
     sta_tornando_da_ricerca = False
     if messaggi:
         ultimo_messaggio = messaggi[-1]
-        # Se l'ultimo messaggio è di tipo ToolMessage, stiamo ciclando in background
         if getattr(ultimo_messaggio, "type", "") == "tool":
             sta_tornando_da_ricerca = True
-
     if not sta_tornando_da_ricerca:
         print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
-    # ------------------------------------------
-
     llm = get_llm_with_tools()
     accept_prompt = get_accept_prompt(topic_da_scrivere)
-
-    # CORREZIONE 1: Filtriamo lo storico dei messaggi.
-    # Evitiamo di passare al LLM le stesure degli articoli precedenti,
-    # andando a ritroso e fermandoci appena troviamo la vecchia stesura.
     storico_pulito = []
     for msg in reversed(state.get("messages", [])):
-        # Se incontriamo la chiamata al tool di stesura del post precedente, ci fermiamo
         if hasattr(msg, "tool_calls") and any(tc.get("name") == "write_an_article" for tc in msg.tool_calls):
             break
-        # Se incontriamo il messaggio effettivo del tool, ci fermiamo
         if getattr(msg, "name", "") == "write_an_article":
             break
         storico_pulito.insert(0, msg)
-
-    # Passiamo al LLM solo il prompt di sistema e lo storico "pulito"
     messages = [{"role": "system", "content": accept_prompt}] + storico_pulito
     response = llm.invoke(messages)
-    # ---> AGGIUNGI QUESTE DUE RIGHE QUI <---
     if response.content:
         print(f"\n💭 [THOUGHT AGENTE]: {response.content}")
-    # ----------------------------------------
-
     return Command(
         update={
             "messages": [response],
@@ -103,11 +155,8 @@ def accept_node(state: State):
 def tool_node(state: State):
     result = []
     last_message = state["messages"][-1]
-
-    testo_articolo = ""
     articolo_generato = None
 
-    # Eseguiamo TUTTI i tool che l'LLM ha richiesto
     for tool_call in last_message.tool_calls:
         tool_name = tool_call["name"]
         tool_args = tool_call.get("args", {})
@@ -154,7 +203,6 @@ def tool_node(state: State):
 
 
 def ask_feedback_node(state: State):
-    # Recuperiamo l'articolo appena generato dallo stato
     articolo = state.get("final_article")
 
     if isinstance(articolo, dict):
@@ -176,13 +224,58 @@ def ask_feedback_node(state: State):
 def update_article_node(state: MessagesState):
     llm = get_llm_with_tools()
     update_prompt = get_update_prompt()
-
     messages = [{"role": "system", "content": update_prompt}] + state["messages"]
-
     response = llm.invoke(messages)
-
     return Command(update={"messages": [response]}, goto="tool_node")
 
+
+def save_draft_node(state: State):
+    final_article = state.get("final_article")
+    approved_articles = state.get("approved_articles", [])
+
+    nuova_lista = list(approved_articles)
+    nuova_lista.append(final_article)
+
+    pending = state.get("pending_topics", [])
+    nuovi_pending = pending[1:] if pending else []
+
+    return Command(
+        update={
+            "approved_articles": nuova_lista,
+            "pending_topics": nuovi_pending   # <--- Ora si passa al successivo in modo sicuro
+        },
+        goto="drafting_router"
+    )
+
+
+def ask_schedule_node(state: State) -> Command:
+    approved_articles = state.get("approved_articles", [])
+    next_article = approved_articles[0]
+
+    if isinstance(next_article, dict):
+        titolo_articolo = next_article.get("title", "Articolo")
+        data_precalcolata = next_article.get("date")
+    else:
+        titolo_articolo = next_article.title
+        data_precalcolata = getattr(next_article, "date", None)
+
+    if data_precalcolata:
+        testo_guida = f"L'articolo '{titolo_articolo}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
+    else:
+        testo_guida = f"Per quando vuoi schedulare l'articolo '{titolo_articolo}'?"
+
+    risposta_utente = interrupt({"schedule_result": testo_guida})
+
+    return Command(
+        update={
+            "data_proposta": data_precalcolata,
+            "messages": [
+                AIMessage(content=testo_guida),
+                HumanMessage(content=risposta_utente)
+            ]
+        },
+        goto="scheduling_node_router"
+    )
 
 def check_schedule_node(state: State):
     last_message = state["messages"][-1]
@@ -257,10 +350,6 @@ def ask_user_schedule_node(state: State):
 
 
 
-from Models import get_llm
-from Schemas import KGExtraction
-
-
 def decision_node(state: State) -> Command:
     print("--- [decision_node] Conferma Data e Schedulazione ---")
 
@@ -311,7 +400,7 @@ def decision_node(state: State) -> Command:
         claims=estrazione.claims,
         sources=estrazione.sources,
         publish_date=target_date,
-        related_topics=estrazione.related_topics  # <--- Nuovo parametro
+        related_topics=estrazione.related_topics
     )
 
     if approved_articles:
@@ -324,95 +413,9 @@ def decision_node(state: State) -> Command:
         print("\n✅ Tutti gli articoli richiesti sono stati scritti, schedulati e salvati nel Knowledge Graph!")
         from langgraph.constants import END
         return Command(
-            update={"approved_articles": []},  # Svuotiamo definitivamente
+            update={"approved_articles": []},
             goto=END
         )
 
-import datetime
-from langgraph.types import interrupt, Command
-from langchain_core.messages import HumanMessage
-
-from Schemas import TopicSelection
 
 
-def planning_node(state: State) -> Command:
-    print("\n--- [planning_node] Generazione Piano Editoriale basato su KG ---")
-
-    last_input = state["messages"][-1].content
-    n = state.get("n_days", 3)
-
-    date_sicure = get_smart_schedule_dates(n_days=n, total_posts=3)
-    data_1, data_2, data_3 = date_sicure[0], date_sicure[1], date_sicure[2]
-
-    contesto_kg_lista = get_covered_context_from_neo4j()
-    contesto_kg_str = "\n".join(contesto_kg_lista)
-
-    llm = get_llm()
-    prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3, contesto_kg_str)
-
-    response = llm.invoke([{"role": "system", "content": prompt_planning}])
-    piano_generato = response.content
-
-    feedback_utente = interrupt({
-        "proposta_piano": piano_generato,
-        "schedule_result": f"Il sistema ha pianificato i post con cadenza ogni {n} giorni. Approvi?"
-    })
-
-    print("🧠 Estrazione dei titoli selezionati in base al feedback...")
-    extractor = get_llm().with_structured_output(TopicSelection)
-    estrazione_prompt = get_topic_extraction_from_feedback_prompt(piano_generato, feedback_utente)
-    scelta = extractor.invoke([{"role": "user", "content": estrazione_prompt}])
-
-    pending = scelta.selected_topics
-    if not pending:  # Fallback di sicurezza se non capisce il feedback
-        pending = [last_input]
-
-        pending_dicts = [{"title": p.title, "date": p.date} for p in pending]
-    print(f"📌 Articoli messi in coda di scrittura: {pending}")
-
-    data_oggi = datetime.date.today().strftime("%Y-%m-%d")
-
-    return Command(
-        update={
-            "messages": [HumanMessage(content=str(feedback_utente))],
-            "editorial_plan": piano_generato,
-            "justification": piano_generato,
-            "data_proposta": data_oggi,
-            "pending_topics": pending  # <--- Carichiamo la coda!
-        },
-        goto="accept_node"
-    )
-
-
-def process_plan_node(state: State):
-    print("\n🧠 Elaborazione della tua selezione...")
-    user_feedback = state["messages"][-1].content
-    original_plan = state.get("editorial_plan", "")
-
-    llm = get_llm().with_structured_output(FinalPlan)
-    prompt = get_final_plan_extraction_prompt(original_plan, user_feedback)
-    risultato = llm.invoke([{"role": "user", "content": prompt}])
-
-    return Command(
-        update={"pending_posts": risultato.posts_to_write},
-        goto="drafting_router"
-    )
-
-def save_draft_node(state: State):
-    final_article = state.get("final_article")
-    approved_articles = state.get("approved_articles", [])
-
-    nuova_lista = list(approved_articles)
-    nuova_lista.append(final_article)
-
-    # RIMUOVIAMO L'ARTICOLO DALLA CODA SOLO DOPO CHE L'UTENTE HA APPROVATO
-    pending = state.get("pending_topics", [])
-    nuovi_pending = pending[1:] if pending else []
-
-    return Command(
-        update={
-            "approved_articles": nuova_lista,
-            "pending_topics": nuovi_pending   # <--- Ora si passa al successivo in modo sicuro
-        },
-        goto="drafting_router"
-    )

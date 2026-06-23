@@ -1,4 +1,5 @@
 from test_neo4j import graph
+from query_neo4j import get_post_for_evaluation_query
 
 def get_posts_for_evaluation(limit: int = 5):
     """
@@ -9,20 +10,7 @@ def get_posts_for_evaluation(limit: int = 5):
         print("⚠️ Errore: Database Neo4j non connesso.")
         return []
 
-    # Sostituisci i nomi delle label e delle relazioni (Post, Topic, Claim, Source, HAS_CLAIM, ecc.)
-    # con quelli esatti che hai usato nella tua get_save_post_to_neo4j_query()
-    query = """
-    MATCH (p:Post)-[:COVERS_TOPIC]->(t:Topic)
-    OPTIONAL MATCH (p)-[:HAS_CLAIM]->(c:Claim)
-    OPTIONAL MATCH (p)-[:USES_SOURCE]->(s:Source)
-    RETURN p.title AS title, 
-           p.date AS publish_date, 
-           t.name AS topic, 
-           collect(DISTINCT c.content) AS claims, 
-           collect(DISTINCT s.url) AS sources
-    ORDER BY p.date DESC
-    LIMIT $limit
-    """
+    query = get_post_for_evaluation_query()
 
     try:
         results = graph.query(query, params={"limit": limit})

@@ -4,9 +4,9 @@ from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START
 from Nodes import refine_node, accept_node, tool_node, update_article_node, check_schedule_node, decision_node, \
-    planning_node, process_plan_node, save_draft_node, ask_user_schedule_node, ask_feedback_node
+    planning_node, process_plan_node, save_draft_node, ask_user_schedule_node, ask_feedback_node, ask_plan_feedback_node, ask_schedule_node
 from RouterNodes import triage_router, tool_node_router, scheduling_node_router, drafting_router, \
-    scheduling_queue_router, ask_schedule_node
+    scheduling_queue_router
 from Schemas import State
 from Tools import rag_document_retriever
 
@@ -30,6 +30,7 @@ builder.add_node("check_schedule_node", check_schedule_node)
 builder.add_node("decision_node", decision_node)
 builder.add_node("planning_node", planning_node)
 builder.add_node("process_plan_node", process_plan_node)
+builder.add_node("ask_plan_feedback_node", ask_plan_feedback_node)
 builder.add_node("drafting_router", drafting_router)
 builder.add_node("save_draft_node", save_draft_node)
 builder.add_node("ask_schedule_node", ask_schedule_node) # <-- NUOVO NODO

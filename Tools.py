@@ -1,10 +1,8 @@
-from datetime import datetime, timedelta
-from langchain_core.tools import tool
-
-
-from function_tool import setup_vector_database, get_latest_scheduled_date_from_db, get_next_fixed_publish_date, \
+from datetime import datetime
+from function_tool import get_latest_scheduled_date_from_db, get_next_fixed_publish_date, \
     getRetriever, tavily_search_tool
-from query_neo4j import get_post_count_by_date_query, get_all_topics_query, get_claims_by_topic_query
+from query_neo4j import get_post_count_by_date_query, get_all_topics_query
+from langchain_core.tools import tool
 from test_neo4j import graph
 
 
@@ -48,7 +46,6 @@ def find_first_available_date_tool(data_partenza: str = None) -> str:
 
             if articoli_presenti < 3:
                 return f"La prima data disponibile in palinsesto (Lun, Mer, Ven, Dom) nel Knowledge Graph è: {data_str}"
-
             # Se il giorno è pieno, saltiamo al PROSSIMO giorno di palinsesto
             giorno_corrente = get_next_fixed_publish_date(data_str)
 
@@ -68,29 +65,23 @@ def check_specific_date_tool(data_target: str) -> str:
     """
     if not graph:
         return "Errore: Database Neo4j non connesso."
-
     # 1. Verifica che il giorno della settimana sia consentito
     giorni_pubblicazione = [0, 2, 4, 6]
     giorni_nomi = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
-
     try:
         target_date_obj = datetime.strptime(data_target, "%Y-%m-%d").date()
     except ValueError:
         return "Errore: Formato data non valido, usa YYYY-MM-DD."
-
     giorno_settimana = target_date_obj.weekday()
-
     if giorno_settimana not in giorni_pubblicazione:
         return (f"Rifiutato: La data {data_target} è un {giorni_nomi[giorno_settimana]}. "
                 f"Il blog pubblica solo di Lunedì, Mercoledì, Venerdì e Domenica. "
                 f"Prova a cercare la prima data disponibile.")
-
     # 2. Se è un giorno consentito, verifica l'occupazione in Neo4j
     query = "MATCH (p:Post {date: $date}) RETURN count(p) AS current_count"
     try:
         risultato = graph.query(query, params={"date": data_target})
         current_count = risultato[0]["current_count"] if risultato else 0
-
         if current_count < 3:
             return (f"La data {data_target} ({giorni_nomi[giorno_settimana]}) è DISPONIBILE in palinsesto. "
                     f"Attualmente ci sono {current_count} articoli pianificati.")
@@ -201,7 +192,8 @@ def verified_internet_search(query: str) -> str:
     (testate giornalistiche, siti istituzionali, portali scientifici/accademici o blog tecnici riconosciuti).
     Scarta tutto ciò che sembra un forum, un social network o un sito promozionale di bassa qualità.
 
-    Rispondi fornendo un breve riepilogo delle fonti salvate e il loro contenuto utile. E spiega brevemente quali hai scartato e perché.
+    Rispondi fornendo un breve riepilogo delle fonti salvate e il loro contenuto utile. E spiega brevemente quali hai 
+    scartato e perché.
     Se nessuna fonte è buona, scrivi "Nessuna fonte affidabile trovata".
     """
 
@@ -212,10 +204,6 @@ def verified_internet_search(query: str) -> str:
 
     return risposta_filtrata.content
 
-
-from langchain_core.tools import tool
-
-from test_neo4j import graph
 
 
 @tool
@@ -276,3 +264,49 @@ def intelligent_topic_matcher(new_topic: str) -> str:
         return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
     else:
         return f"Trovata corrispondenza semantica! Nel database l'argomento è salvato ESATTAMENTE con il nome: '{risposta_llm}'. Usa questo nome per interrogare i claims."
+
+
+@tool
+def get_enhanced_topic_context(topic_name: str) -> str:
+    """
+    Usa questo tool durante la stesura dell'articolo per recuperare il contesto profondo
+    dal Knowledge Graph: estrae i claim storici sul topic e la mappa di relazioni
+    con altri argomenti (es. prerequisiti, sotto-categorie) con le relative motivazioni.
+    """
+    if not graph:
+        return "Errore: Database Neo4j non connesso."
+
+    from query_neo4j import get_enhanced_topic_context_query
+    query = get_enhanced_topic_context_query()
+
+    print(f"\n🧠 [DEBUG KG] Estrazione contesto arricchito per il topic: '{topic_name}'")
+
+    try:
+        risultati = graph.query(query, params={"topic": topic_name})
+        if not risultati or not risultati[0].get("topic_name"):
+            return f"Nessuna informazione storica o relazione trovata nel KG per il topic '{topic_name}'."
+
+        record = risultati[0]
+        claims = record.get("direct_claims", [])
+        relations = record.get("relations", [])
+
+        output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
+
+        # Formattazione dei Claim storici
+        if claims:
+            output += "\n📌 Concetti e claim già trattati in passato:\n- " + "\n- ".join(claims) + "\n"
+        else:
+            output += "\n📌 Nessun claim registrato in precedenza su questo specifico topic.\n"
+
+        # Formattazione della struttura del Grafo
+        valid_relations = [r for r in relations if r.get('target')]
+        if valid_relations:
+            output += "\n🔗 Mappa delle Relazioni Semantiche nel Blog:\n"
+            for rel in valid_relations:
+                output += f"- Connesso a '{rel['target']}' | Tipo: [{rel['type']}] | Motivo: {rel['reason']}\n"
+        else:
+            output += "\n🔗 Nessuna connessione strutturale con altri macro-topic nel grafo.\n"
+
+        return output
+    except Exception as e:
+        return f"Errore durante l'interrogazione avanzata del KG: {e}"

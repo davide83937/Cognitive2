@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 import os
-from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, intelligent_topic_matcher
+from Tools import intelligent_topic_matcher, get_enhanced_topic_context
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
@@ -37,12 +37,9 @@ def get_llm_with_calendar_tools():
     llm = llm.bind_tools([find_first_available_date_tool, check_specific_date_tool])
     return llm
 
-# In Models.py
-from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, get_previous_topics, get_topic_claims, rag_document_retriever, verified_internet_search
-from function_tool import tavily_search_tool
 
+from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, get_previous_topics,  rag_document_retriever, verified_internet_search
 
-# ... [resto invariato] ...
 
 def get_llm_with_tools():
     llm = get_llm()
@@ -50,7 +47,7 @@ def get_llm_with_tools():
     llm = llm.bind_tools([
         write_an_article,
         get_previous_topics,
-        get_topic_claims,
+        get_enhanced_topic_context,
         verified_internet_search,
         rag_document_retriever,
         intelligent_topic_matcher

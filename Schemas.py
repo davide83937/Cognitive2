@@ -1,6 +1,5 @@
-from langgraph.graph import add_messages, MessagesState
+from langgraph.graph import MessagesState
 from pydantic import BaseModel, Field
-from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from typing import Literal, Optional, List
 
 
@@ -12,12 +11,11 @@ class ArticleData(BaseModel):
 
 class State(MessagesState):
     classification_decision: Literal["accept", "refine", "reject"]
-    final_article: Optional[ArticleData] = None  # <--- Il nostro nuovo oggetto
-    data_proposta: Optional[str] = None  # <-- Aggiungi questa riga
-    # --- NUOVI CAMPI PER LA PIANIFICAZIONE ---
-    n_days: int = 3  # Valore di default per 'n' giorni di intervallo
-    editorial_plan: Optional[list[dict]] = None  # Conterrà la sequenza di post pianificati
-    justification: Optional[str] = None  # La giustificazione editoriale dell'agente
+    final_article: Optional[ArticleData] = None
+    data_proposta: Optional[str] = None
+
+    editorial_plan: Optional[list[dict]] = None
+    justification: Optional[str] = None
     current_topic: Optional[str] = None
     pending_topics: list[str] = Field(default_factory=list)
     approved_articles: list[ArticleData] = Field(default_factory=list)
@@ -67,13 +65,21 @@ class RouterSchemaScheduling(BaseModel):
         description="La data YYYY-MM-DD se l'utente ne ha menzionata una, altrimenti None."
     )
 
+# --- NUOVO SCHEMA PER LE RELAZIONI ---
+class TopicRelationship(BaseModel):
+    target_topic: str = Field(description="Il nome ESATTO del topic esistente a cui ci stiamo collegando")
+    relationship_type: Literal["PREREQUISITO", "SOTTO_CATEGORIA", "ESTENSIONE", "CONTRASTO", "APPLICAZIONE", "SIMILARE"] = Field(
+        description="Il tipo specifico di relazione semantica"
+    )
+    reason: str = Field(description="Breve e logica spiegazione del perché questi due topic sono collegati")
+
 class KGExtraction(BaseModel):
     topic: str = Field(description="Il topic principale di questo specifico articolo")
     claims: List[str] = Field(description="Massimo 3 affermazioni chiave dell'articolo")
     sources: List[str] = Field(description="Fonti citate")
-    related_topics: List[str] = Field(
+    related_topics: List[TopicRelationship] = Field( # <-- AGGIORNATO QUI
         default=[],
-        description="Lista di topic esistenti (tra quelli forniti nel contesto) che sono semanticamente correlati a questo articolo"
+        description="Lista di relazioni dettagliate con i topic esistenti. Aggiungi una relazione SOLO se c'è un nesso logico forte e verificabile."
     )
 
 class PlannedArticle(BaseModel):
@@ -82,3 +88,14 @@ class PlannedArticle(BaseModel):
 
 class TopicSelection(BaseModel):
     selected_topics: list[PlannedArticle] = Field(description="Lista degli articoli approvati dall'utente, ognuno con la sua data")
+
+
+# --- NUOVO SCHEMA PER LE RELAZIONI ---
+class TopicRelationship(BaseModel):
+    target_topic: str = Field(description="Il nome ESATTO del topic esistente a cui ci stiamo collegando")
+    relationship_type: Literal["PREREQUISITO", "SOTTO_CATEGORIA", "ESTENSIONE", "CONTRASTO", "APPLICAZIONE", "SIMILARE"] = Field(
+        description="Il tipo specifico di relazione semantica"
+    )
+    reason: str = Field(description="Breve e logica spiegazione del perché questi due topic sono collegati")
+
+# ... (Lascia intatti gli altri schemi) ...

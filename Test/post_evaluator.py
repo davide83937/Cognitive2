@@ -12,25 +12,28 @@ from Main import app
 # 1. DEFINIZIONE DEL DATASET
 # ==========================================
 dataset_topics = [
-    # Robotica e Software (Originali e varianti)
-    {"topic": "Le ultime novità sui bracci robotici open-source nel 2026"},
-    {"topic": "Come integrare ROS2 Humble con un database a grafo Neo4j"},
-    {"topic": "Implementazione di algoritmi di Reinforcement Learning per la navigazione autonoma dei droni"},
+    # --- GRUPPO 1: Catena Logica (Testano PREREQUISITO, ESTENSIONE, APPLICAZIONE) ---
+    # L'agente DEVE creare relazioni forti tra questi tre.
+    {"topic": "Introduzione ai concetti base di ROS2 e architettura a nodi per la robotica"},
+    {"topic": "Integrazione del framework micro-ROS su microcontrollori della famiglia STM32"},
+    {"topic": "Controllo cinematico avanzato di bracci robotici utilizzando MoveIt 2"},
 
-    # Intelligenza Artificiale
-    {"topic": "Il ruolo dell'Intelligenza Artificiale Generativa nella scoperta di nuovi farmaci (Drug Discovery)"},
-    {"topic": "Tecniche di mitigazione delle allucinazioni nei Large Language Models per applicazioni mediche"},
-
-    # Fisica e Nuove Tecnologie
-    {"topic": "Recenti avanzamenti tecnologici nella fusione nucleare a confinamento magnetico"},
+    # --- GRUPPO 2: Isolati ma Validi (Testano la creazione di nodi orfani nel KG) ---
+    # Argomenti tech validi ('accept') ma senza agganci diretti con la robotica.
+    {"topic": "Applicazioni industriali dei nanomateriali in grafene per le batterie a stato solido"},
     {"topic": "L'impatto dei futuri computer quantistici sulla sicurezza della crittografia asimmetrica"},
 
-    # Ingegneria dei Materiali / Hardware
-    {"topic": "Applicazioni industriali dei nanomateriali in grafene per le batterie a stato solido"},
-    {"topic": "Sviluppo e sfide delle interfacce cervello-computer (BCI) non invasive nel 2026"},
+    # --- GRUPPO 3: Troppo Generici (Testano ESPLICITAMENTE il nodo 'refine') ---
+    # Il triage deve bloccarli perché mancano di specificità.
+    {"topic": "I droni"},
+    {"topic": "L'elettricità e il magnetismo"},
+    {"topic": "L'intelligenza artificiale nel futuro"},
 
-    # Spazio ed Esplorazione
-    {"topic": "Le tecnologie alla base dei nuovi rover autonomi per l'esplorazione della superficie marziana"}
+    # --- GRUPPO 4: Scientifici ma Fuori Focus (Test limite per il router) ---
+    # È scienza (biologia/astronomia pura), vediamo se l'agente li accetta come nodi isolati
+    # o se decide di scartarli ('reject') perché troppo lontani dalla vocazione del blog.
+    {"topic": "Il ciclo di Krebs, la glicolisi e la respirazione cellulare"},
+    {"topic": "Dinamiche di formazione dei buchi neri supermassicci al centro delle galassie attive"}
 ]
 
 

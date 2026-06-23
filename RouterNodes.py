@@ -1,11 +1,8 @@
 from typing import Literal
-
 from langchain_core.messages import HumanMessage, AIMessage
-from langgraph.constants import END, START
+from langgraph.constants import END
 from langgraph.types import Command, interrupt
-
 from pydantic import BaseModel, Field
-
 from Models import get_llm
 from Prompt import triage_system_prompt, tool_node_prompt, scheduling_node_prompt, get_scheduling_router_system_prompt
 from Schemas import State, RouterSchema, RouterSchemaToolNode, RouterSchemaScheduling
@@ -20,7 +17,6 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
 
     user_prompt = topic_input
 
-    # Run the router LLM
     llm = get_llm()
     llm = llm.with_structured_output(RouterSchema)
     result = llm.invoke(
@@ -33,14 +29,12 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
 
     if classification == "accept":
         print("📧 Classification: ACCEPT")
-        #goto = "accept_node"
         goto = "planning_node"
 
     elif result.classification == "reject":
         print("🚫 Classification: REJECT")
         goto = END
     elif result.classification == "refine":
-        # If real life, this would do something else
         print("🔔 Classification: REFINE")
         goto = "refine_node"
     else:
@@ -68,10 +62,9 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
 
     if classification == "approve":
         print("📧 Classification: ACCEPT - User has approved the draft")
-        return Command(goto="save_draft_node")  # <--- MODIFICA QUI
+        return Command(goto="save_draft_node")
 
     elif result.classification == "refine":
-        # If real life, this would do something else
         print("🔔 Classification: REFINE")
         print("User has asked some edits")
         goto = "update_article_node"
@@ -79,11 +72,34 @@ def tool_node_router(state: State) -> Command[Literal["__end__"]]:
     else:
         raise ValueError(f"Invalid classification: {result.classification}")
 
+def drafting_router(state: State) -> Command:
+    pending_topics = state.get("pending_topics", [])
+
+    if not pending_topics:
+        print("\n✅ Tutti gli articoli scelti sono stati scritti e approvati! Passiamo alla schedulazione.")
+        return Command(goto="scheduling_queue_router")
+
+    print(f"\n⏳ Ci sono ancora {len(pending_topics)} articoli in coda. Riprendo la stesura...")
+
+    return Command(goto="accept_node")
+
+
+def scheduling_queue_router(state: State) -> Command:
+    approved_articles = state.get("approved_articles", [])
+
+    if not approved_articles:
+        print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
+        from langgraph.constants import END
+        return Command(goto=END)
+
+    print(f"\n📅 Passiamo alla schedulazione del prossimo articolo in coda...")
+
+    return Command(goto="ask_schedule_node")
+
 
 def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
     feedback_input = state["messages"][-1].content
 
-    # Arricchiamo il prompt per FORZARE l'estrazione della data dell'utente
     system_prompt = get_scheduling_router_system_prompt(scheduling_node_prompt, feedback_input)
 
 #    user_prompt = feedback_input
@@ -104,72 +120,13 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
         print("You are talking about the schedule")
         goto = "check_schedule_node"
 
-    # Se l'LLM ha estratto la tua data (es. 2026-06-23), la sovrascrive annullando l'errore del tool
     if result.data_proposta and result.data_proposta != "NESSUNA":
         print(f"🎯 Trasferisco la nuova data confermata dall'utente allo stato: {result.data_proposta}")
         return Command(update={"data_proposta": result.data_proposta}, goto=goto)
 
     return Command(goto=goto)
 
-def drafting_router(state: State) -> Command:
-    # 1. Usiamo la variabile corretta 'pending_topics'
-    pending_topics = state.get("pending_topics", [])
-
-    if not pending_topics:
-        print("\n✅ Tutti gli articoli scelti sono stati scritti e approvati! Passiamo alla schedulazione.")
-        return Command(goto="scheduling_queue_router")
-
-    print(f"\n⏳ Ci sono ancora {len(pending_topics)} articoli in coda. Riprendo la stesura...")
-
-    # 2. Non facciamo alcun '.pop()' qui perché accept_node lo fa già all'inizio del suo ciclo
-    return Command(goto="accept_node")
 
 
-def scheduling_queue_router(state: State) -> Command:
-    approved_articles = state.get("approved_articles", [])
 
-    if not approved_articles:
-        print("\n🏁 Tutte le schedulazioni completate! Il lavoro è finito.")
-        from langgraph.constants import END
-        return Command(goto=END)
-
-    print(f"\n📅 Passiamo alla schedulazione del prossimo articolo in coda...")
-
-    # Invece di interrompere qui, rimandiamo al nuovo nodo dedicato
-    return Command(goto="ask_schedule_node")
-
-
-def ask_schedule_node(state: State) -> Command:
-    approved_articles = state.get("approved_articles", [])
-
-    # GUARDAMO il primo elemento SENZA rimuoverlo dalla coda
-    next_article = approved_articles[0]
-
-    # Gestione sicura Oggetto/Dizionario
-    if isinstance(next_article, dict):
-        titolo_articolo = next_article.get("title", "Articolo")
-        data_precalcolata = next_article.get("date")
-    else:
-        titolo_articolo = next_article.title
-        data_precalcolata = getattr(next_article, "date", None)
-
-    if data_precalcolata:
-        testo_guida = f"L'articolo '{titolo_articolo}' è attualmente pianificato per il {data_precalcolata}. Confermi questa data o preferisci verificarne altre?"
-    else:
-        testo_guida = f"Per quando vuoi schedulare l'articolo '{titolo_articolo}'?"
-
-    # Mettiamo in pausa il grafo nel nodo corretto
-    risposta_utente = interrupt({"schedule_result": testo_guida})
-
-    return Command(
-        update={
-            # NON AGGIORNIAMO LA CODA QUI. Passiamo solo i messaggi e la data
-            "data_proposta": data_precalcolata,
-            "messages": [
-                AIMessage(content=testo_guida),
-                HumanMessage(content=risposta_utente)
-            ]
-        },
-        goto="scheduling_node_router"
-    )
 

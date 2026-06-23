@@ -52,15 +52,16 @@ def get_save_post_to_neo4j_query() -> str:
     MERGE (s:Source {name: source_name})
     MERGE (p)-[:USES]->(s)
 
-    // 5. DINAMICITÀ AI: Generazione relazioni tra topic
+    // 5. DINAMICITÀ AI: Generazione relazioni arricchite tra topic
     WITH t
-    UNWIND $related_topics AS rel_topic_name
-    // Cerchiamo nel grafo il topic correlato segnalato dall'LLM
-    MATCH (old_t:Topic {name: toLower(rel_topic_name)})
-    // Evitiamo che un nodo si colleghi a se stesso
+    UNWIND $related_topics AS rel
+    // rel ora è un dizionario con target_topic, relationship_type, reason
+    MATCH (old_t:Topic {name: toLower(rel.target_topic)})
     WHERE old_t <> t
-    // Creiamo una relazione bidirezionale o direzionale di correlazione semantica
-    MERGE (t)-[:RELATED_TO]->(old_t)
+    // Creiamo la relazione e iniettiamo le proprietà
+    MERGE (t)-[r:RELATED_TO]->(old_t)
+    ON CREATE SET r.type = rel.relationship_type, r.reason = rel.reason
+    ON MATCH SET r.type = rel.relationship_type, r.reason = rel.reason
     """
 
 def get_covered_context_query() -> str:
@@ -78,4 +79,47 @@ def get_future_post_counts_query() -> str:
     MATCH (p:Post)
     WHERE p.date >= $oggi
     RETURN p.date AS post_date, count(p) AS count
+    """
+
+
+def get_post_for_evaluation_query() -> str:
+    """
+        Estrae i post recenti dal Knowledge Graph completi di topic, claims e fonti
+        per passarli al nodo o allo script di valutazione.
+    """
+
+    query = """
+        MATCH (p:Post)-[:COVERS_TOPIC]->(t:Topic)
+        OPTIONAL MATCH (p)-[:HAS_CLAIM]->(c:Claim)
+        OPTIONAL MATCH (p)-[:USES_SOURCE]->(s:Source)
+        RETURN p.title AS title, 
+               p.date AS publish_date, 
+               t.name AS topic, 
+               collect(DISTINCT c.content) AS claims, 
+               collect(DISTINCT s.url) AS sources
+        ORDER BY p.date DESC
+        LIMIT $limit
+        """
+    return query
+
+
+def get_enhanced_topic_context_query() -> str:
+    """
+    Recupera i claim diretti di un topic e tutte le sue relazioni arricchite
+    con gli altri topic (tipologia di arco e motivazione semantica).
+    """
+    return """
+    MATCH (t:Topic)
+    WHERE toLower(t.name) = toLower($topic)
+
+    // 1. Recupera i claim storici associati a questo topic
+    OPTIONAL MATCH (c:Claim)-[:RELATED_TO]->(t)
+
+    // 2. Recupera i topic correlati e i metadati dell'arco indotti dall'AI
+    OPTIONAL MATCH (t)-[r:RELATED_TO]->(other:Topic)
+
+    RETURN 
+        t.name AS topic_name,
+        collect(distinct c.text) AS direct_claims,
+        collect(distinct {target: other.name, type: r.type, reason: r.reason}) AS relations
     """

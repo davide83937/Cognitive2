@@ -39,35 +39,35 @@ def get_accept_prompt(topic: str) -> str:
     OBBLIGO DI RAGIONAMENTO K-RAG (Knowledge-augmented RAG):
     Prima di scrivere l'articolo, DEVI seguire rigorosamente questi step usando i tool a tua disposizione.
 
-    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente. Scrivi sempre un "Thought:" prima di usare un tool per esplicitare il tuo ragionamento.
+    REGOLA FONDAMENTALE: DEVI ESEGUIRE UN SOLO STEP ALLA VOLTA. Non chiamare un tool finché non hai letto e analizzato i risultati del tool precedente. Scrivi sempre un "Thought:" prima di usare un tool per esplicitare il tuo razonamento.
 
     1. MATCHING SEMANTICO (Knowledge Graph): 
     Usa il tool 'intelligent_topic_matcher' passandogli il tema '{topic}'. Questo tool ti dirà se l'argomento è già nel database e qual è il suo NOME ESATTO.
     [Aspetta la risposta prima di procedere]
 
-    2. ESTRAZIONE CLAIMS (Knowledge Graph): 
-    - Se il matcher ha trovato una corrispondenza, usa il tool 'get_topic_claims' passandogli il NOME ESATTO che il matcher ti ha suggerito.
-    - Se il matcher ha detto che è un argomento nuovo, salta questo step e procedi direttamente al punto 3.
+    2. ESTRAZIONE CONTESTO E GRAFO (Knowledge Graph Avanzato): 
+    - Se il matcher ha trovato una corrispondenza, usa il tool 'get_enhanced_topic_context' passandogli il NOME ESATTO.
+    - Analizza accuratamente i vecchi claim per non ripeterti e studia la mappa delle relazioni. Se il topic corrente è ad esempio un'['ESTENSIONE'] o un'['APPLICAZIONE'] di un vecchio argomento, memorizza la motivazione (reason) fornita dal grafo: ti servirà per legare la narrazione.
+    - Se il matcher ha detto che è un argomento nuovo, salta questo step.
     [Aspetta la risposta prima di procedere]
 
     3. RETRIEVAL (Documenti Locali): 
-    Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con eventuali informazioni trovate nei claims (se presenti). Usa questa query espansa con il tool 'rag_document_retriever' per trovare fonti nei manuali locali in PDF.
-    ⚠️ FASE DI VALUTAZIONE RAG (OBBLIGATORIA): Appena ottieni la risposta dal tool, devi scrivere un "Thought:" esplicito sull'esito. 
-    - Se hai trovato documenti, scrivi "Thought: Ho estratto documenti utili dal RAG locale."
-    - Se il tool non ha trovato nulla, scrivi ESPLICITAMENTE "Thought: Non ho trovato documenti locali pertinenti tramite il RAG per questo argomento."
+    Crea una query di ricerca che unisca il tuo topic iniziale '{topic}' con gli spunti emersi dal Knowledge Graph. Usa questa query con il tool 'rag_document_retriever' per trovare i fondamenti scientifici nei PDF.
+    ⚠️ FASE DI VALUTAZIONE RAG (OBBLIGATORIA): Appena ottieni la risposta, scrivi un "Thought:" sull'esito della ricerca locale.
     [Aspetta la risposta prima di procedere]
 
     4. SEARCH E VERIFICA (Internet) - FASE DECISIONALE: 
-    Valuta criticamente se il materiale raccolto finora (da KG e RAG) è sufficiente per scrivere un articolo completo. 
-    - Se NON è sufficiente (ad esempio perché il KG e il RAG erano vuoti), usa 'tavily_search_results_json' per cercare notizie aggiornate. Quando ottieni i risultati, scrivi un "Thought:" in cui valuti l'attendibilità dei link (scarta forum o siti dubbi e tieni solo fonti autorevoli).
-    - Se È sufficiente, scrivi ESPLICITAMENTE questo pensiero: "Thought: Il materiale locale recuperato tramite RAG e KG è sufficiente e di alta qualità. Decido di saltare la ricerca su Internet." e passa direttamente al punto 5.
+    Valuta criticamente se il materiale raccolto finora (da KG avanzato e RAG) è sufficiente per scrivere un articolo completo.
+    - Se NON è sufficiente, usa 'verified_internet_search'.
+    - Se È sufficiente, scrivi ESPLICITAMENTE: "Thought: Il materiale locale recuperato tramite RAG e KG avanzato è sufficiente e di alta qualità. Decido di saltare la ricerca su Internet." e passa allo step 5.
     [Aspetta la risposta prima di procedere]
 
     5. DRAFTING: 
-    Solo dopo aver completato le ricerche (o aver giustificato il salto dello step 4), usa 'write_an_article' per generare il testo. 
+    Usa 'write_an_article' per generare il testo finale.
 
-    REGOLE DI STESURA: 
-    Devi esplicitamente citare le fonti nel testo (es. [Fonte: Documento RAG] o [Fonte: Sito Web Autorevole]) e garantire che l'articolo non ripeta nozioni già coperte nei claims storici.
+    REGOLE DI STESURA RESTRITTIVE: 
+    - Cita esplicitamente le fonti (es. [Fonte: Documento RAG] o [Fonte: Sito Web Autorevole]).
+    - FLUIDITÀ NARRATIVA DEL GRAFO: Se nello step 2 hai rilevato relazioni con altri topic, non limitarti a ignorarle. Inserisci nel testo un richiamo esplicito (es. "Come abbiamo visto trattando l'argomento X, di cui questo sistema rappresenta un'applicazione diretta..."). Questo sfrutta la vera potenza del Knowledge Graph, connettendo gli articoli in un vero ecosistema editoriale.
     """
 
 
@@ -141,7 +141,12 @@ def get_kg_extraction_prompt(titolo: str, testo: str, existing_topics: list) -> 
         f"{topics_str}\n\n"
         f"Istruzioni speciali per i Topic:\n"
         f"- Scegli un 'topic' principale chiaro per questo articolo.\n"
-        f"- Analizza la lista dei TOPIC GIÀ PRESENTI: se noti connessioni logiche, concettuali o di dipendenza tra l'articolo attuale e i vecchi topic, inserisci i nomi dei vecchi topic nella lista 'related_topics'. L'intelligenza artificiale deve mappare le correlazioni semantiche."
+        f"- Analizza attentamente la lista dei TOPIC GIÀ PRESENTI.\n"
+        f"- ATTENZIONE AI FALSI POSITIVI: Crea una relazione con i topic esistenti SOLO se c'è una connessione logica o semantica forte.\n"
+        f"- Per ogni relazione che decidi di creare, devi generare un oggetto con:\n"
+        f"  1. 'target_topic': Il nome del vecchio topic.\n"
+        f"  2. 'relationship_type': Classifica la relazione (scegli tra le opzioni consentite nello schema).\n"
+        f"  3. 'reason': Scrivi una breve giustificazione (1 frase) del motivo per cui sono collegati."
     )
 
 def get_planning_prompt(user_input: str, data_1: str, data_2: str, data_3: str, contesto_kg: str) -> str:
