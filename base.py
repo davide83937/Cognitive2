@@ -1,7 +1,8 @@
 from typing import Optional, List, Dict
 from langchain_core.tools import BaseTool
 from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, \
-    get_previous_topics, get_topic_claims, rag_document_retriever, verified_internet_search, intelligent_topic_matcher
+    get_previous_topics, get_topic_claims, rag_document_retriever, verified_internet_search, intelligent_topic_matcher, \
+    get_enhanced_topic_context
 from function_tool import tavily_search_tool
 
 
@@ -12,11 +13,12 @@ def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = Fals
         "find_first_available_date_tool": find_first_available_date_tool,
         "check_specific_date_tool": check_specific_date_tool,
         "get_previous_topics": get_previous_topics,
-        "get_topic_claims": get_topic_claims,
+        #"get_topic_claims": get_topic_claims,
         #"tavily_search_results_json": tavily_search_tool, # ATTENZIONE: Il nome interno che LangChain assegna a questo tool è questo!
         "rag_document_retriever": rag_document_retriever,
         "verified_internet_search": verified_internet_search,
-        intelligent_topic_matcher: intelligent_topic_matcher
+        "intelligent_topic_matcher": intelligent_topic_matcher,
+        "get_enhanced_topic_context": get_enhanced_topic_context
     }
     if tool_names is None:
         return list(all_tools.values())
@@ -28,10 +30,11 @@ get_tools_by_name = {
     "find_first_available_date_tool": find_first_available_date_tool,
     "check_specific_date_tool": check_specific_date_tool,
 "get_previous_topics": get_previous_topics,
-        "get_topic_claims": get_topic_claims,
+        #"get_topic_claims": get_topic_claims,
        # "tavily_search_results_json": tavily_search_tool,
         "rag_document_retriever": rag_document_retriever,
 "verified_internet_search": verified_internet_search,
-    "intelligent_topic_matcher": intelligent_topic_matcher
+    "intelligent_topic_matcher": intelligent_topic_matcher,
+"get_enhanced_topic_context": get_enhanced_topic_context
 
 }

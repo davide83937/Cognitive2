@@ -12,28 +12,22 @@ from Main import app
 # 1. DEFINIZIONE DEL DATASET
 # ==========================================
 dataset_topics = [
-    # --- GRUPPO 1: Catena Logica (Testano PREREQUISITO, ESTENSIONE, APPLICAZIONE) ---
-    # L'agente DEVE creare relazioni forti tra questi tre.
-    {"topic": "Introduzione ai concetti base di ROS2 e architettura a nodi per la robotica"},
-    {"topic": "Integrazione del framework micro-ROS su microcontrollori della famiglia STM32"},
-    {"topic": "Controllo cinematico avanzato di bracci robotici utilizzando MoveIt 2"},
+    # --- CATENA 1: ROBOTICA E ROS2 ---
+    # L'IA dovrebbe collegarli usando PREREQUISITO, ESTENSIONE o APPLICAZIONE
+    {"topic": "Architettura a nodi e meccanismi di comunicazione publish-subscribe nel framework ROS2"},
+    {"topic": "Integrazione del middleware micro-ROS su schede STM32 per il controllo hardware real-time"},
+    {"topic": "Implementazione di algoritmi di path planning per bracci robotici utilizzando MoveIt 2 e ROS2"},
 
-    # --- GRUPPO 2: Isolati ma Validi (Testano la creazione di nodi orfani nel KG) ---
-    # Argomenti tech validi ('accept') ma senza agganci diretti con la robotica.
-    {"topic": "Applicazioni industriali dei nanomateriali in grafene per le batterie a stato solido"},
-    {"topic": "L'impatto dei futuri computer quantistici sulla sicurezza della crittografia asimmetrica"},
+    # --- CATENA 2: INTELLIGENZA ARTIFICIALE E DATI ---
+    # L'IA dovrebbe collegarli usando SOTTO_CATEGORIA, CONTRASTO o SIMILARE
+    {"topic": "Addestramento di Large Language Models tramite Reinforcement Learning from Human Feedback (RLHF)"},
+    {"topic": "Confronto architetturale tra Retrieval-Augmented Generation (RAG) e Fine-tuning per modelli linguistici"},
+    {"topic": "Ottimizzazione dei database vettoriali come ChromaDB per query semantiche ad alta dimensionalità"},
 
-    # --- GRUPPO 3: Troppo Generici (Testano ESPLICITAMENTE il nodo 'refine') ---
-    # Il triage deve bloccarli perché mancano di specificità.
-    {"topic": "I droni"},
-    {"topic": "L'elettricità e il magnetismo"},
-    {"topic": "L'intelligenza artificiale nel futuro"},
-
-    # --- GRUPPO 4: Scientifici ma Fuori Focus (Test limite per il router) ---
-    # È scienza (biologia/astronomia pura), vediamo se l'agente li accetta come nodi isolati
-    # o se decide di scartarli ('reject') perché troppo lontani dalla vocazione del blog.
-    {"topic": "Il ciclo di Krebs, la glicolisi e la respirazione cellulare"},
-    {"topic": "Dinamiche di formazione dei buchi neri supermassicci al centro delle galassie attive"}
+    # --- CATENA 3: HARDWARE E MATERIALI ---
+    # Argomenti iper-specifici per forzare la creazione di un nuovo cluster isolato nel grafo
+    {"topic": "Sviluppo di batterie a stato solido con elettroliti ceramici per veicoli elettrici ad alta autonomia"},
+    {"topic": "Utilizzo di nanomateriali in grafene per migliorare la dissipazione termica nei microprocessori ad alte prestazioni"}
 ]
 
 
@@ -158,7 +152,7 @@ def automated_agent_run(inputs: dict) -> dict:
 if __name__ == "__main__":
     print("🌐 Inizializzazione del client LangSmith...")
     client = Client()
-    dataset_name = "CCAI-Blog-Topics-v4"  # Modificato in v3 per un test pulito
+    dataset_name = "CCAI-Blog-Topics-v6"  # Modificato in v3 per un test pulito
 
     try:
         client.read_dataset(dataset_name=dataset_name)
