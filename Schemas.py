@@ -13,8 +13,9 @@ class State(MessagesState):
     classification_decision: Literal["accept", "refine", "reject"]
     final_article: Optional[ArticleData] = None
     data_proposta: Optional[str] = None
-
+    search_count: int
     editorial_plan: Optional[list[dict]] = None
+    kg_summaries: str
     justification: Optional[str] = None
     current_topic: Optional[str] = None
     pending_topics: list[str] = Field(default_factory=list)

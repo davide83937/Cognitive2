@@ -188,9 +188,18 @@ def verified_internet_search(query: str) -> str:
     {risultati_grezzi}
 
     Il tuo compito è analizzare l'URL e il contenuto di ciascun risultato. 
-    Seleziona e restituisci SOLO i risultati che provengono da fonti attendibili 
-    (testate giornalistiche, siti istituzionali, portali scientifici/accademici o blog tecnici riconosciuti).
-    Scarta tutto ciò che sembra un forum, un social network o un sito promozionale di bassa qualità.
+    Seleziona e restituisci SOLO i risultati che provengono da fonti affidabili.
+    
+    CRITERI DI AFFIDABILITA' (Devono rispettare almeno uno):
+    1. Provenienza da domini accademici o governativi (.edu, .gov).
+    2. Pubblicazioni su portali scientifici riconosciuti (es. arxiv.org, ieee.org, nature.com).
+    3. Articoli che presentano chiaramente l'autore, la sua affiliazione e citano studi o dataset esterni linkabili.
+    
+    CRITERI DI INAFFIDABILITA' (Scarta la fonte se presenta uno di questi):
+    1. È un forum, un sito di Q&A (Reddit, Quora) o un'enciclopedia libera (Wikipedia).
+    2. Usa un linguaggio sensazionalistico o titoli clickbait.
+    3. È un blog personale senza credenziali o un sito con evidente intento promozionale/commerciale.
+    4. Fa affermazioni tecniche o scientifiche senza citare uno studio o una fonte primaria.
 
     Rispondi fornendo un breve riepilogo delle fonti salvate e il loro contenuto utile. E spiega brevemente quali hai 
     scartato e perché.

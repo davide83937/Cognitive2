@@ -157,12 +157,47 @@ def tool_node(state: State):
     last_message = state["messages"][-1]
     articolo_generato = None
 
+    # 1. Recupera il contatore dallo stato (default a 0)
+    current_search_count = state.get("search_count", 0)
+    state_updates = {}
+
     for tool_call in last_message.tool_calls:
         tool_name = tool_call["name"]
         tool_args = tool_call.get("args", {})
 
+        # ---> INIZIO GUARDRAIL LIMITE RICERCHE <---
+        if tool_name == "verified_internet_search":
+            current_search_count += 1
+
+            if current_search_count > 2:  # Limite massimo di 2 ricerche
+                msg_limite = "SYSTEM WARNING: Limite di 2 ricerche web raggiunto per questo post. Usa le informazioni già raccolte (fonti locali e web) per scrivere la bozza ORA con 'write_an_article', senza altre ricerche."
+                print(f"🛑 [GUARDRAIL] {msg_limite}")
+
+                # Restituiamo l'avviso come finta "Observation"
+                result.append(ToolMessage(
+                    content=msg_limite,
+                    tool_call_id=tool_call["id"],
+                    name=tool_name
+                ))
+                continue  # Salta l'esecuzione reale del tool e passa al prossimo (se c'è)
+        # ---> FINE GUARDRAIL <---
+
+        # Esecuzione normale degli altri tool o della ricerca se entro i limiti
         tool = get_tools_by_name[tool_name]
         observation = tool.invoke(tool_args)
+
+        tool_message = ToolMessage(
+            content=str(observation),
+            tool_call_id=tool_call["id"],
+            name=tool_name
+        )
+        result.append(tool_message)
+
+        # ---> INIZIO ESTRAZIONE KG SUMMARIES <---
+        # Se il tool usato è quello del Knowledge Graph, salviamo il summary esplicitamente nello stato
+        if tool_name in ["get_enhanced_topic_context"]:
+            state_updates["kg_summaries"] = str(observation)
+        # ---> FINE ESTRAZIONE KG SUMMARIES <---
 
         tool_message = ToolMessage(
             content=str(observation),
@@ -185,11 +220,13 @@ def tool_node(state: State):
                 date=state.get("data_proposta")
             )
 
+    state_updates["messages"] = result
     if articolo_generato is not None:
         return Command(
             update={
                 "messages": result,
-                "final_article": articolo_generato
+                "final_article": articolo_generato,
+                "search_count": 0  # <--- RESETTA IL CONTATORE per il prossimo articolo
             },
             goto="ask_feedback_node"
         )
@@ -197,7 +234,10 @@ def tool_node(state: State):
         nomi_tools_usati = [tc["name"] for tc in last_message.tool_calls]
         print(f"\n🛠️ [DEBUG AGENTE] In background l'LLM ha appena usato: {', '.join(nomi_tools_usati)}")
         return Command(
-            update={"messages": result},
+            update={
+                "messages": result,
+                "search_count": current_search_count  # <--- AGGIORNA IL CONTATORE NELLO STATO
+            },
             goto="accept_node"
         )
 
