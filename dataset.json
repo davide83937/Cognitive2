@@ -1,0 +1,522 @@
+[
+  {
+    "input": "Trova tutti i post che trattano il topic 'STM32F407VET6'.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE t.name CONTAINS 'STM32F407VET6' RETURN p.title, p.date"
+  },
+  {
+    "input": "Quali sono le fonti utilizzate per l'articolo intitolato 'Integrazione di micro-ROS su hardware STM32'?",
+    "output": "MATCH (p:Post)-[:BASED_ON]->(s:Source) WHERE p.title CONTAINS 'Integrazione di micro-ROS su hardware STM32' RETURN s.text"
+  },
+  {
+    "input": "Elenca tutti i claim scientifici contenuti nella fonte accademica sullo SLAM autonomo.",
+    "output": "MATCH (s:Source)-[:CONTAINS]->(c:Claim) WHERE s.text CONTAINS 'SLAM autonomo' RETURN c.text"
+  },
+  {
+    "input": "Quali topic sono direttamente correlati al tema 'MoveIt2'?",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO]-(t2:Topic) WHERE t1.name =~ '(?i).*moveit2.*' RETURN t2.name"
+  },
+  {
+    "input": "Mostra i titoli di tutti i post pubblicati nel mese di giugno 2026.",
+    "output": "MATCH (p:Post) WHERE p.date STARTS WITH '2026-06' RETURN p.title, p.date"
+  },
+  {
+    "input": "Trova i claim estratti direttamente dal post intitolato 'Cinematica inversa con MoveIt2 su droni industriali'.",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim) WHERE p.title CONTAINS 'Cinematica inversa con MoveIt2 su droni industriali' RETURN c.text"
+  },
+  {
+    "input": "Quali articoli coprono il topic 'ROS2' e sono basati sulla documentazione ufficiale di micro-ROS?",
+    "output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:BASED_ON]->(s:Source) WHERE t.name CONTAINS 'ROS2' AND s.text CONTAINS 'documentazione ufficiale di micro-ROS' RETURN p.title"
+  },
+  {
+    "input": "Elenca i nomi di tutti i topic registrati nel sistema.",
+    "output": "MATCH (t:Topic) RETURN t.name ORDER BY t.name"
+  },
+  {
+    "input": "Trova tutte le fonti che contengono il claim 'L'uso di micro-ROS riduce la latenza dei segnali PWM'.",
+    "output": "MATCH (s:Source)-[:CONTAINS]->(c:Claim) WHERE c.text CONTAINS 'L\\'uso di micro-ROS riduce la latenza dei segnali PWM' RETURN s.text"
+  },
+  {
+    "input": "Quali post trattano argomenti correlati a 'SLAM autonomo'?",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO]-(t2:Topic)<-[:COVERS]-(p:Post) WHERE t1.name CONTAINS 'SLAM autonomo' RETURN p.title, t2.name"
+  },
+  {
+    "input": "Mostra il contenuto e la data del post con titolo 'Analisi hardware del microcontrollore STM32F407VET6'.",
+    "output": "MATCH (p:Post) WHERE p.title CONTAINS 'Analisi hardware del microcontrollore STM32F407VET6' RETURN p.content, p.date"
+  },
+  {
+    "input": "Trova i post che condividono la stessa fonte dell'articolo 'Guida ai droni industriali quadricottero'.",
+    "output": "MATCH (p1:Post)-[:BASED_ON]->(s:Source)<-[:BASED_ON]-(p2:Post) WHERE p1.title CONTAINS 'Guida ai droni industriali quadricottero' RETURN p2.title"
+  },
+  {
+    "input": "Quali claim sono presenti sia nel post 'Configurazione PWM su STM32' sia nelle sue fonti?",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim)<-[:CONTAINS]-(s:Source)<-[:BASED_ON]-(p) WHERE p.title CONTAINS 'Configurazione PWM su STM32' RETURN c.text"
+  },
+  {
+    "input": "Trova tutti i post scritti il '2026-05-15'.",
+    "output": "MATCH (p:Post) WHERE p.date STARTS WITH '2026-05-15' RETURN p.title, p.content"
+  },
+  {
+    "input": "Quali sono i topic coperti dai post che citano la documentazione di MoveIt2?",
+    "output": "MATCH (s:Source)<-[:BASED_ON]-(p:Post)-[:COVERS]->(t:Topic) WHERE s.text CONTAINS 'documentazione di MoveIt2' RETURN DISTINCT t.name"
+  },
+  {
+    "input": "Trova tutti i claim associati al topic 'Atlas Boston Dynamics' tramite i post che lo trattano.",
+    "output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:CONTAINS]->(c:Claim) WHERE t.name CONTAINS 'Atlas Boston Dynamics' RETURN c.text"
+  },
+  {
+    "input": "Esistono relazioni di correlazione bidirezionale per il topic 'Droni quadricotteri'?",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO]-(t2:Topic) WHERE t1.name CONTAINS 'Droni quadricotteri' RETURN t2.name"
+  },
+  {
+    "input": "Seleziona i primi 5 post più recenti che trattano di 'Pianificazione delle traiettorie'.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE t.name CONTAINS 'Pianificazione delle traiettorie' RETURN p.title, p.date ORDER BY p.date DESC LIMIT 5"
+  },
+  {
+    "input": "Quali fonti supportano il claim 'L'algoritmo RTAB-Map richiede una GPU dedicata per lo SLAM in tempo reale'?",
+    "output": "MATCH (s:Source)-[:CONTAINS]->(c:Claim) WHERE c.text CONTAINS 'L\\'algoritmo RTAB-Map richiede una GPU dedicata per lo SLAM in tempo reale' RETURN s.text"
+  },
+  {
+    "input": "Trova i post che contengono la parola 'generazione' nel contenuto e che parlano di 'ROS2'.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE t.name CONTAINS 'ROS2' AND p.content CONTAINS 'generazione' RETURN p.title"
+  },
+  {
+    "input": "Quali topic sono connessi indirettamente a 'STM32F407VET6' tramite un raggio di 2 relazioni RELATED_TO?",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO*2]-(t2:Topic) WHERE t1.name CONTAINS 'STM32F407VET6' AND t1 <> t2 RETURN DISTINCT t2.name"
+  },
+  {
+    "input": "Trova il numero totale di post che trattano il topic 'micro-ROS'.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE t.name =~ '(?i).*micro-ros.*' RETURN count(p) AS total_posts"
+  },
+  {
+    "input": "Mostra i titoli dei post che contengono almeno un claim e che sono stati pubblicati prima del '2026-04-01'.",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim) WHERE p.date < '2026-04-01' RETURN DISTINCT p.title, p.date"
+  },
+  {
+    "input": "Quali fonti descrivono dettagliatamente il funzionamento dei 'servomotori PWM'?",
+    "output": "MATCH (s:Source) WHERE s.text CONTAINS 'servomotori PWM' RETURN s.text"
+  },
+  {
+    "input": "Trova i post che trattano sia il topic 'ROS2' che il topic 'STM32F407VET6'.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t1:Topic) MATCH (p)-[:COVERS]->(t2:Topic) WHERE t1.name CONTAINS 'ROS2' AND t2.name CONTAINS 'STM32F407VET6' RETURN p.title"
+  },
+  {
+    "input": "Elenca tutti i post che non hanno alcuna fonte associata.",
+    "output": "MATCH (p:Post) WHERE NOT (p)-[:BASED_ON]->(:Source) RETURN p.title"
+  },
+  {
+    "input": "Quali claim compaiono sia in un post sia in una fonte non correlata a quel post?",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim)<-[:CONTAINS]-(s:Source) WHERE NOT (p)-[:BASED_ON]->(s) RETURN p.title, s.text, c.text"
+  },
+  {
+    "input": "Trova tutti i topic associati ad articoli pubblicati nell'anno 2025.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE p.date STARTS WITH '2025' RETURN DISTINCT t.name"
+  },
+  {
+    "input": "Quali fonti contengono la parola chiave 'kinematics' nel loro testo descrittivo?",
+    "output": "MATCH (s:Source) WHERE s.text =~ '(?i).*kinematics.*' RETURN s.text"
+  },
+  {
+    "input": "Mostra tutti i post che contengono il claim 'I droni ad ala fissa consumano meno energia dei quadricotteri'.",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim) WHERE c.text CONTAINS 'I droni ad ala fissa consumano meno energia dei quadricotteri' RETURN p.title, p.date"
+  },
+  {
+    "input": "Trova i topic che hanno più di 3 post ad essi dedicati.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WITH t, count(p) AS post_count WHERE post_count > 3 RETURN t.name, post_count"
+  },
+  {
+    "input": "Quali fonti sono state usate per scrivere post riguardanti 'Atlas Boston Dynamics'?",
+    "output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:BASED_ON]->(s:Source) WHERE t.name CONTAINS 'Atlas Boston Dynamics' RETURN DISTINCT s.text"
+  },
+  {
+    "input": "Trova tutti i post che parlano di 'MoveIt2' ma che non contengono alcun claim.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE t.name CONTAINS 'MoveIt2' AND NOT (p)-[:CONTAINS]->(:Claim) RETURN p.title"
+  },
+  {
+    "input": "Quali sono i claim supportati dal paper scientifico sulla pianificazione delle trajectories?",
+    "output": "MATCH (s:Source)-[:CONTAINS]->(c:Claim) WHERE s.text CONTAINS 'paper scientifico sulla pianificazione delle traiettorie' RETURN c.text"
+  },
+  {
+    "input": "Trova le coppie di topic correlati in cui uno dei due è 'micro-ROS'.",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO]-(t2:Topic) WHERE t1.name CONTAINS 'micro-ROS' RETURN t2.name"
+  },
+  {
+    "input": "Elenca i titoli dei post che hanno la parola 'ST-Link' nel titolo.",
+    "output": "MATCH (p:Post) WHERE p.title CONTAINS 'ST-Link' RETURN p.title"
+  },
+  {
+    "input": "Quali post contengono un claim estratto dal repository di MoveIt2?",
+    "output": "MATCH (s:Source)-[:CONTAINS]->(c:Claim)<-[:CONTAINS]-(p:Post) WHERE s.text CONTAINS 'repository di MoveIt2' RETURN p.title"
+  },
+  {
+    "input": "Trova il topic più trattato del blog in base al numero di post.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) RETURN t.name, count(p) AS c ORDER BY c DESC LIMIT 1"
+  },
+  {
+    "input": "Quali claim del post 'Algoritmi di SLAM per droni autonomi' non sono inclusi nelle sue fonti dirette?",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim) WHERE p.title CONTAINS 'Algoritmi di SLAM per droni autonomi' AND NOT (p)-[:BASED_ON]->(:Source)-[:CONTAINS]->(c) RETURN c.text"
+  },
+  {
+    "input": "Trova tutti i post pubblicati tra il '2026-01-01' e il '2026-06-30'.",
+    "output": "MATCH (p:Post) WHERE p.date >= '2026-01-01' AND p.date <= '2026-06-30' RETURN p.title, p.date"
+  },
+  {
+    "input": "Mostra le fonti associate a post che trattano argomenti legati a 'Pianificazione traiettoria'.",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO]-(t2:Topic)<-[:COVERS]-(p:Post)-[:BASED_ON]->(s:Source) WHERE t1.name CONTAINS 'Pianificazione traiettoria' RETURN DISTINCT s.text"
+  },
+  {
+    "input": "Quali claim associati al topic 'STM32F407VET6' sono stati scritti nel 2026?",
+    "output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:CONTAINS]->(c:Claim) WHERE t.name CONTAINS 'STM32F407VET6' AND p.date STARTS WITH '2026' RETURN c.text"
+  },
+  {
+    "input": "Trova tutte le fonti che hanno fornito informazioni per i post sul topic 'Droni industriali'.",
+    "output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:BASED_ON]->(s:Source) WHERE t.name CONTAINS 'Droni industriali' RETURN DISTINCT s.text"
+  },
+  {
+    "input": "Seleziona tutti i claim che contengono la parola 'ROS2'.",
+    "output": "MATCH (c:Claim) WHERE c.text CONTAINS 'ROS2' RETURN c.text"
+  },
+  {
+    "input": "Quali post trattano un topic che è correlato a 'Cinematica inversa'?",
+    "output": "MATCH (t1:Topic)-[:RELATED_TO]-(t2:Topic)<-[:COVERS]-(p:Post) WHERE t1.name =~ '(?i).*cinematica inversa.*' RETURN p.title, t2.name"
+  },
+  {
+    "input": "Restituisci i titoli dei post ordinati per data decrescente.",
+    "output": "MATCH (p:Post) RETURN p.title, p.date ORDER BY p.date DESC"
+  },
+  {
+    "input": "Quali fonti contengono claim riguardanti la 'latenza di comunicazione'?",
+    "output": "MATCH (s:Source)-[:CONTAINS]->(c:Claim) WHERE c.text CONTAINS 'latenza di comunicazione' RETURN s.text"
+  },
+  {
+    "input": "Trova il post che contiene il maior numero di relazioni CONTAINS verso i claim.",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim) RETURN p.title, count(c) AS num_claims ORDER BY num_claims DESC LIMIT 1"
+  },
+  {
+    "input": "Quali topic sono coperti dall'articolo del blog intitolato 'Calibrazione dei sensori IMU su droni'?",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE p.title CONTAINS 'Calibrazione dei sensori IMU su droni' RETURN t.name"
+  },
+  {
+    "input": "Trova i claim che sono condivisi da almeno due fonti diverse.",
+    "output": "MATCH (s1:Source)-[:CONTAINS]->(c:Claim)<-[:CONTAINS]-(s2:Source) WHERE id(s1) < id(s2) RETURN c.text, s1.text, s2.text"
+  },
+  {
+    "input": "Seleziona i post che hanno fonti ma non contengono claim.",
+    "output": "MATCH (p:Post)-[:BASED_ON]->(:Source) WHERE NOT (p)-[:CONTAINS]->(:Claim) RETURN p.title"
+  },
+  {
+    "input": "Mostra le relazioni di correlazione tra i topic 'MoveIt2' e 'ROS2'.",
+    "output": "MATCH (t1:Topic)-[r:RELATED_TO]-(t2:Topic) WHERE t1.name CONTAINS 'MoveIt2' AND t2.name CONTAINS 'ROS2' RETURN r"
+  },
+  {
+    "input": "Quali sono le fonti utilizzate nei post pubblicati il '2026-04-20'?",
+    "output": "MATCH (p:Post)-[:BASED_ON]->(s:Source) WHERE p.date STARTS WITH '2026-04-20' RETURN s.text"
+  },
+  {
+    "input": "Trova tutti i claim estratti sia da un post che dalla fonte di quel post.",
+    "output": "MATCH (p:Post)-[:CONTAINS]->(c:Claim)<-[:CONTAINS]-(s:Source)<-[:BASED_ON]-(p) RETURN p.title, s.text, c.text"
+  },
+  {
+    "input": "Trova tutti i topic coperti da post che contengono la stringa 'STM32' nel testo dei loro claim.",
+    "output": "MATCH (c:Claim)<-[:CONTAINS]-(p:Post)-[:COVERS]->(t:Topic) WHERE c.text CONTAINS 'STM32' RETURN DISTINCT t.name"
+  },
+  {
+    "input": "Quali post fanno riferimento alla tesi magistrale sull'architettura dei droni?",
+    "output": "MATCH (p:Post)-[:BASED_ON]->(s:Source) WHERE s.text CONTAINS 'tesi magistrale sull\\'architettura dei droni' RETURN p.title"
+  },
+  {
+    "input": "Elenca tutti i claim relazionati al topic 'Algoritmi SLAM' tramite le fonti.",
+    "output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:BASED_ON]->(s:Source)-[:CONTAINS]->(c:Claim) WHERE t.name CONTAINS 'Algoritmi SLAM' RETURN DISTINCT c.text"
+  },
+  {
+    "input": "Trova i post che parlano del topic 'Atlas Boston Dynamics' scritti prima del '2026-01-01'.",
+    "output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE t.name CONTAINS 'Atlas Boston Dynamics' AND p.date < '2026-01-01' RETURN p.title, p.date"
+  },
+  {
+    "input": "Trova la fonte e il relativo testo per l'articolo 'Configurazione micro-ROS ed agenti'.",
+    "output": "MATCH (p:Post)-[:BASED_ON]->(s:Source) WHERE p.title CONTAINS 'Configurazione micro-ROS ed agenti' RETURN s.text"
+  },
+  {
+    "input": "Mostra tutti i claim presenti nel grafo senza duplicati.",
+    "output": "MATCH (c:Claim) RETURN DISTINCT c.text"
+  },
+  {
+"input": "Trova tutti i post che trattano un topic il cui nome contiene 'ros2'.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE toLower(t.name) CONTAINS 'ros2' RETURN p.title, p.date"
+},
+{
+"input": "Mostrami i claim estratti dai post pubblicati dopo il primo gennaio 2026.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim) WHERE p.date > '2026-01-01' RETURN p.title, c.text"
+},
+{
+"input": "Cerca i topic che sono considerati un 'prerequisito' del topic 'slam'.",
+"output": "MATCH (t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE t2.name = 'slam' AND r.type = 'prerequisito' RETURN t1.name, r.reason"
+},
+{
+"input": "Quali sono le fonti utilizzate nei post che parlano di firmware per 'stm32'?",
+"output": "MATCH (s:Source)<-[:USES]-(p:Post)-[:COVERS]->(t:Topic) WHERE toLower(t.name) CONTAINS 'stm32' RETURN DISTINCT s.name"
+},
+{
+"input": "Trova tutti i post che non utilizzano alcuna fonte esterna (Source).",
+"output": "MATCH (p:Post) WHERE NOT (p)-[:USES]->(:Source) RETURN p.title, p.date"
+},
+{
+"input": "Elenca i 5 topic più trattati nei post, ordinati per importanza decrescente.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic) RETURN t.name, count(p) AS post_count ORDER BY post_count DESC LIMIT 5"
+},
+{
+"input": "Trova i claim legati a un topic che è una 'sottocategoria' di 'intelligenza artificiale'.",
+"output": "MATCH (c:Claim)-[:RELATED_TO]->(t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE t2.name = 'intelligenza artificiale' AND r.type = 'sottocategoria' RETURN c.text, t1.name, r.reason"
+},
+{
+"input": "Mostrami i post e i relativi claim che parlano di 'droni', ma escludi i post che usano come fonte 'wikipedia'.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim) WHERE (p)-[:COVERS]->(:Topic {name: 'droni'}) AND NOT (p)-[:USES]->(:Source {name: 'wikipedia'}) RETURN p.title, c.text"
+},
+{
+"input": "Trova le relazioni tra topic in cui la ragione del collegamento menziona la parola 'attuatori'.",
+"output": "MATCH (t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE toLower(r.reason) CONTAINS 'attuatori' RETURN t1.name, t2.name, r.type, r.reason"
+},
+{
+"input": "Quali topic non hanno alcun claim direttamente collegato?",
+"output": "MATCH (t:Topic) WHERE NOT (:Claim)-[:RELATED_TO]->(t) RETURN t.name"
+},
+{
+"input": "Trova i post che estraggono claim contenenti la parola 'imu' e mostra anche i topic coperti da questi post.",
+"output": "MATCH (t:Topic)<-[:COVERS]-(p:Post)-[:EXTRACTS]->(c:Claim) WHERE toLower(c.text) CONTAINS 'imu' RETURN p.title, t.name, c.text"
+},
+{
+"input": "Cerca i topic che rappresentano un'evoluzione tecnologica di altri topic, restituendo il motivo.",
+"output": "MATCH (t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE r.type = 'evoluzione' RETURN t1.name AS tecnologia_successiva, t2.name AS tecnologia_precedente, r.reason"
+},
+{
+"input": "Dammi il numero totale di claim estratti per ogni topic, escludendo i topic che non hanno claim.",
+"output": "MATCH (c:Claim)-[:RELATED_TO]->(t:Topic) RETURN t.name, count(c) AS num_claims ORDER BY num_claims DESC"
+},
+{
+"input": "Trova i post che trattano di 'langgraph' ma che non contengono il termine 'agenti' nei loro claim.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic {name: 'langgraph'}) WHERE NOT EXISTS { MATCH (p)-[:EXTRACTS]->(c:Claim) WHERE toLower(c.text) CONTAINS 'agenti' } RETURN p.title, p.date"
+},
+{
+"input": "Mostrami le fonti utilizzate nei post che trattano topic che sono alternative a 'micro-ros'.",
+"output": "MATCH (s:Source)<-[:USES]-(p:Post)-[:COVERS]->(t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE t2.name = 'micro-ros' AND r.type = 'alternativa' RETURN DISTINCT s.name, t1.name"
+},
+{
+"input": "Trova tutti i post pubblicati nel mese di giugno 2026 che parlano di 'pwm'.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE p.date STARTS WITH '2026-06' AND toLower(t.name) CONTAINS 'pwm' RETURN p.title, p.date"
+},
+{
+"input": "Quali sono i topic collegati a 'state pattern' con una relazione di tipo 'sottocategoria'?",
+"output": "MATCH (t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE t2.name = 'state pattern' AND r.type = 'sottocategoria' RETURN t1.name, r.reason"
+},
+{
+"input": "Trova i claim il cui testo menziona 'multi-agent systems' e che appartengono a post che non coprono il topic 'reinforcement learning'.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim) WHERE toLower(c.text) CONTAINS 'multi-agent systems' AND NOT (p)-[:COVERS]->(:Topic {name: 'reinforcement learning'}) RETURN c.text, p.title"
+},
+{
+"input": "Seleziona i post che hanno estratto più di 3 claim differenti.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim) WITH p, count(c) AS claim_count WHERE claim_count > 3 RETURN p.title, claim_count ORDER BY claim_count DESC"
+},
+{
+"input": "Trova i passaggi multi-hop tra topic: partendo da un topic iniziale, trova il suo prerequisito e il prerequisito di quest'ultimo.",
+"output": "MATCH (t1:Topic)-[r1:RELATED_TO {type: 'prerequisito'}]->(t2:Topic)-[r2:RELATED_TO {type: 'prerequisito'}]->(t3:Topic) RETURN t1.name AS target, t2.name AS intermediario, t3.name AS base"
+},
+{
+"input": "Mostrami i post che citano la fonte 'github' e che estraggono claim legati al topic 'firmware'.",
+"output": "MATCH (s:Source {name: 'github'})<-[:USES]-(p:Post)-[:EXTRACTS]->(c:Claim)-[:RELATED_TO]->(t:Topic) WHERE toLower(t.name) CONTAINS 'firmware' RETURN p.title, c.text"
+},
+{
+"input": "Trova i topic che non sono coperti da nessun post ma che hanno relazioni con altri topic.",
+"output": "MATCH (t:Topic) WHERE NOT (:Post)-[:COVERS]->(t) AND ((t)-[:RELATED_TO]-()) RETURN DISTINCT t.name"
+},
+{
+"input": "Trova tutti i post che parlano di 'cinematica' e restituisci il titolo del post insieme alla spiegazione del perché quel topic è correlato ad altri.",
+"output": "MATCH (p:Post)-[:COVERS]->(t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE toLower(t1.name) CONTAINS 'cinematica' RETURN p.title, t1.name, t2.name, r.type, r.reason"
+},
+{
+"input": "Elenca le fonti (Source) utilizzate dai post, contando quanti post usano ciascuna fonte, e mostra solo quelle usate almeno 2 volte.",
+"output": "MATCH (s:Source)<-[:USES]-(p:Post) WITH s, count(p) AS utilizzo WHERE utilizzo >= 2 RETURN s.name, utilizzo ORDER BY utilizzo DESC"
+},
+{
+"input": "Trova i claim che contengono la parola 'efficienza' associati a topic che sono considerati 'evoluzione' di qualcos'altro.",
+"output": "MATCH (c:Claim)-[:RELATED_TO]->(t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE toLower(c.text) CONTAINS 'efficienza' AND r.type = 'evoluzione' RETURN c.text, t1.name, r.reason"
+},
+{
+"input": "Mostrami i post che coprono il topic 'freeertos' ma che non hanno relazioni con fonti di tipo 'ieee'.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic {name: 'freertos'}) WHERE NOT (p)-[:USES]->(:Source {name: 'ieee'}) RETURN p.title, p.date"
+},
+{
+"input": "Cerca la catena di relazioni in cui un topic A è alternativa di un topic B, il quale è a sua volta prerequisito di un topic C.",
+"output": "MATCH (t1:Topic)-[r1:RELATED_TO {type: 'alternativa'}]->(t2:Topic)-[r2:RELATED_TO {type: 'prerequisito'}]->(t3:Topic) RETURN t1.name, t2.name, t3.name, r1.reason, r2.reason"
+},
+{
+"input": "Trova i post che trattano contemporaneamente sia il topic 'ros2' sia il topic 'nav2'.",
+"output": "MATCH (p:Post)-[:COVERS]->(t1:Topic {name: 'ros2'}) MATCH (p)-[:COVERS]->(t2:Topic {name: 'nav2'}) RETURN p.title, p.date"
+},
+{
+"input": "Trova tutti i claim legati a un topic la cui spiegazione della relazione (reason) contiene la parola 'sicurezza'.",
+"output": "MATCH (c:Claim)-[:RELATED_TO]->(t1:Topic)-[r:RELATED_TO]->(t2:Topic) WHERE toLower(r.reason) CONTAINS 'sicurezza' RETURN c.text, t1.name, r.reason"
+},
+{
+"input": "Elenca i post più recenti (ordinati per data decrescente) che trattano argomenti legati a 'llm'.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE toLower(t.name) CONTAINS 'llm' RETURN p.title, p.date ORDER BY p.date DESC LIMIT 10"
+},
+  {
+"input": "Inserisci o aggiorna un post nel grafo impostando titolo e data, collegalo al suo topic in minuscolo, estrai una lista di claim (collegandoli sia al post che al topic), associa un elenco di fonti e crea dinamicamente relazioni arricchite con proprietà type e reason verso altri topic esistenti.",
+"output": "MERGE (p:Post {title: $title}) ON CREATE SET p.date = $date ON MATCH SET p.date = $date MERGE (t:Topic {name: toLower($topic)}) MERGE (p)-[:COVERS]->(t) WITH p, t UNWIND $claims AS claim_text MERGE (c:Claim {text: claim_text}) MERGE (p)-[:EXTRACTS]->(c) MERGE (c)-[:RELATED_TO]->(t) WITH p, t UNWIND $sources AS source_name MERGE (s:Source {name: source_name}) MERGE (p)-[:USES]->(s) WITH t UNWIND $related_topics AS rel MATCH (old_t:Topic {name: toLower(rel.target_topic)}) WHERE old_t <> t MERGE (t)-[r:RELATED_TO]->(old_t) ON CREATE SET r.type = rel.relationship_type, r.reason = rel.reason ON MATCH SET r.type = rel.relationship_type, r.reason = rel.reason"
+},
+{
+"input": "Aggiorna massivamente una lista di post impostando la data odierna, e per ciascuno scollega tutte le vecchie fonti prima di collegare le nuove fonti fornite in input.",
+"output": "UNWIND $posts AS post_data MATCH (p:Post {title: post_data.title}) SET p.date = $current_date OPTIONAL MATCH (p)-[old_r:USES]->(:Source) DELETE old_r WITH p, post_data UNWIND post_data.sources AS source_name MERGE (s:Source {name: source_name}) MERGE (p)-[:USES]->(s)"
+},
+{
+"input": "Dato un elenco di nuovi claim, nominali e connetti ciascuno di essi sia al rispettivo post di origine sia al topic di riferimento, a patto che il testo del claim contenga la parola 'pipeline'.",
+"output": "UNWIND $claims_list AS c_info MATCH (p:Post {title: c_info.post_title}) MATCH (t:Topic {name: toLower(c_info.topic_name)}) WHERE toLower(c_info.text) CONTAINS 'pipeline' MERGE (c:Claim {text: c_info.text}) MERGE (p)-[:EXTRACTS]->(c) MERGE (c)-[:RELATED_TO]->(t)"
+},
+{
+"input": "Crea una serie di relazioni tra topic in blocco partendo da una lista di input, impostando tipo e motivo del collegamento, ma solo se i topic di destinazione esistono già nel grafo.",
+"output": "UNWIND $topic_links AS link MATCH (source:Topic {name: toLower(link.from_topic)}) MATCH (target:Topic {name: toLower(link.to_topic)}) MERGE (source)-[r:RELATED_TO]->(target) SET r.type = link.type, r.reason = link.reason"
+},
+{
+"input": "Rimuovi tutti i claim duplicati dal grafo che hanno lo stesso identico testo, mantenendo solo la relazione con il post più recente ed eliminando i nodi claim rimasti isolati.",
+"output": "MATCH (c:Claim) WITH c.text AS txt, collect(c) AS nodes WHERE size(nodes) > 1 UNWIND nodes AS n MATCH (p:Post)-[r:EXTRACTS]->(n) WITH txt, n, p ORDER BY p.date DESC WITH txt, collect({node: n, rel: r, post: p}) AS items WITH items[0] AS keep, items[1..] AS to_delete UNWIND to_delete AS del_item DELETE del_item.rel WITH del_item.node AS orphan_node WHERE NOT (orphan_node)-[:EXTRACTS]-() DETACH DELETE orphan_node"
+},
+{
+"input": "Trova tutti i post che trattano un certo topic e, per ciascuno, aggiorna le proprietà dei loro claim inserendo un prefisso specifico passato come parametro nel testo del claim.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic {name: toLower($topic_name)}) MATCH (p)-[:EXTRACTS]->(c:Claim) SET c.text = $prefix + c.text"
+},
+{
+"input": "Dato un array di nodi e relazioni da creare, effettua un inserimento condizionale: se il post non esiste, crealo insieme al suo topic principale, altrimenti aggiungi soltanto i nuovi claim forniti.",
+"output": "OPTIONAL MATCH (p:Post {title: $title}) FOREACH (_ IN CASE WHEN p IS NULL THEN [1] ELSE [] END | MERGE (new_p:Post {title: $title}) SET new_p.date = $date MERGE (t:Topic {name: toLower($topic)}) MERGE (new_p)-[:COVERS]->(t) ) WITH $title AS p_title UNWIND $claims AS claim_text MATCH (p2:Post {title: p_title}) MATCH (p2)-[:COVERS]->(t2:Topic) MERGE (c:Claim {text: claim_text}) MERGE (p2)-[:EXTRACTS]->(c) MERGE (c)-[:RELATED_TO]->(t2)"
+},
+{
+"input": "Importa in modo efficiente un intero grafo di topic correlati passati come dizionari nidificati, gestendo i casi in cui i nodi di origine o destinazione non siano ancora stati registrati.",
+"output": "UNWIND $batch AS item MERGE (source:Topic {name: toLower(item.source_name)}) MERGE (target:Topic {name: toLower(item.target_name)}) MERGE (source)-[r:RELATED_TO]->(target) SET r.type = item.rel_type, r.reason = item.rel_reason"
+},
+{
+"input": "Elimina un topic specifico dal sistema, trasferendo prima tutte le relazioni di tipo COVERS dei post associati verso un nuovo topic di fallback fornito in input.",
+"output": "MATCH (old_t:Topic {name: toLower($old_topic)}) MERGE (new_t:Topic {name: toLower($fallback_topic)}) MATCH (p:Post)-[r:COVERS]->(old_t) MERGE (p)-[:COVERS]->(new_t) DELETE r WITH old_t DETACH DELETE old_t"
+},
+{
+"input": "Dato un elenco di fonti e una lista di parole chiave, trova tutti i post che usano quelle fonti ed estrai i claim associati che contengono almeno una delle parole chiave fornite.",
+"output": "MATCH (s:Source)<-[:USES]-(p:Post)-[:EXTRACTS]->(c:Claim) WHERE s.name IN $allowed_sources AND ANY(keyword IN $keywords WHERE toLower(c.text) CONTAINS toLower(keyword)) RETURN p.title, c.text, s.name"
+},
+{
+"input": "Trova la catena più breve di relazioni tra due topic arbitrari (passati come parametri) muovendoti esclusivamente sulle relazioni RELATED_TO interne ai Topic.",
+"output": "MATCH p = shortestPath((t1:Topic {name: toLower($start_topic)})-[:RELATED_TO*..5]->(t2:Topic {name: toLower($end_topic)})) RETURN p"
+},
+{
+"input": "Esegui un'operazione di pulizia sul Knowledge Graph rimuovendo tutte le relazioni RELATED_TO tra topic il cui tipo è 'alternativa' se i due topic non condividono alcun Post comune.",
+"output": "MATCH (t1:Topic)-[r:RELATED_TO {type: 'alternativa'}]->(t2:Topic) WHERE NOT EXISTS { MATCH (t1)<-[:COVERS]-(p:Post)-[:COVERS]->(t2) } DELETE r"
+},
+{
+"input": "Trova tutti i post che contengono claim relativi a un topic specifico, raggruppali per la fonte utilizzata e restituisci una mappa JSON con il nome della fonte e l'elenco dei titoli dei post.",
+"output": "MATCH (t:Topic {name: toLower($topic_name)})<-[:RELATED_TO]-(c:Claim)<-[:EXTRACTS]-(p:Post)-[:USES]->(s:Source) RETURN s.name AS fonte, collect(DISTINCT p.title) AS titoli_post"
+},
+{
+"input": "Inserisci un nuovo claim per un post esistente, ma effettua il collegamento al topic (RELATED_TO) solo se esiste già una relazione di prerequisito tra il topic del post e quello del claim.",
+"output": "MATCH (p:Post {title: $post_title})-[:COVERS]->(current_t:Topic) MATCH (target_t:Topic {name: toLower($target_topic)}) WHERE (current_t)-[:RELATED_TO {type: 'prerequisito'}]->(target_t) MERGE (c:Claim {text: $claim_text}) MERGE (p)-[:EXTRACTS]->(c) MERGE (c)-[:RELATED_TO]->(target_t)"
+},
+{
+"input": "Aggiorna la proprietà reason di una relazione tra due topic specifici basandoti su un nuovo testo generato, solo se la vecchia ragione conteneva una determinata sottostringa obsoleta.",
+"output": "MATCH (t1:Topic {name: toLower($topic_a)})-[r:RELATED_TO]->(t2:Topic {name: toLower($topic_b)}) WHERE toLower(r.reason) CONTAINS toLower($obsolete_text) SET r.reason = $new_reason"
+},
+{
+"input": "Seleziona i post che hanno claims associati a più di due topic differenti e restituisci il titolo del post insieme al conteggio dei topic distinti.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim)-[:RELATED_TO]->(t:Topic) WITH p, count(DISTINCT t) AS topic_count WHERE topic_count > 2 RETURN p.title, topic_count ORDER BY topic_count DESC"
+},
+{
+"input": "Unisci due topic duplicati nel grafo (es. 'ros-2' e 'ros2'): sposta tutte le relazioni esterne dei post, dei claim e dei topic correlati dal primo al secondo, eliminando infine il topic sorgente.",
+"output": "MATCH (src:Topic {name: toLower($source_name)}) MATCH (dst:Topic {name: toLower($target_name)}) MATCH (p:Post)-[r1:COVERS]->(src) MERGE (p)-[:COVERS]->(dst) DELETE r1 WITH src, dst MATCH (c:Claim)-[r2:RELATED_TO]->(src) MERGE (c)-[:RELATED_TO]->(dst) DELETE r2 WITH src, dst MATCH (src)-[r3:RELATED_TO]->(other:Topic) MERGE (dst)-[new_r3:RELATED_TO]->(other) SET new_r3.type = r3.type, new_r3.reason = r3.reason DELETE r3 WITH src, dst MATCH (other:Topic)-[r4:RELATED_TO]->(src) MERGE (other)-[new_r4:RELATED_TO]->(dst) SET new_r4.type = r4.type, new_r4.reason = r4.reason DELETE r4 WITH src DETACH DELETE src"
+},
+{
+"input": "Trova tutti i post pubblicati in un intervallo di date personalizzato, che non usano una specifica fonte vietata, e restituisci i loro titoli ordinati alfabeticamente.",
+"output": "MATCH (p:Post) WHERE p.date >= $start_date AND p.date <= $end_date AND NOT (p)-[:USES]->(:Source {name: $forbidden_source}) RETURN p.title ORDER BY p.title ASC"
+},
+{
+"input": "Crea una struttura gerarchica di sotto-topic a partire da un elenco JSON, connettendoli ricorsivamente a un topic padre con una relazione 'sottocategoria' e una spiegazione standard.",
+"output": "MATCH (parent:Topic {name: toLower($parent_name)}) UNWIND $sub_topics AS sub_name MERGE (child:Topic {name: toLower(sub_name)}) MERGE (child)-[r:RELATED_TO]->(parent) SET r.type = 'sottocategoria', r.reason = 'Generato automaticamente come sotto-argomento di ' + parent.name"
+},
+{
+"input": "Identifica tutti i claim isolati nel database, ovvero nodi Claim che non sono collegati a nessun Post o a nessun Topic, e procedi con la loro cancellazione definitiva.",
+"output": "MATCH (c:Claim) WHERE NOT (c)<-[:EXTRACTS]-(:Post) OR NOT (c)-[:RELATED_TO]->(:Topic) DETACH DELETE c"
+},
+{
+"input": "Trova coppie di post che condividono esattamente la stessa combinazione di fonti e che trattano lo stesso set di topic, escludendo l'auto-accoppiamento.",
+"output": "MATCH (p1:Post)-[:USES]->(s:Source)<-[:USES]-(p2:Post) WHERE id(p1) < id(p2) WITH p1, p2, collect(DISTINCT s.name) AS s1 MATCH (p1)-[:COVERS]->(t:Topic)<-[:COVERS]-(p2) WITH p1, p2, s1, collect(DISTINCT t.name) AS t1 MATCH (p1)-[:USES]->(all_s1:Source) WITH p1, p2, s1, t1, collect(DISTINCT all_s1.name) AS total_s1 MATCH (p2)-[:USES]->(all_s2:Source) WITH p1, p2, s1, t1, total_s1, collect(DISTINCT all_s2.name) AS total_s2 WHERE size(s1) = size(total_s1) AND size(s1) = size(total_s2) RETURN p1.title, p2.title"
+},
+{
+"input": "Aggiungi una nuova fonte a tutti i post che contengono nel titolo una parola chiave dinamica e il cui argomento coperto è un prerequisito di 'micro-ros'.",
+"output": "MATCH (p:Post)-[:COVERS]->(t1:Topic)-[r:RELATED_TO {type: 'prerequisito'}]->(t2:Topic {name: 'micro-ros'}) WHERE toLower(p.title) CONTAINS toLower($keyword) MERGE (s:Source {name: $source_name}) MERGE (p)-[:USES]->(s)"
+},
+{
+"input": "Estrai l'elenco completo di tutti i topic del grafo calcolando per ciascuno un 'indice di centralità' basato sulla somma dei post che lo coprono e dei claim ad esso associati.",
+"output": "MATCH (t:Topic) OPTIONAL MATCH (p:Post)-[:COVERS]->(t) OPTIONAL MATCH (c:Claim)-[:RELATED_TO]->(t) WITH t, count(DISTINCT p) AS post_count, count(DISTINCT c) AS claim_count RETURN t.name, (post_count + claim_count) AS score ORDER BY score DESC"
+},
+{
+"input": "Cerca tutti i post che citano nei loro claim espressioni legate a 'state pattern' ma che non hanno una relazione esplicita di COVERS verso quel topic, creandola automaticamente.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim) WHERE toLower(c.text) CONTAINS 'state pattern' MATCH (t:Topic {name: 'state pattern'}) WHERE NOT (p)-[:COVERS]->(t) MERGE (p)-[:COVERS]->(t)"
+},
+{
+"input": "Trova i topic che hanno relazioni RELATED_TO uscenti di tipo 'evoluzione' verso un topic B, ma che contemporaneamente sono registrati come 'alternativa' dello stesso topic B.",
+"output": "MATCH (t1:Topic)-[r1:RELATED_TO {type: 'evoluzione'}]->(t2:Topic) MATCH (t1)-[r2:RELATED_TO {type: 'alternativa'}]->(t2) RETURN t1.name, t2.name, r1.reason AS evol_reason, r2.reason AS alt_reason"
+},
+{
+"input": "Seleziona tutti i claim scritti in una determinata data (ricavata dalla data del Post d'origine) e aggiorna il loro testo aggiungendo in coda un tag di verifica passato in input.",
+"output": "MATCH (p:Post)-[:EXTRACTS]->(c:Claim) WHERE p.date = $target_date SET c.text = c.text + ' ' + $verification_tag"
+},
+{
+"input": "Dato un input complesso contenente un post e i metadati di relazioni tra topic, effettua il merge del post e crea le relazioni tra il topic principale e i topic correlati solo se la ragione (reason) è valida ed estesa.",
+"output": "MERGE (p:Post {title: $title}) SET p.date = $date MERGE (main_t:Topic {name: toLower($main_topic)}) MERGE (p)-[:COVERS]->(main_t) WITH main_t UNWIND $related AS rel_data WHERE size(rel_data.reason) > 10 MATCH (target_t:Topic {name: toLower(rel_data.target)}) MERGE (main_t)-[r:RELATED_TO]->(target_t) SET r.type = rel_data.type, r.reason = rel_data.reason"
+},
+{
+"input": "Trova tutte le fonti che non sono mai state utilizzate in nessun post pubblicato nell'ultimo anno corrente (2026).",
+"output": "MATCH (s:Source) WHERE NOT EXISTS { MATCH (s)<-[:USES]-(p:Post) WHERE p.date STARTS WITH '2026' } RETURN s.name"
+},
+{
+"input": "Dato un elenco di titoli di post, incrementa o modifica la loro data di un giorno se trattano argomenti associati a 'droni'.",
+"output": "UNWIND $post_titles AS t_title MATCH (p:Post {title: t_title})-[:COVERS]->(:Topic {name: 'droni'}) SET p.date = $new_date"
+},
+{
+"input": "Seleziona i primi 3 topic che hanno il maggior numero di relazioni RELATED_TO di tipo 'prerequisito' entranti, mostrando anche i motivi combinati in una lista.",
+"output": "MATCH (t1:Topic)-[r:RELATED_TO {type: 'prerequisito'}]->(t2:Topic) RETURN t2.name, count(r) AS incoming_count, collect(r.reason) AS reasons ORDER BY incoming_count DESC LIMIT 3"
+},
+  {
+"input": "Esegui un inserimento condizionale in blocco: per ogni elemento di un array, crea il Post e il Topic principale se non esistono. Successivamente, scollega tutti i vecchi claim da quel topic e associa solo i nuovi claim che contengono la parola chiave fornita, aggiornando simultaneamente le relazioni con le fonti.",
+"output": "UNWIND $batch AS item MERGE (p:Post {title: item.title}) ON CREATE SET p.date = item.date MERGE (t:Topic {name: toLower(item.topic)}) MERGE (p)-[:COVERS]->(t) WITH p, t, item OPTIONAL MATCH (t)<-[old_r:RELATED_TO]-(c:Claim) DELETE old_r WITH p, t, item UNWIND item.claims AS claim_text WITH p, t, item, claim_text WHERE toLower(claim_text) CONTAINS toLower($keyword) MERGE (new_c:Claim {text: claim_text}) MERGE (p)-[:EXTRACTS]->(new_c) MERGE (new_c)-[:RELATED_TO]->(t) WITH p, item UNWIND item.sources AS source_name MERGE (s:Source {name: source_name}) MERGE (p)-[:USES]->(s)"
+},
+{
+"input": "Trova tutti i sotto-topic legati a un argomento di partenza tramite un cammino multi-hop indefinito di relazioni 'sottocategoria'. Per ciascuno di essi, aggrega i claim dei relativi post e restituisci una struttura nidificata ordinata per numero di post.",
+"output": "MATCH path = (sub_t:Topic)-[:RELATED_TO*]->(main_t:Topic {name: toLower($start_topic)}) WHERE ALL(r IN relationships(path) WHERE r.type = 'sottocategoria') OPTIONAL MATCH (sub_t)<-[:COVERS]-(p:Post)-[:EXTRACTS]->(c:Claim) WITH sub_t, count(DISTINCT p) AS post_count, collect(DISTINCT c.text) AS claim_list ORDER BY post_count DESC RETURN collect({topic: sub_t.name, posts: post_count, claims: claim_list}) AS gerarchia"
+},
+{
+"input": "Sincronizza lo stato delle relazioni tra topic: dato un elenco di configurazioni, se una relazione 'alternativa' tra due topic esiste già, aggiorna la proprietà reason unendo la vecchia e la nuova stringa; se non esiste, creala da zero ma solo se entrambi i topic hanno almeno un post in comune.",
+"output": "UNWIND $sync_links AS link MATCH (t1:Topic {name: toLower(link.from)}) MATCH (t2:Topic {name: toLower(link.to)}) MERGE (t1)-[r:RELATED_TO {type: 'alternativa'}]->(t2) ON CREATE SET r.reason = CASE WHEN EXISTS { MATCH (t1)<-[:COVERS]-(p:Post)-[:COVERS]->(t2) } THEN link.reason ELSE null END ON MATCH SET r.reason = r.reason + ' | ' + link.reason WITH r WHERE r.reason IS NULL DELETE r"
+},
+{
+"input": "Rileva potenziali conflitti o ridondanze nel grafo: trova i casi in cui un topic A ha una relazione diretta di 'evoluzione' verso un topic C, ma esiste anche un cammino alternativo a due tappe (A -> B -> C) con lo stesso tipo di relazione. Restituisci i dettagli di entrambe le ramificazioni per l'analisi.",
+"output": "MATCH (a:Topic)-[r_direct:RELATED_TO {type: 'evoluzione'}]->(c:Topic) MATCH (a)-[r1:RELATED_TO {type: 'evoluzione'}]->(b:Topic)-[r2:RELATED_TO {type: 'evoluzione'}]->(c) WHERE a <> b AND b <> c RETURN a.name AS sorgente, b.name AS intermediario, c.name AS destinazione, r_direct.reason AS via_diretta, {step1: r1.reason, step2: r2.reason} AS via_indiretta"
+},
+{
+"input": "Dato un array di oggetti contenenti metadati di post, effettua una sovrascrittura condizionale: per ogni post, azzera tutte le attuali relazioni EXTRACTS e COVERS, poi ricrea il collegamento verso il nuovo topic e genera i nuovi claim solo se la data del post è precedente a un limite temporale impostato.",
+"output": "UNWIND $updates AS update MATCH (p:Post {title: update.title}) WHERE p.date < $cutoff_date OPTIONAL MATCH (p)-[r_ext:EXTRACTS]->(:Claim) OPTIONAL MATCH (p)-[r_cov:COVERS]->(:Topic) DELETE r_ext, r_cov WITH p, update MERGE (t:Topic {name: toLower(update.new_topic)}) MERGE (p)-[:COVERS]->(t) WITH p, t, update UNWIND update.new_claims AS c_text MERGE (c:Claim {text: c_text}) MERGE (p)-[:EXTRACTS]->(c) MERGE (c)-[:RELATED_TO]->(t)"
+},
+{
+"input": "Trova i post più influenti basandoti su metriche incrociate: seleziona i post che estraggono claim contenenti termini come 'micro-ros' o 'stm32' e le cui fonti associate sono state utilizzate in totale almeno 5 volte nel database, escludendo i post che trattano il topic 'legacy'.",
+"output": "MATCH (p:Post)-[:USES]->(s:Source) WITH s, count(p) AS source_usage MATCH (p2:Post)-[:USES]->(s) MATCH (p2)-[:EXTRACTS]->(c:Claim) WHERE (toLower(c.text) CONTAINS 'micro-ros' OR toLower(c.text) CONTAINS 'stm32') AND source_usage >= 5 AND NOT (p2)-[:COVERS]->(:Topic {name: 'legacy'}) RETURN p2.title AS titolo, collect(DISTINCT s.name) AS fonti_autorevoli, count(DISTINCT c) AS numero_claims ORDER BY numero_claims DESC"
+},
+{
+"input": "Esegui un'epurazione selettiva di nodi obsoleti: cancella tutti i nodi Claim il cui testo contiene parole chiave deprecate e, se il post che li conteneva rimane privo di qualsiasi altro claim, rimuovi anche il post stesso insieme alla sua relazione con il topic principale.",
+"output": "MATCH (c:Claim) WHERE ANY(kw IN $deprecated_keywords WHERE toLower(c.text) CONTAINS toLower(kw)) MATCH (p:Post)-[r:EXTRACTS]->(c) DETACH DELETE c WITH DISTINCT p MATCH (p)-[r_cov:COVERS]->(:Topic) WHERE NOT EXISTS { MATCH (p)-[:EXTRACTS]->(:Claim) } DELETE r_cov DETACH DELETE p"
+},
+{
+"input": "Trova tutte le fonti che alimentano indirettamente un argomento sensibile: seleziona le Source collegate a post i cui claim fanno riferimento a topic distanti due salti (RELATED_TO) dal topic 'langgraph', escludendo i cammini che passano per relazioni di tipo 'alternativa'.",
+"output": "MATCH (s:Source)<-[:USES]-(p:Post)-[:EXTRACTS]->(c:Claim)-[:RELATED_TO]->(t1:Topic)-[r:RELATED_TO]->(t2:Topic {name: 'langgraph'}) WHERE r.type <> 'alternativa' RETURN s.name AS fonte_indiretta, collect(DISTINCT p.title) AS post_coinvolti, count(p) AS peso ORDER BY peso DESC"
+},
+{
+"input": "Implementa una query di riconciliazione per l'AI: analizza i topic che hanno lo stesso nome parziale (es. contengono 'slam'). Sposta tutte le relazioni RELATED_TO entranti e uscenti dai topic secondari verso il topic eletto come principale, aggiornando le stringhe di 'reason' per tracciare la migrazione.",
+"output": "MATCH (main:Topic {name: $canonical_name}) MATCH (alias:Topic) WHERE toLower(alias.name) CONTAINS toLower($search_term) AND alias <> main MATCH (alias)-[r_out:RELATED_TO]->(target:Topic) MERGE (main)-[n_out:RELATED_TO]->(target) ON CREATE SET n_out.type = r_out.type, n_out.reason = r_out.reason + ' (Migrato da ' + alias.name + ')' ON MATCH SET n_out.reason = n_out.reason + ' | ' + r_out.reason DELETE r_out WITH main, alias MATCH (source:Topic)-[r_in:RELATED_TO]->(alias) MERGE (source)-[n_in:RELATED_TO]->(main) ON CREATE SET n_in.type = r_in.type, n_in.reason = r_in.reason + ' (Migrato verso ' + main.name + ')' ON MATCH SET n_in.reason = n_in.reason + ' | ' + r_in.reason DELETE r_in WITH alias DETACH DELETE alias"
+},
+{
+"input": "Genera un report di isolamento tecnologico: calcola per ogni topic la percentuale di post esclusivi (post che coprono solo quel topic e nessun altro) rispetto al totale dei post associati a quel topic, filtrando i risultati per mostrare solo i topic con tasso di isolamento superiore al 50%.",
+"output": "MATCH (p:Post)-[:COVERS]->(t:Topic) WITH t, count(p) AS total_posts MATCH (p2:Post)-[:COVERS]->(t) WHERE size((p2)-[:COVERS]->()) = 1 WITH t, total_posts, count(p2) AS exclusive_posts WITH t, total_posts, exclusive_posts, (toFloat(exclusive_posts) / total_posts) * 100 AS isolation_rate WHERE isolation_rate > 50.0 RETURN t.name, total_posts, exclusive_posts, isolation_rate ORDER BY isolation_rate DESC"
+}
+]
