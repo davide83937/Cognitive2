@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 import os
-from Tools import intelligent_topic_matcher, get_enhanced_topic_context
+from Tools import intelligent_topic_matcher, get_enhanced_topic_context, schedule_manager_tool
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN")
@@ -34,11 +34,11 @@ def get_notion_db_id():
 
 def get_llm_with_calendar_tools():
     llm = get_llm()
-    llm = llm.bind_tools([find_first_available_date_tool, check_specific_date_tool])
+    llm = llm.bind_tools([schedule_manager_tool])
     return llm
 
 
-from Tools import write_an_article, find_first_available_date_tool, check_specific_date_tool, get_previous_topics,  rag_document_retriever, verified_internet_search
+from Tools import write_an_article,  get_previous_topics,  rag_document_retriever, verified_internet_search
 
 
 def get_llm_with_tools():

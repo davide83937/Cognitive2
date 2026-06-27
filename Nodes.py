@@ -130,7 +130,11 @@ def accept_node(state: State):
     if not sta_tornando_da_ricerca:
         print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
     llm = get_llm_with_tools()
-    accept_prompt = get_accept_prompt(topic_da_scrivere)
+    # 2. Recuperi i kg_summaries dallo stato
+    sommari = state.get("kg_summaries", "")
+
+    # 3. Passi ENTRAMBI alla funzione!
+    accept_prompt = get_accept_prompt(topic_da_scrivere, sommari)
     storico_pulito = []
     for msg in reversed(state.get("messages", [])):
         if hasattr(msg, "tool_calls") and any(tc.get("name") == "write_an_article" for tc in msg.tool_calls):
