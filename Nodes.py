@@ -203,13 +203,6 @@ def tool_node(state: State):
             state_updates["kg_summaries"] = str(observation)
         # ---> FINE ESTRAZIONE KG SUMMARIES <---
 
-        tool_message = ToolMessage(
-            content=str(observation),
-            tool_call_id=tool_call["id"],
-            name=tool_name
-        )
-        result.append(tool_message)
-
         if tool_name == "write_an_article":
             titolo_estratto = tool_args.get("about", "Nuovo Articolo")
             autore_estratto = tool_args.get("author", "Agente AI")
@@ -237,10 +230,18 @@ def tool_node(state: State):
     else:
         nomi_tools_usati = [tc["name"] for tc in last_message.tool_calls]
         print(f"\n🛠️ [DEBUG AGENTE] In background l'LLM ha appena usato: {', '.join(nomi_tools_usati)}")
+
+        # AGGIUNTA GUARDRAIL
+        if not last_message.tool_calls:
+            print("⚠️ L'LLM non ha chiamato alcun tool nativo. Forza l'uso di write_an_article.")
+            msg_forzatura = HumanMessage(
+                content="SYSTEM WARNING: Non hai chiamato alcun tool. Usa esplicitamente il tool 'write_an_article' ora per generare il pezzo e proseguire.")
+            result.append(msg_forzatura)
+
         return Command(
             update={
                 "messages": result,
-                "search_count": current_search_count  # <--- AGGIORNA IL CONTATORE NELLO STATO
+                "search_count": current_search_count
             },
             goto="accept_node"
         )

@@ -33,53 +33,31 @@ def get_refine_prompt(last_input: str):
 
 
 def get_accept_prompt(topic: str, kg_summaries: str) -> str:
-    # Se la stringa è vuota o None, impostiamo un fallback sicuro
-    if not kg_summaries:
-        kg_summaries = "Nessuna informazione o claim precedente trovato nel Knowledge Graph per questo argomento. È un tema del tutto nuovo per il blog."
+    # Mostriamo la memoria solo se c'è, altrimenti indichiamo che va cercata
+    memoria_attuale = kg_summaries if kg_summaries else "In attesa di interrogazione. Usa i tool del KG per scoprire cosa sappiamo."
 
     return f"""
 Sei un AI Blogger Assistant esperto. Il tuo compito finale è scrivere un articolo di alta qualità sul topic: '{topic}'.
 
-Per raccogliere le informazioni necessarie, DEVI operare seguendo il paradigma ReAct (Reasoning and Acting).
 Hai a disposizione un set di strumenti (tools) che includono:
-- Ricerca sul Web (per notizie fresche o dati pubblici)
-- RAG Documentale (per recuperare concetti tecnici dai manuali locali)
-- Knowledge Graph (per verificare se l'argomento è già stato trattato e recuperare i claim passati per mantenere coerenza)
-- Stesura Articolo (per generare il testo finale)
+- intelligent_topic_matcher: per verificare dinamicamente se l'argomento è già nel Knowledge Graph.
+- get_enhanced_topic_context: per recuperare i claim passati di un topic esistente.
+- rag_document_retriever: per recuperare concetti tecnici dai manuali locali.
+- verified_internet_search: per notizie fresche dal web.
+- write_an_article: per generare il testo finale.
 
-REGOLE DI ESECUZIONE (ReAct):
-Lavorerai in un ciclo continuo di Pensiero, Azione e Osservazione. Per ogni passo, devi produce questo formato esatto:
-
-Thought: [Ragiona su cosa ti serve sapere in questo momento, QUALE tool è più adatto per ottenerlo e GIUSTIFICA esplicitamente la tua scelta]
-Action: [Chiama il tool scelto]
-Observation: [Il sistema inserirà qui il risultato del tool]
+REGOLE DI ESECUZIONE (FONDAMENTALE):
+1. COME PRIMA AZIONE IN ASSOLUTO: Devi obbligatoriamente invocare il tool 'intelligent_topic_matcher' per capire se l'argomento '{topic}' è già nel nostro database. NON puoi usare la ricerca web o RAG prima di aver controllato il Knowledge Graph.
+2. Se il matcher ti restituisce un argomento esistente, usa 'get_enhanced_topic_context' per recuperare i dettagli e i claim storici.
+3. Solo DOPO aver esplorato il Knowledge Graph, valuta se ti servono il RAG o la ricerca Web (Tavily) per arricchire l'articolo.
+4. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
 
 ---------------------------------------------------------
 MEMORIA STORICA DEL BLOG (Knowledge Graph Summaries):
-Ecco cosa il nostro sistema ha già estratto dal Knowledge Graph riguardo a questo argomento o a temi correlati nel passato:
-{kg_summaries}
+{memoria_attuale}
 ---------------------------------------------------------
 
-REGOLE DI SELEZIONE DINAMICA E DI COERENZA:
-- Analizza attentamente la 'MEMORIA STORICA DEL BLOG' prima di agire. 
-- Se la memoria contiene già informazioni utili, usale nel tuo "Thought" per pianificare l'articolo senza ripetere concetti già trattati in passato, concentrandoti sulle novità o sulle estensioni del tema.
-- Non sei obbligato a usare tutti i tool nello stesso ordine per ogni articolo. Adatta la tua strategia!
-- Se il topic richiede nozioni tecniche profonde, giustifica nel Thought la necessità di usare il RAG.
-- Se hai bisogno di validare informazioni di attualità o se la memoria storica è vuota, giustifica l'uso della ricerca web.
-- Una volta che ritieni, nel tuo Thought, di avere tutto il materiale necessario (supportato dalle fonti), usa il tool per scrivere l'articolo.
-
-CRITERI PER L'USO DELLA RICERCA WEB (Tavily):
-Devi invocare 'verified_internet_search' SE E SOLO SE le informazioni raccolte finora (inclusa la memoria storica sopra riportata) NON sono "abbastanza".
-Le informazioni locali NON sono "abbastanza" se si verifica almeno una di queste condizioni:
-1. La memoria storica e i documenti RAG hanno restituito risultati vuoti, scarsi o fuori tema.
-2. Ti mancano dati concreti (numeri, specifiche, date) per scrivere un post altamente tecnico e rischi di produrre un testo vago o inventato.
-3. Il topic richiede esplicitamente "freshness" (es. listini prezzi aggiornati, ultime uscite di mercato, notizie recenti) che i documenti locali statici o la memoria del KG non possiedono.
-
-Nel tuo "Thought:", valuta rigorosamente questi tre punti. Se i dati della memoria storica o del RAG soddisfano tutti e tre i requisiti, scrivi esplicitamente: "Thought: I dati locali coprono i fatti, l'attualità e il brief. L'informazione è ABBASTANZA. Procedo alla stesura senza ricerca web."
-
-REGOLE PER LA STESURA FINALE:
-- Cita esplicitamente le fontes (es. [Fonte: Documento RAG] o [Fonte: Sito Web Autorevole]).
-- Sfrutta la memoria del Knowledge Graph: inserisci nel testo un richiamo esplicito e fluido alle relazioni passate (es. "Come abbiamo analizzato nel precedente speciale sul tema X, questa nuova tecnologia rappresenta..."). Non inventare connessioni se la memoria storica sopra è vuota.
+Nel tuo testo finale cita sempre le fonti (es. [Fonte: Documento RAG], [Fonte: Knowledge Graph]) ed evidenzia i collegamenti con gli articoli passati se il KG ha rivelato delle connessioni.
 """
 
 

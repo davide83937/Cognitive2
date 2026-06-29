@@ -16,86 +16,37 @@ def write_an_article(about: str, author: str, content: str):
 
 
 @tool
-def schedule_manager_tool(data_target: str = None) -> str:
+def calendar_query_tool(natural_language_query: str) -> str:
     """
-    Strumento UNIFICATO per la gestione del palinsesto e delle date degli articoli.
-    - Se l'utente propone una data, passa 'data_target' (formato YYYY-MM-DD) per verificare se è disponibile.
-    - Se l'utente chiede la prima data libera (o non specifica nulla), NON passare 'data_target' (lascialo vuoto o null).
-    Regole del blog: pubblicazione solo di Lunedì, Mercoledì, Venerdì e Domenica (massimo 3 post al giorno).
+    Strumento generalizzato per interrogare il palinsesto del blog nel Knowledge Graph.
+    Passa una richiesta in linguaggio naturale (es. "Quanti articoli ci sono il 2026-05-10?",
+    "Qual è l'ultima data occupata?", "Dammi tutte le date dei post pianificati").
+    Il tool tradurrà la richiesta in Cypher e restituirà i risultati grezzi.
     """
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    giorni_pubblicazione = [0, 2, 4, 6]
-    giorni_nomi = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
+    # 1. Deleghiamo al modello fine-tuned sulla RTX 3070 la creazione della query
+    cypher_query = generate_cypher(natural_language_query)
+    print(f"🔧 [DEBUG TEXT-TO-CYPHER] Query generata per il calendario:\n{cypher_query}")
 
-    # ==========================================
-    # CASO 1: VERIFICA DI UNA DATA SPECIFICA
-    # ==========================================
-    if data_target and data_target.lower() != 'null':
-        try:
-            target_date_obj = datetime.strptime(data_target, "%Y-%m-%d").date()
-        except ValueError:
-            return "Errore: Formato data non valido, usa YYYY-MM-DD."
+    # 2. Esecuzione diretta su Neo4j
+    try:
+        risultati = graph.query(cypher_query)
 
-        giorno_settimana = target_date_obj.weekday()
-        if giorno_settimana not in giorni_pubblicazione:
-            return (f"Rifiutato: La data {data_target} è un {giorni_nomi[giorno_settimana]}. "
-                    f"Il blog pubblica solo di Lun, Mer, Ven e Dom. Prova a cercare la prima data disponibile.")
+        if not risultati:
+            return "Nessun risultato trovato nel database. Il palinsesto potrebbe essere vuoto per questa ricerca."
 
-        # L'IA usa il fine-tuning per estrarre i post di quel giorno
-        nl_instruction = f"Restituisci i titoli dei post che hanno la data uguale a '{data_target}'."
-        cypher_query = generate_cypher(nl_instruction)
-        print(f"🔧 [DEBUG TEXT-TO-CYPHER] Check Data Specifica:\n{cypher_query}")
+        # 3. Formattazione pulita dei risultati da restituire all'agente
+        # Trasformiamo la lista di dizionari in una stringa leggibile per l'LLM
+        output = "Risultati estratti dal DB:\n"
+        for row in risultati:
+            output += f"- {row}\n"
 
-        try:
-            risultati = graph.query(cypher_query)
-            current_count = len(risultati) if risultati else 0
+        return output
 
-            if current_count < 3:
-                return (f"La data {data_target} ({giorni_nomi[giorno_settimana]}) è DISPONIBILE. "
-                        f"Ci sono {current_count} articoli pianificati.")
-            else:
-                return f"La data {data_target} è OCCUPATA. Limite massimo di 3 articoli raggiunto."
-        except Exception as e:
-            return f"Errore Cypher: {e}"
-
-    # ==========================================
-    # CASO 2: RICERCA DELLA PRIMA DATA LIBERA
-    # ==========================================
-    else:
-        # Recuperiamo da dove partire
-        base_date_str = get_latest_scheduled_date_from_db()
-        giorno_corrente = get_next_fixed_publish_date(base_date_str)
-
-        # L'IA usa il fine-tuning per estrarre il calendario completo
-        nl_instruction = "Restituisci la data di tutti i post presenti nel database."
-        cypher_query = generate_cypher(nl_instruction)
-        print(f"🔧 [DEBUG TEXT-TO-CYPHER] Analisi Calendario Globale:\n{cypher_query}")
-
-        # Costruiamo il calendario in Python
-        date_occupate = {}
-        try:
-            risultati = graph.query(cypher_query)
-            for r in risultati:
-                valori = list(r.values())
-                if valori and valori[0]:
-                    data_post = str(valori[0])
-                    date_occupate[data_post] = date_occupate.get(data_post, 0) + 1
-        except Exception as e:
-            return f"Errore Cypher: {e}"
-
-        # Loop ibrido super-veloce per trovare il giorno libero
-        for _ in range(50):
-            data_str = giorno_corrente.strftime("%Y-%m-%d")
-            articoli_presenti = date_occupate.get(data_str, 0)
-
-            if articoli_presenti < 3:
-                return f"La prima data disponibile in palinsesto nel Knowledge Graph è: {data_str}"
-
-            giorno_corrente = get_next_fixed_publish_date(data_str)
-
-        return "Non ci sono date disponibili nel palinsesto."
+    except Exception as e:
+        return f"Errore durante l'esecuzione in Neo4j: {e}\nQuery generata: {cypher_query}"
 
 
 
