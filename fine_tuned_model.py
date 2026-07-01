@@ -11,7 +11,6 @@ def generate_cypher(query_testuale: str) -> str:
     Genera una query Cypher deterministica delegando il calcolo al server API (Flask)
     che ospita il modello fine-tuned Qwen-7B sulla RTX 3070.
     """
-    # 1. Manteniamo il prompt di sistema rigido per istruire correttamente il modello
     prompt_text = """Genera SOLO la query Neo4j Cypher. Non aggiungere spiegazioni o formattazione markdown.
     REGOLE RIGIDE:
     1. Restituisci in RETURN SOLO le variabili esplicitamente richieste.
@@ -36,25 +35,30 @@ def generate_cypher(query_testuale: str) -> str:
 
     Richiesta: """
 
-    # 2. Assembliamo il prompt completo (Istruzioni + Richiesta NL)
     full_prompt = prompt_text + query_testuale + "\nCypher: "
 
-    # 3. Invio della richiesta HTTP POST al server Flask
     try:
         response = requests.post(
             API_URL,
             json={"prompt": full_prompt},
-            timeout=45  # Timeout generoso nel caso la GPU impieghi qualche secondo
+            timeout=45
         )
-        response.raise_for_status()  # Verifica che non ci siano errori HTTP (es. 500 o 404)
+        response.raise_for_status()
 
-        # 4. Estrazione della query ripulita restituita dal server
         data = response.json()
         risultato_pulito = data.get("cypher_query", "")
+
+        # ---> INIZIO MODIFICA: STAMPA DELLA QUERY <---
+        print("\n" + "="*50)
+        print("🔥 [DEBUG - QWEN-7B HA GENERATO CYPHER]")
+        print("Testo ricevuto (NLP):", query_testuale)
+        print("-" * 50)
+        print(risultato_pulito)
+        print("="*50 + "\n")
+        # ---> FINE MODIFICA <---
 
         return risultato_pulito
 
     except requests.exceptions.RequestException as e:
         print(f"❌ [API ERROR] Errore di comunicazione con il server Text-to-Cypher: {e}")
-        # Restituiamo una stringa d'errore che l'agente può intercettare o loggare
         return f"Errore Cypher (API inattiva): {e}"

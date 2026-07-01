@@ -268,8 +268,102 @@ def intelligent_topic_matcher(new_topic: str) -> str:
         return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
     else:
         return f"Trovata corrispondenza semantica! Nel database l'argomento è salvato ESATTAMENTE con il nome: '{risposta_llm}'. Usa questo nome per interrogare i claims."
+import calendar
+
+from datetime import datetime, timedelta
+from langchain_core.tools import tool
+from test_neo4j import graph
+from fine_tuned_model import generate_cypher
+
+from datetime import datetime, timedelta
+from langchain_core.tools import tool
+from test_neo4j import graph
+from fine_tuned_model import generate_cypher
 
 
+@tool
+def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10) -> str:
+    """
+    Trova date disponibili per la pubblicazione (Lun, Mer, Ven, Dom con < 3 post)
+    all'interno di un range di tempo.
+    Usa 'start_date' ed 'end_date' nel formato YYYY-MM-DD.
+    """
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        return "Errore: le date devono essere nel formato YYYY-MM-DD."
+
+    # 1. Troviamo TUTTE le date candidate nel range
+    giorni_validi = [0, 2, 4, 6]
+    tutte_le_date_candidate = []
+
+    corrente = start
+    while corrente <= end:
+        if corrente.weekday() in giorni_validi:
+            tutte_le_date_candidate.append(corrente.strftime("%Y-%m-%d"))
+        corrente += timedelta(days=1)
+
+    if not tutte_le_date_candidate:
+        return f"Nel periodo indicato ({start_date} al {end_date}) non ci sono giorni di palinsesto validi."
+
+    date_disponibili_finali = []
+
+    # 2. BATCHING: Dividiamo le date in piccoli lotti da 5 per evitare limiti di token
+    batch_size = 5
+    print(f"🤖 [TOOL NLP] Trovate {len(tutte_le_date_candidate)} date candidate. Inizio elaborazione a lotti...")
+
+    for i in range(0, len(tutte_le_date_candidate), batch_size):
+        lotto_corrente = tutte_le_date_candidate[i:i + batch_size]
+
+        # Creiamo la richiesta NLP solo per questo piccolo gruppo
+        date_str_nlp = ", ".join([f"'{d}'" for d in lotto_corrente])
+        prompt_nlp_per_cypher = f"Restituisci la data (p.date) e il conteggio dei post raggruppati per data, solo per i post dove la data è una di queste: {date_str_nlp}."
+
+        cypher_query = generate_cypher(prompt_nlp_per_cypher)
+
+        conteggio_db = {}
+        if graph:
+            try:
+                risultati = graph.query(cypher_query)
+                if risultati:
+                    for res in risultati:
+                        # Estraiamo la data (solitamente p.date o date)
+                        data_db = res.get("p.date") or res.get("date")
+
+                        # ---> INIZIO FIX: Estrazione Dinamica del Conteggio <---
+                        # Cerchiamo dinamicamente tra tutti i valori della riga restituita dal DB
+                        # Il conteggio sarà sicuramente un numero intero (int)
+                        count = 1
+                        for valore in res.values():
+                            if isinstance(valore, int):
+                                count = valore
+                                break
+                        # ---> FINE FIX <---
+
+                        if data_db:
+                            conteggio_db[data_db] = count
+            except Exception as e:
+                print(f"⚠️ Errore Cypher sul lotto corrente (salto): {e}")
+
+        # 3. Controllo disponibilità per il lotto analizzato
+        for data_cand in lotto_corrente:
+            occupazione = conteggio_db.get(data_cand, 0)
+            if occupazione < 3:
+                date_disponibili_finali.append(data_cand)
+
+                # Se abbiamo già raggiunto il limite di date richieste dall'LLM, usciamo da tutto!
+                if len(date_disponibili_finali) == limit:
+                    break
+
+                    # Interrompiamo anche il ciclo principale dei lotti se abbiamo raggiunto il limite
+        if len(date_disponibili_finali) == limit:
+            break
+
+    if not date_disponibili_finali:
+        return f"Attenzione: Tutti i giorni di palinsesto tra il {start_date} e il {end_date} hanno già 3 post programmati."
+
+    return f"Date disponibili trovate con successo (meno di 3 post): {', '.join(date_disponibili_finali)}."
 #@tool
 #def intelligent_topic_matcher(new_topic: str) -> str:
     """
