@@ -471,6 +471,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
         return f"Errore durante l'interrogazione avanzata del KG: {e}"
     """
 
+
 @tool
 def get_enhanced_topic_context(topic_name: str) -> str:
     """
@@ -479,34 +480,57 @@ def get_enhanced_topic_context(topic_name: str) -> str:
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    # Chiediamo esplicitamente le variabili per sfruttare la RELAZIONE TOPIC del tuo schema
-    nl_instruction = f"Restituisci il nome del topic correlato e il tipo di relazione per il topic '{topic_name}'."
+    # 1. NLP per gli archi (chiediamo esplicitamente tipo e motivo)
+    nl_instruction_rel = f"Restituisci il nome del topic correlato, il tipo di relazione e il motivo della relazione per il topic '{topic_name}'."
+    cypher_query_rel = generate_cypher(nl_instruction_rel)
 
-    cypher_query_rel = generate_cypher(nl_instruction)
-    print(f"🔧 [DEBUG TEXT-TO-CYPHER] Query Relazioni:\n{cypher_query_rel}")
-
-    # Per i claim usiamo un'altra query diretta per semplicità e precisione dell'LLM
+    # 2. NLP per i claim (inalterato)
     nl_instruction_claims = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{topic_name}'."
     cypher_query_claims = generate_cypher(nl_instruction_claims)
 
     try:
-        # Eseguiamo le interrogazioni (puoi anche unirle se il tuo LLM sa gestire query complesse con OPTIONAL MATCH)
         risultati_rel = graph.query(cypher_query_rel)
         risultati_claims = graph.query(cypher_query_claims)
 
         output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
 
+        # --- GESTIONE E DEBUG DEI CLAIM ---
         if risultati_claims:
             claims = set([str(list(r.values())[0]) for r in risultati_claims])
+            print("\n" + "=" * 50)
+            print(f"🔍 [DEBUG CLAIM] Trovati {len(claims)} claim per '{topic_name}':")
+            for c in claims:
+                print(f"  - {c}")
+
             output += "\n📌 Concetti già trattati in passato:\n- " + "\n- ".join(claims) + "\n"
 
+        # --- GESTIONE E DEBUG DELLE RELAZIONI (ARCHI) ---
         if risultati_rel:
+            print("\n" + "=" * 50)
+            print(f"🔗 [DEBUG ARCHI E RELAZIONI] Nodi collegati a '{topic_name}':")
+
             output += "\n🔗 Mappa delle Relazioni:\n"
             for rel in risultati_rel:
-                # Estrazione flessibile dei valori restituiti
+                # Stampiamo il dizionario grezzo restituito da Neo4j per ispezione
+                print(f"  -> RAW RECORD NEO4J: {rel}")
+
                 valori = list(rel.values())
-                if len(valori) >= 2:
+
+                # Se l'LLM ha estratto correttamente Nome, Tipo e Motivo (3 campi)
+                if len(valori) >= 3:
+                    nome_target = valori[0]
+                    tipo_rel = valori[1]
+                    motivo_rel = valori[2]
+
+                    print(f"  -> ESTRATTO: Target='{nome_target}', Type='{tipo_rel}', Reason='{motivo_rel}'")
+                    output += f"- Connesso a '{nome_target}' | Tipo: [{tipo_rel}] | Motivo: {motivo_rel}\n"
+
+                # Fallback se ne estrae solo 2 (Nome e Tipo)
+                elif len(valori) == 2:
+                    print(f"  -> ESTRATTO (No Reason): Target='{valori[0]}', Type='{valori[1]}'")
                     output += f"- Connesso a '{valori[0]}' | Tipo: [{valori[1]}]\n"
+
+            print("=" * 50 + "\n")
 
         return output
     except Exception as e:
