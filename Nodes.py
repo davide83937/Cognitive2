@@ -322,17 +322,23 @@ def ask_schedule_node(state: State) -> Command:
         goto="scheduling_node_router"
     )
 
+
 def check_schedule_node(state: State):
-    last_message = state["messages"][-1]
+    # Recuperiamo l'intera cronologia recente per dare pieno contesto all'LLM grande
+    messages_history = state.get("messages", [])
     llm = get_llm_with_calendar_tools()
 
     data_estratta = state.get("data_proposta")
     data_testo = data_estratta if data_estratta else "Nessuna data attualmente assegnata"
-    n_days = state.get("n_days", 3)
+    #n_days = state.get("n_days", 3)
 
-    context_prompt = get_check_schedule_context_prompt(check_date_prompt, data_testo, n_days)
+    context_prompt = get_check_schedule_context_prompt(check_date_prompt, data_testo)
 
-    ai_msg = llm.invoke([{"role": "system", "content": context_prompt}] + [last_message])
+    # Prepariamo i messaggi per l'LLM inserendo il system prompt aggiornato
+    input_messages = [{"role": "system", "content": context_prompt}] + messages_history
+
+    # Passo 1: L'LLM decide se chiamare lo strumento di controllo del calendario
+    ai_msg = llm.invoke(input_messages)
     new_messages = [ai_msg]
 
     if hasattr(ai_msg, "tool_calls") and len(ai_msg.tool_calls) > 0:
@@ -345,29 +351,32 @@ def check_schedule_node(state: State):
             selected_tool = get_tools_by_name[tool_name]
             tool_result = selected_tool.invoke(tool_args)
 
-            tool_msg = ToolMessage(
+            tool_message = ToolMessage(
                 content=str(tool_result),
                 name=tool_name,
                 tool_call_id=tool_id
             )
-            new_messages.append(tool_msg)
+            new_messages.append(tool_message)
 
-            match = re.search(r"\d{4}-\d{2}-\d{2}", str(tool_result))
-            if match:
-                data_estratta = match.group(0)
+        # --- SOLUZIONE REACT ---
+        # Passiamo l'output del tool di nuovo all'LLM grande (GPT-4)
+        # In questo modo leggerà i dati grezzi del DB e applicherà la logica flessibile
+        final_ai_msg = llm.invoke(input_messages + new_messages)
+        new_messages.append(final_ai_msg)
     else:
         print("✅ Nessun tool richiesto dall'LLM. Risposta generata direttamente.")
 
     print("\n" + "=" * 50)
-    print("📅 RISULTATO SCHEDULING (Tool/LLM):")
+    print("📅 RISULTATO SCHEDULING (Elaborato da LLM Grande):")
     for msg in new_messages:
         msg.pretty_print()
     print("=" * 50 + "\n")
 
+    # SICUREZZA STATO (Punto 4): Non aggiorniamo data_proposta qui.
+    # Lo stato cambierà solo nel router quando l'utente darà la conferma definitiva.
     return Command(
         update={
-            "messages": new_messages,
-            "data_proposta": data_estratta
+            "messages": new_messages
         },
         goto="ask_user_schedule_node"
     )

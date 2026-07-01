@@ -206,7 +206,7 @@ def intelligent_topic_matcher(new_topic: str) -> str:
 
     # 1. GENERAZIONE DELLA QUERY CON IL MODELLO FINE-TUNED
     # Chiediamo i topic e i claim seguendo lo schema del training: Topic <-[:COVERS]- Post -[:EXTRACTS]-> Claim
-    nl_instruction = "Restituisci il nome di tutti i topic presenti e i testi dei claim estratti dai post che coprono ciascun topic."
+    nl_instruction = ("Restituisci il nome di tutti i topic presenti e i testi dei claim estratti dai post che coprono ciascun topic. Limita la tua ricerca solo agli ultimi 30 giorni")
 
     cypher_query = generate_cypher(nl_instruction)
     print(f"🔧 [DEBUG TEXT-TO-CYPHER] Query Topic Matcher:\n{cypher_query}")

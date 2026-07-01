@@ -94,6 +94,7 @@ Regole di classificazione:
 REGOLE SULLA PROPRIETÀ 'data_proposta':
 - Se l'utente specifica chiaramente una NUOVA data nel suo messaggio (es. "Spostalo al 2026-06-25"), estrai quella data nel formato YYYY-MM-DD.
 - Se l'utente si limita a confermare la data proposta dicendo semplicemente "Sì" o "Va bene", imposta 'data_proposta' a null (o "NESSUNA"), in modo da non sovrascrivere la data già salvata nel contesto.
+- Se l'intento è ancora esplorativo o informativo, lascia null.
 
 Devi rispondere UNICAMENTE restituendo un oggetto JSON valido con questa struttura esatta:
 {
@@ -103,24 +104,30 @@ Devi rispondere UNICAMENTE restituendo un oggetto JSON valido con questa struttu
 }
 Non aggiungere testo prima o dopo il JSON."""
 
-check_date_prompt = """Sei l'assistente editoriale responsabile della pianificazione del blog di robotica.
-    Il tuo compito è aiutare l'utente a trovare una data disponibile per pubblicare il suo articolo.
-    L'utente ti chiederà informazioni sulle date disponibili, hai dei tool a disposizione per poter cercare e fornire
-    le informazioni, scegli sempre il tool più adatto alla richiesta che ti viene fatta.
+check_date_prompt = """Sei l'assistente editoriale responsabile della validazione delle date del blog.
+Il calendario editoriale è già strutturato e pianificato. Il tuo compito è unicamente confermare se la data già prevista per l'articolo corrente è libera.
+
+REGOLE TASSATIVE DI COMPORTAMENTO (EVITA LOOP DI TOOL):
+1. AZIONE INIZIALE: Usa il tool per verificare qual è l'ultima data occupata o se la data proposta è libera.
+2. STOP IMMEDIATO (NO CALCOLI, NO ALTRI TOOL): Una volta che hai ricevuto i dati dal database, NON devi invocare altri tool e NON devi fare calcoli matematici (es. non aggiungere giorni). 
+3. LOGICA DI VERIFICA: Se il database ti dice che l'ultimo post è il 2026-07-06 e la data proposta per l'articolo corrente è il 2026-07-08, deduci immediatamente che il 2026-07-08 è LIBERO e non ha conflitti. 
+4. RISPOSTA FINALE: Genera subito il testo per l'utente dicendo chiaramente che la data proposta è la prima disponibile ed è libera. 
+
+Esempio di risposta corretta:
+"L'ultimo post sul blog è programmato per il 2026-07-06. Pertanto, la data già prevista del 2026-07-08 è la prima data libera disponibile. Confermiamo questa data?"
 """
 
 tavily_prompt = """Un motore di ricerca ottimizzato per agenti AI. 
     Usa questo tool per cercare su internet informazioni aggiornate, notizie o per 
     verificare l'accuratezza scientifica e tecnologica di un argomento prima di scriverci un articolo."""
 
-def get_check_schedule_context_prompt(check_date_prompt_base: str, data_testo: str, n_days: int) -> str:
+def get_check_schedule_context_prompt(check_date_prompt_base: str, data_testo: str) -> str:
     """Genera il prompt di contesto per la verifica della schedulazione."""
     return (
         f"{check_date_prompt_base}\n\n"
         f"--- INFORMAZIONE DI CONTESTO INTERNA ---\n"
-        f"La data attualmente pianificata/proposta per questo articolo è: {data_testo}.\n"
-        f"⚠️ REGOLA SCHEDULAZIONE: Il piano prevede di pubblicare con una cadenza di {n_days} giorni.\n"
-        f"Se l'utente chiede la 'prossima data disponibile' o di 'spostare' la data, calcola o usa i tool tenendo in considerazione questo stacco obbligatorio di {n_days} giorni rispetto alla data attuale."
+        f"La data esatta definita dal calendario editoriale per questo articolo è: {data_testo}.\n"
+        f"Se l'utente chiede la prima data libera, verifica semplicemente che il {data_testo} non sia già occupato da un altro post. Se è libero, confermalo senza fare slittamenti o calcoli aggiuntivi."
     )
 
 def get_kg_extraction_prompt(titolo: str, testo: str, existing_topics: list) -> str:
