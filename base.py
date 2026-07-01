@@ -1,12 +1,11 @@
-from typing import Optional, List, Dict
+from typing import Optional, List
 from langchain_core.tools import BaseTool
-from Tools import write_an_article, schedule_manager_tool,get_previous_topics, get_topic_claims, rag_document_retriever, verified_internet_search, intelligent_topic_matcher, \
-    get_enhanced_topic_context
-from function_tool import tavily_search_tool
+from Tools import write_an_article, get_previous_topics, rag_document_retriever, verified_internet_search, \
+    intelligent_topic_matcher, \
+    get_enhanced_topic_context, calendar_query_tool
 
 
-
-def get_tools(tool_names: Optional[List[str]] = None, include_gmail: bool = False) -> List[BaseTool]:
+def get_tools(tool_names: Optional[List[str]] = None) -> List[BaseTool]:
     all_tools = {
         "write_article": write_an_article,
         #"find_first_available_date_tool": find_first_available_date_tool,
@@ -32,7 +31,7 @@ get_tools_by_name = {
 "get_previous_topics": get_previous_topics,
         #"get_topic_claims": get_topic_claims,
        # "tavily_search_results_json": tavily_search_tool,
-"schedule_manager_tool": schedule_manager_tool,
+"calendar_query_tool": calendar_query_tool,
         "rag_document_retriever": rag_document_retriever,
 "verified_internet_search": verified_internet_search,
     "intelligent_topic_matcher": intelligent_topic_matcher,

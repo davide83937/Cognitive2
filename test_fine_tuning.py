@@ -196,22 +196,26 @@ def robust_cleaner(query):
 
     return query
 
+TEST_SOLO_ULTIMI_11 = True
+
 def main():
-    # 1. Caricamento dati di test (Tutto il file)
+    # 1. Caricamento dati di test
     try:
         test_items = load_test_dataset(DATASET_PATH)
 
-        # --- MODIFICA: Prendi solo le ultime 11 query ---
-        if len(test_items) > 11:
+        # Gestione switch modalità
+        if TEST_SOLO_ULTIMI_11 and len(test_items) > 11:
+            print("🚀 MODALITÀ: Esecuzione limitata agli ultimi 11 elementi.")
             test_items = test_items[-11:]
-            print(f"⚠️ Modalità test ridotto: in esecuzione sulle ultime {len(test_items)} query.")
-        # -----------------------------------------------
+        else:
+            print("🚀 MODALITÀ: Esecuzione su INTERO dataset.")
 
     except Exception as e:
         print(f"❌ Impossibile caricare il dataset: {e}")
         return
 
     num_total_items = len(test_items)
+    # ... resto del codice rimane identico ...
 
     # 2. Connessione a Neo4j
     print("🔌 Connessione a Neo4j (Cloud)...")
