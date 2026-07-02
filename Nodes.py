@@ -49,8 +49,10 @@ def planning_node(state: State) -> Command:
 def ask_plan_feedback_node(state: State) -> Command:
     print("\n--- [ask_plan_feedback_node] In attesa di approvazione ---")
     piano_generato = state.get("editorial_plan", "")
+    justification = state.get("justification", "")
     feedback_utente = interrupt({
         "proposta_piano": piano_generato,
+        "justification": justification,
         "schedule_result": "Il sistema ha pianificato i post. Approvi la programmazione o vuoi suggerire modifiche?"
     })
     return Command(

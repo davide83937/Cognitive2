@@ -93,6 +93,7 @@ if __name__ == "__main__":
                 print("📅 PROPOSTA CALENDARIO EDITORIALE (Ogni n giorni):")
                 print("=" * 50)
                 print(dati["proposta_piano"])
+                print(dati["justification"])
                 print("=" * 50 + "\n")
                 new_input = input("Scrivi 'ok' per approvare o inserisci modifiche: ")
             elif "articolo_generato" in dati:
