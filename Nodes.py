@@ -67,17 +67,15 @@ def process_plan_node(state: State) -> Command:
     user_feedback = state["messages"][-1].content
     original_plan = state.get("editorial_plan", "")
 
-    last_input = "Argomento generico"
-    if len(state["messages"]) > 1:
-        last_input = state["messages"][-2].content
 
     extractor = get_llm().with_structured_output(TopicSelection)
     estrazione_prompt = get_topic_extraction_from_feedback_prompt(original_plan, user_feedback)
     scelta = extractor.invoke([{"role": "user", "content": estrazione_prompt}])
 
     pending = scelta.selected_topics
+
     if not pending:
-        pending = [last_input]
+        pending = [original_plan]
 
     print(f"📌 Articoli messi in coda di scrittura: {pending}")
 
@@ -86,7 +84,7 @@ def process_plan_node(state: State) -> Command:
     return Command(
         update={
             "data_proposta": data_oggi,
-            "pending_topics": pending
+            "pending_topics": pending  #verificare la compatibilità
         },
         goto="accept_node"
     )
@@ -108,17 +106,41 @@ def refine_node(state: MessagesState):
 
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
+
     if pending:
         elemento = pending[0]
         if isinstance(elemento, dict):
             topic_da_scrivere = elemento.get("title", "Argomento generico")
-            data_assegnata = elemento.get("date")
+            data_assegnata = elemento.get("date")   #da PLANNED ARTICLE
         else:
             topic_da_scrivere = getattr(elemento, "title", "Argomento generico")
             data_assegnata = getattr(elemento, "date", None)
     else:
         topic_da_scrivere = state.get("current_topic", "Argomento generico")
         data_assegnata = state.get("data_proposta", None)
+
+    """
+    1. Su data_proposta = data_oggi in process_plan_node
+    "È una misura di sicurezza (fallback). Normalmente ogni 
+    articolo ha già la sua data specifica calcolata dal piano editoriale. 
+    Tuttavia, se l'utente fornisce un feedback ambiguo e l'LLM non riesce 
+    ad estrarre correttamente gli articoli (restituendo una lista vuota), 
+    questa riga garantisce che il sistema non vada in crash e assegni 
+    provvisoriamente la data odierna all'articolo di emergenza."
+
+    2. Sul blocco else in accept_node (e current_topic)
+    "Serve a gestire i loop di background dell'agente (paradigma ReAct). 
+    Quando l'agente entra in questo nodo, estrae l'articolo dalla coda e 
+    salva il titolo in current_topic nello stato globale. 
+    Se subito dopo l'LLM decide di invocare un tool 
+    (come una ricerca web o un recupero documentale), 
+    il flusso esce temporaneamente dal nodo per poi rientrarci. 
+    Il blocco else garantisce che, se la coda dovesse subire anomalie 
+    o se l'agente deve semplicemente continuare a lavorare sullo stesso 
+    articolo dopo aver usato un tool, il sistema recuperi current_topic 
+    dallo stato senza perdere la memoria di ciò che stava scrivendo."
+    """
+
     messaggi = state.get("messages", [])
     sta_tornando_da_ricerca = False
     if messaggi:
@@ -127,6 +149,18 @@ def accept_node(state: State):
             sta_tornando_da_ricerca = True
     if not sta_tornando_da_ricerca:
         print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
+    """
+    A cosa serve: È un controllo puramente visivo per la console (UX/LOG).
+    Spiegazione: Se l'ultimo messaggio della cronologia è di tipo "tool", 
+    significa che l'agente ha appena eseguito un'azione di background 
+    (come una ricerca sul web o un recupero RAG) ed è tornato in questo 
+    nodo per elaborare i risultati. In questo caso, il sistema evita di 
+    stampare nuovamente a schermo la scritta "Avvio stesura articolo...", 
+    evitando di intasare la console con messaggi ripetitivi durante i loop 
+    interni dell'agente.
+    """
+
+
     llm = get_llm_with_tools()
     # 2. Recuperi i kg_summaries dallo stato
     sommari = state.get("kg_summaries", "")
@@ -140,6 +174,14 @@ def accept_node(state: State):
         if getattr(msg, "name", "") == "write_an_article":
             break
         storico_pulito.insert(0, msg)
+    """
+    A cosa serve: Questa è una tecnica di ottimizzazione e gestione della memoria del contesto.
+    Spiegazione: Scorrendo i messaggi al contrario (reversed), il codice isola solo la cronologia 
+    recente relativa alla sessione di scrittura corrente. Appena incontra una chiamata passata al 
+    tool write_an_article (o il suo rispettivo output), il ciclo si interrompe (break). Questo garantisce due enormi vantaggi:
+    Risparmio di Token: Evita di inviare all'LLM l'intera cronologia dei vecchi articoli scritti in precedenza.
+    Prevenzione delle Allucinazioni: Impedisce all'LLM di confondersi leggendo i testi o i dati dei post passati.
+    """
     messages = [{"role": "system", "content": accept_prompt}] + storico_pulito
     response = llm.invoke(messages)
     if response.content:

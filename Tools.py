@@ -1,12 +1,10 @@
-from datetime import datetime
-
-
-from fine_tuned_model import generate_cypher
-from function_tool import get_latest_scheduled_date_from_db, get_next_fixed_publish_date, \
-    getRetriever, tavily_search_tool
-from query_neo4j import get_post_count_by_date_query, get_all_topics_query
-from langchain_core.tools import tool
+from datetime import datetime, timedelta
 from test_neo4j import graph
+from fine_tuned_model import generate_cypher
+from function_tool import getRetriever, tavily_search_tool
+from query_neo4j import get_all_topics_query
+from langchain_core.tools import tool
+
 
 
 @tool
@@ -193,47 +191,40 @@ def verified_internet_search(query: str) -> str:
     return risposta_filtrata.content
 
 
-
 @tool
 def intelligent_topic_matcher(new_topic: str) -> str:
     """
-    Usa questo tool per scoprire SE e COME un nuovo argomento è già stato trattato nel Knowledge Graph.
-    Fornisce la corrispondenza semantica esatta del nome del Topic nel database.
+    Usa questo tool per scoprire SE e QUALI argomenti sono già stati trattati nel Knowledge Graph.
+    Fornisce la corrispondenza semantica dei Topic nel database.
     """
     from Models import get_llm
+    from test_neo4j import graph
+
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    # 1. GENERAZIONE DELLA QUERY CON IL MODELLO FINE-TUNED
-    # Chiediamo i topic e i claim seguendo lo schema del training: Topic <-[:COVERS]- Post -[:EXTRACTS]-> Claim
-    nl_instruction = ("Restituisci il nome di tutti i topic presenti e i testi dei claim estratti dai post che coprono ciascun topic. Limita la tua ricerca solo agli ultimi 30 giorni")
-
+    nl_instruction = (
+        "Restituisci il nome di tutti i topic presenti e i testi dei claim estratti dai post che coprono ciascun topic. Limita la tua ricerca solo agli ultimi 30 giorni")
     cypher_query = generate_cypher(nl_instruction)
-    print(f"🔧 [DEBUG TEXT-TO-CYPHER] Query Topic Matcher:\n{cypher_query}")
 
-    # 2. ESECUZIONE ED ELABORAZIONE DEI RISULTATI IN PYTHON
     try:
         records = graph.query(cypher_query)
         if not records:
             return f"Il database è vuoto. '{new_topic}' è un argomento 100% nuovo."
 
-        # Usiamo un dizionario per raggruppare i claim sotto lo stesso topic (emulando il collect[] di Cypher)
         topic_dict = {}
         for r in records:
             valori = list(r.values())
             if len(valori) >= 1:
                 nome_topic = str(valori[0])
-                # Controlliamo se la query ha restituito anche un claim valido nella seconda colonna
                 claim = str(valori[1]) if len(valori) > 1 and valori[1] is not None else None
 
                 if nome_topic not in topic_dict:
                     topic_dict[nome_topic] = []
 
-                # Salviamo al massimo 2 claim di esempio per non saturare il prompt del Giudice
                 if claim and claim != "None" and len(topic_dict[nome_topic]) < 2:
                     topic_dict[nome_topic].append(claim)
 
-        # Costruiamo il contesto testuale per l'LLM
         lista_esistenti = []
         for nome, claims in topic_dict.items():
             lista_esistenti.append(f"- Topic: '{nome}' (Esempi trattati: {claims})")
@@ -243,7 +234,7 @@ def intelligent_topic_matcher(new_topic: str) -> str:
     except Exception as e:
         return f"Errore durante l'interrogazione di Neo4j: {e}"
 
-    # 3. IL GIUDICE SEMANTICO (Rimane invariato, usa un LLM standard come GPT-4o)
+    # --- 3. IL GIUDICE SEMANTICO AGGIORNATO PER MULTI-TOPIC ---
     llm_giudice = get_llm()
     prompt_giudice = f"""
     Sei un analista semantico. Il tuo compito è confrontare un NUOVO argomento con una lista di argomenti GIA' ESISTENTI nel database.
@@ -253,32 +244,23 @@ def intelligent_topic_matcher(new_topic: str) -> str:
     ARGOMENTI ESISTENTI NEL DATABASE:
     {contesto_db}
 
-    DOMANDA: Il nuovo argomento proposto è concettualmente uguale, o una sotto-categoria molto stretta, di uno degli argomenti esistenti?
-    Considera sinonimi, acronimi (es. 5G e Rete 5G) e concetti correlati.
+    DOMANDA: Il nuovo argomento proposto è concettualmente uguale, affine, o una sotto-categoria di uno o più argomenti esistenti?
+    Identifica TUTTI i topic esistenti che hanno una forte correlazione semantica con il nuovo argomento.
 
     REGOLE DI RISPOSTA (IMPORTANTISSIMO):
-    - Se C'E' una corrispondenza semantica, rispondi SOLO con il NOME ESATTO del Topic esistente (copialo identico a come è scritto nel database). Non aggiungere altre parole.
-    - Se NON C'E' nessuna corrispondenza (è un argomento totalmente nuovo), rispondi ESATTAMENTE con la parola: "NESSUNO".
+    - Se trovi uno o più topic corrispondenti, rispondi SOLO con i NOMI ESATTI dei Topic esistenti separati da una virgola (es. "Droni, Sistemi Autonomi"). Non aggiungere altre parole, spiegazioni o introduzioni.
+    - Se NON c'è nessuna corrispondenza semantica con nessun topic, rispondi ESATTAMENTE con la parola: "NESSUNO".
     """
 
     risposta_llm = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}]).content.strip()
 
-    # 4. RISPOSTA FINALE ALL'AGENTE LANGGRAPH
+    # --- 4. RISPOSTA FINALE MULTI-TOPIC ALL'AGENTE ---
     if risposta_llm == "NESSUNO":
         return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
     else:
-        return f"Trovata corrispondenza semantica! Nel database l'argomento è salvato ESATTAMENTE con il nome: '{risposta_llm}'. Usa questo nome per interrogare i claims."
-import calendar
+        # Restituiamo l'elenco dei topic trovati sotto forma di stringa strutturata
+        return f"CORRISPONDENZA_TROVATA: {risposta_llm}"
 
-from datetime import datetime, timedelta
-from langchain_core.tools import tool
-from test_neo4j import graph
-from fine_tuned_model import generate_cypher
-
-from datetime import datetime, timedelta
-from langchain_core.tools import tool
-from test_neo4j import graph
-from fine_tuned_model import generate_cypher
 
 
 @tool
@@ -364,112 +346,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
         return f"Attenzione: Tutti i giorni di palinsesto tra il {start_date} e il {end_date} hanno già 3 post programmati."
 
     return f"Date disponibili trovate con successo (meno di 3 post): {', '.join(date_disponibili_finali)}."
-#@tool
-#def intelligent_topic_matcher(new_topic: str) -> str:
-    """
-    Usa questo tool per scoprire SE e COME un nuovo argomento è già stato trattato nel Knowledge Graph.
-    Fornisce la corrispondenza semantica esatta del nome del Topic nel database.
-    """
-    """from Models import get_llm
-    if not graph:
-        return "Errore: Database Neo4j non connesso."
-        """
 
-    # 1. Estraiamo TUTTI i Topic esistenti nel database (e magari qualche claim chiave)
-    # Se il DB è piccolo/medio, possiamo portarli tutti in memoria.
-    query = """
-    MATCH (t:Topic)
-    OPTIONAL MATCH (c:Claim)-[:RELATED_TO]->(t)
-    RETURN t.name AS topic_name, collect(c.text)[0..2] AS sample_claims
-    """
-    try:
-        records = graph.query(query)
-        if not records:
-            return f"Il database è vuoto. '{new_topic}' è un argomento 100% nuovo."
-
-        lista_esistenti = []
-        for r in records:
-            nome = r['topic_name']
-            claims = r['sample_claims']
-            lista_esistenti.append(f"- Topic: '{nome}' (Esempi trattati: {claims})")
-
-        contesto_db = "\n".join(lista_esistenti)
-
-    except Exception as e:
-        return f"Errore durante l'interrogazione di Neo4j: {e}"
-
-    # 2. Usiamo un LLM "Giudice" per fare il matching semantico
-    llm_giudice = get_llm()
-    prompt_giudice = f"""
-    Sei un analista semantico. Il tuo compito è confrontare un NUOVO argomento con una lista di argomenti GIA' ESISTENTI nel database.
-
-    NUOVO ARGOMENTO PROPOSTO: "{new_topic}"
-
-    ARGOMENTI ESISTENTI NEL DATABASE:
-    {contesto_db}
-
-    DOMANDA: Il nuovo argomento proposto è concettualmente uguale, o una sotto-categoria molto stretta, di uno degli argomenti esistenti?
-    Considera sinonimi, acronimi (es. 5G e Rete 5G) e concetti correlati.
-
-    REGOLE DI RISPOSTA (IMPORTANTISSIMO):
-    - Se C'E' una corrispondenza semantica, rispondi SOLO con il NOME ESATTO del Topic esistente (copialo identico a come è scritto nel database). Non aggiungere altre parole.
-    - Se NON C'E' nessuna corrispondenza (è un argomento totalmente nuovo), rispondi ESATTAMENTE con la parola: "NESSUNO".
-    """
-
-    risposta_llm = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}]).content.strip()
-
-    # 3. Formattiamo la risposta per l'agente principale
-    if risposta_llm == "NESSUNO":
-        return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
-    else:
-        return f"Trovata corrispondenza semantica! Nel database l'argomento è salvato ESATTAMENTE con il nome: '{risposta_llm}'. Usa questo nome per interrogare i claims."
-
-
-#@tool
-#def get_enhanced_topic_context(topic_name: str) -> str:
-    """
-    Usa questo tool durante la stesura dell'articolo per recuperare il contesto profondo
-    dal Knowledge Graph: estrae i claim storici sul topic e la mappa di relazioni
-    con altri argomenti (es. prerequisiti, sotto-categorie) con le relative motivazioni.
-    """
-    """if not graph:
-        return "Errore: Database Neo4j non connesso."
-
-    from query_neo4j import get_enhanced_topic_context_query
-    query = get_enhanced_topic_context_query()
-
-    print(f"\n🧠 [DEBUG KG] Estrazione contesto arricchito per il topic: '{topic_name}'")
-
-    try:
-        risultati = graph.query(query, params={"topic": topic_name})
-        if not risultati or not risultati[0].get("topic_name"):
-            return f"Nessuna informazione storica o relazione trovata nel KG per il topic '{topic_name}'."
-
-        record = risultati[0]
-        claims = record.get("direct_claims", [])
-        relations = record.get("relations", [])
-
-        output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
-
-        # Formattazione dei Claim storici
-        if claims:
-            output += "\n📌 Concetti e claim già trattati in passato:\n- " + "\n- ".join(claims) + "\n"
-        else:
-            output += "\n📌 Nessun claim registrato in precedenza su questo specifico topic.\n"
-
-        # Formattazione della struttura del Grafo
-        valid_relations = [r for r in relations if r.get('target')]
-        if valid_relations:
-            output += "\n🔗 Mappa delle Relazioni Semantiche nel Blog:\n"
-            for rel in valid_relations:
-                output += f"- Connesso a '{rel['target']}' | Tipo: [{rel['type']}] | Motivo: {rel['reason']}\n"
-        else:
-            output += "\n🔗 Nessuna connessione strutturale con altri macro-topic nel grafo.\n"
-
-        return output
-    except Exception as e:
-        return f"Errore durante l'interrogazione avanzata del KG: {e}"
-    """
 
 
 @tool

@@ -37,51 +37,58 @@ def get_accept_prompt(topic: str, kg_summaries: str) -> str:
     memoria_attuale = kg_summaries if kg_summaries else "In attesa di interrogazione. Usa i tool del KG per scoprire cosa sappiamo."
 
     return f"""
-Sei un AI Blogger Assistant esperto. Il tuo compito finale è scrivere un articolo di alta qualità sul topic: '{topic}'.
-
-Hai a disposizione un set di strumenti (tools) che includono:
-- intelligent_topic_matcher: per verificare dinamicamente se l'argomento è già nel Knowledge Graph.
-- get_enhanced_topic_context: per recuperare i claim passati di un topic esistente.
-- rag_document_retriever: per recuperare concetti tecnici dai manuali locali.
-- verified_internet_search: per notizie fresche dal web.
-- write_an_article: per generare il testo finale.
-
-REGOLE DI ESECUZIONE (FONDAMENTALE):
-1. COME PRIMA AZIONE IN ASSOLUTO: Devi obbligatoriamente invocare il tool 'intelligent_topic_matcher' per capire se l'argomento '{topic}' è già nel nostro database. NON puoi usare la ricerca web o RAG prima di aver controllato il Knowledge Graph.
-2. Se il matcher ti restituisce un argomento esistente, usa 'get_enhanced_topic_context' per recuperare i dettagli e i claim storici.
-3. Solo DOPO aver esplorato il Knowledge Graph, valuta se ti servono il RAG o la ricerca Web (Tavily) per arricchire l'articolo.
-4. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
-
----------------------------------------------------------
-MEMORIA STORICA DEL BLOG (Knowledge Graph Summaries):
-{memoria_attuale}
----------------------------------------------------------
-
-Nel tuo testo finale cita sempre le fonti (es. [Fonte: Documento RAG], [Fonte: Knowledge Graph]) ed evidenzia i collegamenti con gli articoli passati se il KG ha rivelato delle connessioni.
-"""
+    Sei un AI Blogger Assistant esperto. Il tuo compito finale è scrivere un articolo di alta qualità sul topic: '{topic}'.
+    
+    Hai a disposizione un set di strumenti (tools) che includono:
+    - intelligent_topic_matcher: per verificare dinamicamente se l'argomento è già nel Knowledge Graph.
+    - get_enhanced_topic_context: per recuperare i claim passati di un topic esistente.
+    - rag_document_retriever: per recuperare concetti tecnici dai manuali locali.
+    - verified_internet_search: per notizie fresche dal web.
+    - write_an_article: per generare il testo finale.
+    
+    REGOLE DI ESECUZIONE (FONDAMENTALE):
+    1. COME PRIMA AZIONE IN ASSOLUTO: Invoca il tool 'intelligent_topic_matcher'.
+    2. SE IL MATCHER TI RESTITUISCE PIÙ TOPIC (separati da virgola, es. 'Droni, Sistemi Autonomi'):
+    Devi obbligatoriamente invocare il tool 'get_enhanced_topic_context' PIÙ VOLTE, ovvero UNA VOLTA PER CIASCUN TOPIC TROVATO (es. prima per 'Droni' e poi per 'Sistemi Autonomi'). 
+    Raccogli tutti i claim storici di ognuno di essi prima di procedere.
+    3. Solo DOPO aver esplorato il Knowledge Graph, valuta se ti servono il RAG o la ricerca Web (Tavily)
+     per arricchire l'articolo.
+    4. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
+    
+    ---------------------------------------------------------
+    MEMORIA STORICA DEL BLOG (Knowledge Graph Summaries):
+    {memoria_attuale}
+    ---------------------------------------------------------
+    
+    Nel tuo testo finale cita sempre le fonti (es. [Fonte: Documento RAG], [Fonte: Knowledge Graph]) ed 
+    evidenzia i collegamenti con gli articoli passati se il KG ha rivelato delle connessioni.
+    """
 
 
 tool_node_prompt = f"""Sei un classificatore che riceve due input, il primo è un articolo che riguarda un determinato topic, 
-il secondo input invece è il feedback dell'utente riguardante quell'articolo. Il feedback può essere di tipo positivo, il che significa
-che l'utente approva l'articolo così come è, oppure l'utente chiedere di fare delle modifiche.
-Rispondi:
-refine, se l'utente ti ha chiesto delle modifiche
-approve, se l'utente ha detto che l'articolo va bene così.
-Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATTAMENTE questa struttura:
-{{
-    "ragionamento": "Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo",
-    "classification": "approve" oppure "refine"
-}}
-Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
+    il secondo input invece è il feedback dell'utente riguardante quell'articolo. Il feedback può essere di tipo positivo, 
+    il che significa
+    che l'utente approva l'articolo così come è, oppure l'utente chiedere di fare delle modifiche.
+    Rispondi:
+    refine, se l'utente ti ha chiesto delle modifiche
+    approve, se l'utente ha detto che l'articolo va bene così.
+    Devi rispondere UNICAMENTE restituendo un oggetto JSON valido che rispetti ESATTAMENTE questa struttura:
+    {{
+        "ragionamento": "Analizza il feedback utente e spiega come mai lo hai interpretato in un certo modo",
+        "classification": "approve" oppure "refine"
+    }}
+    Non aggiungere testo prima o dopo il JSON. Non usare chiavi diverse da 'ragionamento' e 'classification'."""
 
 
 def get_update_prompt():
-    update_prompt = """Sei un giornalista esperto. Hai appena generato un articolo, ma l'utente ha richiesto delle modifiche fornendo un feedback.
+    update_prompt = """Sei un giornalista esperto. Hai appena generato un articolo, ma l'utente ha richiesto 
+    delle modifiche fornendo un feedback.
     Per raccogliere le informazioni necessarie, DEVI operare seguendo il paradigma ReAct (Reasoning and Acting).
     Hai a disposizione un set di strumenti (tools) che includono:
     - Ricerca sul Web (per cercare quello che l'utente ti ha chiesto nel suo feedback)
     - RAG Documentale (per cercare quello che l'utente ti ha chiesto nel suo feedback)
-    Il tuo compito è analizzare la cronologia dei messaggi, comprendere le modifiche richieste e utilizzare nuovamente il tool 'write_an_article' per generare la versione aggiornata.
+    Il tuo compito è analizzare la cronologia dei messaggi, comprendere le modifiche richieste e utilizzare nuovamente 
+    il tool 'write_an_article' per generare la versione aggiornata.
     Assicurati di passare al tool i nuovi parametri (about, author, content) aggiornati in base alle richieste."""
     return update_prompt
 
