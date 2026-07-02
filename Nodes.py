@@ -181,6 +181,14 @@ def accept_node(state: State):
             break
         storico_pulito.insert(0, msg)
     """
+    Lo storico_pulito in accept_node isola solo la sessione di lavoro corrente, escludendo i vecchi messaggi per
+    risparmiare token e prevenire allucinazioni. È fondamentale nel paradigma ReAct poiché permette all'LLM di
+    leggere i risultati dei tool appena eseguiti (evitando loop infiniti) e di mantenere la continuità operativa. 
+    In sintesi, agisce come una "memoria a breve termine" dedicata al singolo articolo, essenziale per coordinare 
+    correttamente il flusso di ricerca e scrittura. Questo approccio assicura che il modello abbia sempre il 
+    contesto aggiornato per decidere autonomamente quando passare alla stesura finale.
+    """
+    """
     A cosa serve: Questa è una tecnica di ottimizzazione e gestione della memoria del contesto.
     Spiegazione: Scorrendo i messaggi al contrario (reversed), il codice isola solo la cronologia 
     recente relativa alla sessione di scrittura corrente. Appena incontra una chiamata passata al 

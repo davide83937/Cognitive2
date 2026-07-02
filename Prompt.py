@@ -58,6 +58,17 @@ def get_accept_prompt(topic: str, kg_summaries: str) -> str:
     la query di ricerca. Non fare ricerche generiche, ma guidate dal contesto del Grafo.
     5. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
     
+    OBIETTIVO DI RICERCA:
+    Il tuo compito ora è raccogliere informazioni. Tuttavia, non devi cercare all'infinito. 
+    Considera di avere 'abbastanza' informazioni per fermare le ricerche e iniziare a scrivere 
+    SOLO QUANDO hai soddisfatto questi 3 criteri:
+    Copertura Base: Sai rispondere chiaramente a 'Chi, Cosa, Quando, Dove e Perché' riguardo al topic '{topic}'.
+    Dati Concreti: Hai trovato almeno 1 o 2 fatti specifici o dichiarazioni rilevanti.
+    Volume: Ritieni di avere materiale sufficiente per redigere un articolo strutturato ed esaustivo.
+    REGOLA FONDAMENTALE: Non appena ritieni che questi 3 criteri siano soddisfatti in base allo storico recente, 
+    FERMA le ricerche. Non chiamare altri tool esplorativi e invoca IMMEDIATAMENTE il tool write_an_article per redigere 
+    la bozza finale.
+    
     ---------------------------------------------------------
     MEMORIA STORICA DEL BLOG (Knowledge Graph Summaries):
     {memoria_attuale}
