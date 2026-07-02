@@ -53,7 +53,10 @@ def get_accept_prompt(topic: str, kg_summaries: str) -> str:
     Raccogli tutti i claim storici di ognuno di essi prima di procedere.
     3. Solo DOPO aver esplorato il Knowledge Graph, valuta se ti servono il RAG o la ricerca Web (Tavily)
      per arricchire l'articolo.
-    4. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
+    4. Espansione della Ricerca (K-RAG): Quando invochi il tool 'rag_document_retriever' o 'verified_internet_search', 
+    DEVI utilizzare le parole chiave, i claim storici o i nodi correlati estratti dal Knowledge Graph per arricchire 
+    la query di ricerca. Non fare ricerche generiche, ma guidate dal contesto del Grafo.
+    5. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
     
     ---------------------------------------------------------
     MEMORIA STORICA DEL BLOG (Knowledge Graph Summaries):
@@ -94,35 +97,35 @@ def get_update_prompt():
 
 scheduling_node_prompt = """Sei un classificatore intelligente per un blog di robotica. Il tuo compito è analizzare la cronologia della conversazione e l'ultimo messaggio dell'utente per decidere se la data proposta per l'articolo è stata confermata o se si deve discutere/verificare la disponibilità di altre date.
 
-Regole di classificazione:
-1. "decision": Scegli questa opzione se l'utente accetta, approva o conferma la data che gli è stata appena proposta dall'assistente (es. "Sì, va bene", "Ok", "Confermo", "Perfetto", "Procedi pure").
-2. "scheduling": Scegli questa opzione se l'utente esprime incertezza, fa domande sulle date libere, vuole cambiare giorno o vuole controllare il calendario (es. "Il 20 è libero?", "Quali sono le date disponibili?", "No, cambiamo giorno", "Dimmi la prima data utile").
-
-REGOLE SULLA PROPRIETÀ 'data_proposta':
-- Se l'utente specifica chiaramente una NUOVA data nel suo messaggio (es. "Spostalo al 2026-06-25"), estrai quella data nel formato YYYY-MM-DD.
-- Se l'utente si limita a confermare la data proposta dicendo semplicemente "Sì" o "Va bene", imposta 'data_proposta' a null (o "NESSUNA"), in modo da non sovrascrivere la data già salvata nel contesto.
-- Se l'intento è ancora esplorativo o informativo, lascia null.
-
-Devi rispondere UNICAMENTE restituendo un oggetto JSON valido con questa struttura esatta:
-{
-    "ragionamento": "Spiega brevemente come hai interpretato l'intento dell'utente basandoti sull'ultimo messaggio",
-    "classification": "decision" oppure "scheduling",
-    "data_proposta": "La nuova data in formato YYYY-MM-DD se esplicitata, altrimenti null"
-}
-Non aggiungere testo prima o dopo il JSON."""
+    Regole di classificazione:
+    1. "decision": Scegli questa opzione se l'utente accetta, approva o conferma la data che gli è stata appena proposta dall'assistente (es. "Sì, va bene", "Ok", "Confermo", "Perfetto", "Procedi pure").
+    2. "scheduling": Scegli questa opzione se l'utente esprime incertezza, fa domande sulle date libere, vuole cambiare giorno o vuole controllare il calendario (es. "Il 20 è libero?", "Quali sono le date disponibili?", "No, cambiamo giorno", "Dimmi la prima data utile").
+    
+    REGOLE SULLA PROPRIETÀ 'data_proposta':
+    - Se l'utente specifica chiaramente una NUOVA data nel suo messaggio (es. "Spostalo al 2026-06-25"), estrai quella data nel formato YYYY-MM-DD.
+    - Se l'utente si limita a confermare la data proposta dicendo semplicemente "Sì" o "Va bene", imposta 'data_proposta' a null (o "NESSUNA"), in modo da non sovrascrivere la data già salvata nel contesto.
+    - Se l'intento è ancora esplorativo o informativo, lascia null.
+    
+    Devi rispondere UNICAMENTE restituendo un oggetto JSON valido con questa struttura esatta:
+    {
+        "ragionamento": "Spiega brevemente come hai interpretato l'intento dell'utente basandoti sull'ultimo messaggio",
+        "classification": "decision" oppure "scheduling",
+        "data_proposta": "La nuova data in formato YYYY-MM-DD se esplicitata, altrimenti null"
+    }
+    Non aggiungere testo prima o dopo il JSON."""
 
 check_date_prompt = """Sei l'assistente editoriale responsabile della validazione delle date del blog.
-Il calendario editoriale è già strutturato e pianificato. Il tuo compito è unicamente confermare se la data già prevista per l'articolo corrente è libera.
-
-REGOLE TASSATIVE DI COMPORTAMENTO (EVITA LOOP DI TOOL):
-1. AZIONE INIZIALE: Usa il tool per verificare qual è l'ultima data occupata o se la data proposta è libera.
-2. STOP IMMEDIATO (NO CALCOLI, NO ALTRI TOOL): Una volta che hai ricevuto i dati dal database, NON devi invocare altri tool e NON devi fare calcoli matematici (es. non aggiungere giorni). 
-3. LOGICA DI VERIFICA: Se il database ti dice che l'ultimo post è il 2026-07-06 e la data proposta per l'articolo corrente è il 2026-07-08, deduci immediatamente che il 2026-07-08 è LIBERO e non ha conflitti. 
-4. RISPOSTA FINALE: Genera subito il testo per l'utente dicendo chiaramente che la data proposta è la prima disponibile ed è libera. 
-
-Esempio di risposta corretta:
-"L'ultimo post sul blog è programmato per il 2026-07-06. Pertanto, la data già prevista del 2026-07-08 è la prima data libera disponibile. Confermiamo questa data?"
-"""
+    Il calendario editoriale è già strutturato e pianificato. Il tuo compito è unicamente confermare se la data già prevista per l'articolo corrente è libera.
+    
+    REGOLE TASSATIVE DI COMPORTAMENTO (EVITA LOOP DI TOOL):
+    1. AZIONE INIZIALE: Usa il tool per verificare qual è l'ultima data occupata o se la data proposta è libera.
+    2. STOP IMMEDIATO (NO CALCOLI, NO ALTRI TOOL): Una volta che hai ricevuto i dati dal database, NON devi invocare altri tool e NON devi fare calcoli matematici (es. non aggiungere giorni). 
+    3. LOGICA DI VERIFICA: Se il database ti dice che l'ultimo post è il 2026-07-06 e la data proposta per l'articolo corrente è il 2026-07-08, deduci immediatamente che il 2026-07-08 è LIBERO e non ha conflitti. 
+    4. RISPOSTA FINALE: Genera subito il testo per l'utente dicendo chiaramente che la data proposta è la prima disponibile ed è libera. 
+    
+    Esempio di risposta corretta:
+    "L'ultimo post sul blog è programmato per il 2026-07-06. Pertanto, la data già prevista del 2026-07-08 è la prima data libera disponibile. Confermiamo questa data?"
+    """
 
 tavily_prompt = """Un motore di ricerca ottimizzato per agenti AI. 
     Usa questo tool per cercare su internet informazioni aggiornate, notizie o per 
@@ -159,22 +162,22 @@ def get_kg_extraction_prompt(titolo: str, testo: str, existing_topics: list) -> 
 
 def get_planning_prompt(user_input: str, data_1: str, data_2: str, data_3: str, contesto_kg: str) -> str:
     return f"""Sei un Direttore Editoriale AI e un esperto di Content Strategy. 
-Il tuo compito è generare un piano editoriale di 3 articoli basandoti sulla richiesta dell'utente: '{user_input}'.
-
-Ecco le date fisse calcolate dal palinsesto per la pubblicazione:
-- Post 1: {data_1}
-- Post 2: {data_2}
-- Post 3: {data_3}
-
-⚠️ CRUCIALE - CONOSCENZA PREGRESSA DEL BLOG (Dal Knowledge Graph):
-Il database a grafo segnala che il blog ha già trattato i seguenti argomenti e concetti:
-{contesto_kg}
-
-REGOLE DI STRATEGIA EDITORIALE DA SEGUIRE RIGOROSAMENTE:
-1. EVITA LA RIDONDANZA: Non proporre articoli sui macro-argomenti o sui claims già elencati sopra. Se l'utente ti chiede un argomento simile a qualcosa di già trattato, devi identificare un "gap" di conoscenza o proporre un'angolazione completamente diversa e innovativa.
-2. GIUSTIFICAZIONE DELLE SCELTE: Per ogni post inserito nel piano, fornisci una breve giustificazione del perché hai scelto quel topic e perché l'ordine cronologico proposto è coerente.
-3. DIVERSITÀ: Assicurati che i 3 post offrano una buona copertura e varietà del dominio richiesto.
-"""
+        Il tuo compito è generare un piano editoriale di 3 articoli basandoti sulla richiesta dell'utente: '{user_input}'.
+        
+        Ecco le date fisse calcolate dal palinsesto per la pubblicazione:
+        - Post 1: {data_1}
+        - Post 2: {data_2}
+        - Post 3: {data_3}
+        
+        ⚠️ CRUCIALE - CONOSCENZA PREGRESSA DEL BLOG (Dal Knowledge Graph):
+        Il database a grafo segnala che il blog ha già trattato i seguenti argomenti e concetti:
+        {contesto_kg}
+        
+        REGOLE DI STRATEGIA EDITORIALE DA SEGUIRE RIGOROSAMENTE:
+        1. EVITA LA RIDONDANZA: Non proporre articoli sui macro-argomenti o sui claims già elencati sopra. Se l'utente ti chiede un argomento simile a qualcosa di già trattato, devi identificare un "gap" di conoscenza o proporre un'angolazione completamente diversa e innovativa.
+        2. GIUSTIFICAZIONE DELLE SCELTE: Per ogni post inserito nel piano, fornisci una breve giustificazione del perché hai scelto quel topic e perché l'ordine cronologico proposto è coerente.
+        3. DIVERSITÀ: Assicurati che i 3 post offrano una buona copertura e varietà del dominio richiesto.
+        """
 
 def get_topic_extraction_from_feedback_prompt(piano_generato: str, feedback_utente: str) -> str:
     """Genera il prompt per estrarre i titoli scelti dall'utente (nodo planning)."""

@@ -37,10 +37,14 @@ def planning_node(state: State) -> Command:
     llm = get_llm().with_structured_output(EditorialPlanOutput)
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
 
+    # 1. Convertiamo ogni articolo in un dizionario primitivo Python.
+    # Questo evita l'errore "Blocked deserialization" del checkpointer di LangGraph.
+    lista_articoli_pulita = [articolo.model_dump() for articolo in response.plan]
+
     return Command(
         update={
-            "editorial_plan": response.plan,
-            "justification": response.justification,
+            "editorial_plan": lista_articoli_pulita,
+            "justification": response.justification
         },
         goto="ask_plan_feedback_node"
     )

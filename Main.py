@@ -89,12 +89,30 @@ if __name__ == "__main__":
                 new_input = input("Inserisci il tuo topic raffinato: ")
                 # --- NUOVO CASO: L'interrupt proviene da planning_node ---
             elif "proposta_piano" in dati:
-                print("\n" + "=" * 50)
-                print("📅 PROPOSTA CALENDARIO EDITORIALE (Ogni n giorni):")
-                print("=" * 50)
-                print(dati["proposta_piano"])
-                print(dati["justification"])
-                print("=" * 50 + "\n")
+                print("\n" + "=" * 60)
+                print("📅  PROPOSTA CALENDARIO EDITORIALE")
+                print("=" * 60)
+
+                # Prende la lista degli articoli (assicurati che la chiave sia quella corretta dello State)
+                piano_articoli = dati.get("proposta_piano", [])
+
+                if isinstance(piano_articoli, list):
+                    for i, articolo in enumerate(piano_articoli, 1):
+                        print(f"📌 [Articolo {i}]")
+                        print(f"   🔹 Titolo:  {articolo.get('title', 'N/A')}")
+                        print(f"   🔹 Focus:   {articolo.get('about', 'N/A')}")
+                        print("-" * 60)
+                else:
+                    # Fallback nel caso in cui arrivasse una stringa o un formato imprevisto
+                    print(piano_articoli)
+                    print("-" * 60)
+
+                # Stampa la giustificazione subito sotto
+                giustificazione = dati.get("justification", "Nessuna giustificazione fornita.")
+                print("\n💡 MOTIVAZIONE E COPERTURA DEL TOPIC:")
+                print(giustificazione)
+
+                print("=" * 60 + "\n")
                 new_input = input("Scrivi 'ok' per approvare o inserisci modifiche: ")
             elif "articolo_generato" in dati:
                 print("\n" + "=" * 50)

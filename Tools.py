@@ -219,6 +219,11 @@ def intelligent_topic_matcher(new_topic: str) -> str:
                 nome_topic = str(valori[0])
                 claim = str(valori[1]) if len(valori) > 1 and valori[1] is not None else None
 
+                """
+                valori[0] (nome_topic): Corrisponde alla prima variabile presente nel RETURN della query Cypher generata. Basandosi sul tuo log, questa è t.name.
+                valori[1] (claim): Corrisponde alla seconda variabile presente nel RETURN. Basandosi sul tuo log, questa è c.text.
+                """
+
                 if nome_topic not in topic_dict:
                     topic_dict[nome_topic] = []
 
@@ -348,67 +353,75 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
     return f"Date disponibili trovate con successo (meno di 3 post): {', '.join(date_disponibili_finali)}."
 
 
-
 @tool
 def get_enhanced_topic_context(topic_name: str) -> str:
     """
-    Recupera il contesto profondo: claim storici e mappa di relazioni semantiche.
+    Recupera il contesto profondo: claim storici e mappa di relazioni semantiche per il topic e i suoi correlati.
     """
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    # 1. NLP per gli archi (chiediamo esplicitamente tipo e motivo)
+    # 1. NLP per gli archi (Questo funziona benissimo, lo teniamo!)
     nl_instruction_rel = f"Restituisci il nome del topic correlato, il tipo di relazione e il motivo della relazione per il topic '{topic_name}'."
     cypher_query_rel = generate_cypher(nl_instruction_rel)
 
-    # 2. NLP per i claim (inalterato)
-    nl_instruction_claims = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{topic_name}'."
-    cypher_query_claims = generate_cypher(nl_instruction_claims)
-
     try:
         risultati_rel = graph.query(cypher_query_rel)
-        risultati_claims = graph.query(cypher_query_claims)
-
-        output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
-
-        # --- GESTIONE E DEBUG DEI CLAIM ---
-        if risultati_claims:
-            claims = set([str(list(r.values())[0]) for r in risultati_claims])
-            print("\n" + "=" * 50)
-            print(f"🔍 [DEBUG CLAIM] Trovati {len(claims)} claim per '{topic_name}':")
-            for c in claims:
-                print(f"  - {c}")
-
-            output += "\n📌 Concetti già trattati in passato:\n- " + "\n- ".join(claims) + "\n"
-
-        # --- GESTIONE E DEBUG DELLE RELAZIONI (ARCHI) ---
-        if risultati_rel:
-            print("\n" + "=" * 50)
-            print(f"🔗 [DEBUG ARCHI E RELAZIONI] Nodi collegati a '{topic_name}':")
-
-            output += "\n🔗 Mappa delle Relazioni:\n"
-            for rel in risultati_rel:
-                # Stampiamo il dizionario grezzo restituito da Neo4j per ispezione
-                print(f"  -> RAW RECORD NEO4J: {rel}")
-
-                valori = list(rel.values())
-
-                # Se l'LLM ha estratto correttamente Nome, Tipo e Motivo (3 campi)
-                if len(valori) >= 3:
-                    nome_target = valori[0]
-                    tipo_rel = valori[1]
-                    motivo_rel = valori[2]
-
-                    print(f"  -> ESTRATTO: Target='{nome_target}', Type='{tipo_rel}', Reason='{motivo_rel}'")
-                    output += f"- Connesso a '{nome_target}' | Tipo: [{tipo_rel}] | Motivo: {motivo_rel}\n"
-
-                # Fallback se ne estrae solo 2 (Nome e Tipo)
-                elif len(valori) == 2:
-                    print(f"  -> ESTRATTO (No Reason): Target='{valori[0]}', Type='{valori[1]}'")
-                    output += f"- Connesso a '{valori[0]}' | Tipo: [{valori[1]}]\n"
-
-            print("=" * 50 + "\n")
-
-        return output
     except Exception as e:
-        return f"Errore Cypher: {e}"
+        risultati_rel = []
+        print(f"Errore Cypher archi: {e}")
+
+    # 2. Creiamo una lista con il topic principale + tutti i topic correlati trovati
+    topics_da_esplorare = [topic_name]
+    if risultati_rel:
+        for rel in risultati_rel:
+            valori = list(rel.values())
+            # valori[0] è il nome del topic target (es. 'propulsione a gas naturale liquefatto (gnl)')
+            if len(valori) >= 1 and valori[0]:
+                topics_da_esplorare.append(valori[0])
+
+    # 3. Estraiamo i claim per TUTTI i topic nella lista, iterando con l'istruzione semplice
+    tutti_i_claims = set()
+    for t in topics_da_esplorare:
+        # Usiamo l'istruzione base che sappiamo Qwen traduce alla perfezione
+        nl_instruction_claims = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{t}'."
+        cypher_query_claims = generate_cypher(nl_instruction_claims)
+        try:
+            ris_claims = graph.query(cypher_query_claims)
+            if ris_claims:
+                for r in ris_claims:
+                    tutti_i_claims.add(str(list(r.values())[0]))
+        except Exception as e:
+            print(f"Errore recupero claim per '{t}': {e}")
+
+    # 4. Generazione Output
+    output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
+
+    # --- GESTIONE E DEBUG DEI CLAIM ---
+    if tutti_i_claims:
+        print("\n" + "=" * 50)
+        print(f"🔍 [DEBUG CLAIM] Trovati {len(tutti_i_claims)} claim totali per '{topic_name}' e i suoi correlati:")
+        for c in tutti_i_claims:
+            print(f"  - {c}")
+
+        output += "\n📌 Concetti già trattati in passato:\n- " + "\n- ".join(tutti_i_claims) + "\n"
+
+    # --- GESTIONE E DEBUG DELLE RELAZIONI (ARCHI) ---
+    if risultati_rel:
+        print("\n" + "=" * 50)
+        print(f"🔗 [DEBUG ARCHI E RELAZIONI] Nodi collegati a '{topic_name}':")
+        output += "\n🔗 Mappa delle Relazioni:\n"
+        for rel in risultati_rel:
+            valori = list(rel.values())
+            if len(valori) >= 3:
+                nome_target = valori[0]
+                tipo_rel = valori[1]
+                motivo_rel = valori[2]
+                print(f"  -> ESTRATTO: Target='{nome_target}', Type='{tipo_rel}', Reason='{motivo_rel}'")
+                output += f"- Connesso a '{nome_target}' | Tipo: [{tipo_rel}] | Motivo: {motivo_rel}\n"
+            elif len(valori) == 2:
+                print(f"  -> ESTRATTO (No Reason): Target='{valori[0]}', Type='{valori[1]}'")
+                output += f"- Connesso a '{valori[0]}' | Tipo: [{valori[1]}]\n"
+        print("=" * 50 + "\n")
+
+    return output

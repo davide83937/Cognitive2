@@ -1,5 +1,5 @@
 from langgraph.graph import MessagesState
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Optional, List
 
 
@@ -101,6 +101,15 @@ class TopicRelationship(BaseModel):
 
 # ... (Lascia intatti gli altri schemi) ...
 
+class EditorialArticle(BaseModel):
+    # Questo ConfigDict forza Pydantic e OpenAI a rispettare lo schema Strict
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(description="Titolo proposto per l'articolo")
+    about: str = Field(description="Argomento o focus principale dell'articolo")
+
+
 class EditorialPlanOutput(BaseModel):
-    plan: list[dict] = Field(description="Lista degli articoli pianificati")
-    justification: str = Field(description="Giustificazione delle scelte fatte")
+    model_config = ConfigDict(extra="forbid")  # Mantiene lo standard rigido richiesto da OpenAI
+    plan: list[EditorialArticle] = Field(description="Lista degli articoli pianificati")
+    justification: str = Field(description="Giustificazione delle scelte fatte, e cita alcuni topic già presenti che non hai voluto ripetere")
