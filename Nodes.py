@@ -4,7 +4,7 @@ from Models import get_llm, get_llm_with_tools, get_llm_with_calendar_tools
 from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, check_date_prompt, \
     get_check_schedule_context_prompt, get_kg_extraction_prompt, get_planning_prompt, \
     get_topic_extraction_from_feedback_prompt
-from Schemas import KGExtraction, State, ArticleData,TopicSelection
+from Schemas import KGExtraction, State, ArticleData, TopicSelection, EditorialPlanOutput
 from base import get_tools_by_name
 import re
 from function_tool import save_to_neo4j, get_smart_schedule_dates, get_covered_context_from_neo4j
@@ -33,16 +33,14 @@ def planning_node(state: State) -> Command:
     contesto_kg_lista = get_covered_context_from_neo4j()
     contesto_kg_str = "\n".join(contesto_kg_lista)
 
-    llm = get_llm()
     prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3, contesto_kg_str)
-
+    llm = get_llm().with_structured_output(EditorialPlanOutput)
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
-    piano_generato = response.content
 
     return Command(
         update={
-            "editorial_plan": piano_generato,
-            "justification": piano_generato,
+            "editorial_plan": response.plan,
+            "justification": response.justification,
         },
         goto="ask_plan_feedback_node"
     )

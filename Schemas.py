@@ -100,3 +100,7 @@ class TopicRelationship(BaseModel):
     reason: str = Field(description="Breve e logica spiegazione del perché questi due topic sono collegati")
 
 # ... (Lascia intatti gli altri schemi) ...
+
+class EditorialPlanOutput(BaseModel):
+    plan: list[dict] = Field(description="Lista degli articoli pianificati")
+    justification: str = Field(description="Giustificazione delle scelte fatte")
