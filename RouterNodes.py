@@ -44,7 +44,6 @@ class FinalPlan(BaseModel):
     posts_to_write: list[str] = Field(description="Lista degli argomenti da scrivere, escludendo quelli scartati dall'utente")
 
 def tool_node_router(state: State) -> Command[Literal["__end__"]]:
-    article_input = state["messages"][-2].content
     feedback_input = state["messages"][-1].content
     system_prompt = tool_node_prompt
     user_prompt = feedback_input

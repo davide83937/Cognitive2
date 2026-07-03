@@ -49,13 +49,15 @@ def calendar_query_tool(natural_language_query: str) -> str:
 
 
 
-
+"""
 @tool
 def get_previous_topics() -> str:
-    """
+"""
+"""
     Usa questo tool per scoprire quali argomenti (Topic) sono già stati trattati nel blog
     così da evitare di proporre ripetizioni.
-    """
+"""
+"""
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
@@ -71,7 +73,7 @@ def get_previous_topics() -> str:
         return f"I topic già trattati nel blog sono: {', '.join(lista_topic)}."
     except Exception as e:
         return f"Errore durante l'interrogazione del KG: {e}"
-
+"""
 
 
 @tool

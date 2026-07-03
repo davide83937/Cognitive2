@@ -113,18 +113,24 @@ def refine_node(state: MessagesState):
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
 
+    # 1. Inizializzazione di base (il tuo ex blocco "else")
+    topic_da_scrivere = state.get("current_topic", "Argomento generico")
+    data_assegnata = state.get("data_proposta", None)
+
+    # 2. Se c'è qualcosa in pending, sovrascriviamo le variabili
+
     if pending:
         elemento = pending[0]
-        if isinstance(elemento, dict):
-            topic_da_scrivere = elemento.get("title", "Argomento generico")
-            data_assegnata = elemento.get("date")   #da PLANNED ARTICLE
-        else:
+        #if isinstance(elemento, dict):
+        topic_da_scrivere = elemento.get("title", "Argomento generico")
+        data_assegnata = elemento.get("date")   #da PLANNED ARTICLE
+    """ else:
             topic_da_scrivere = getattr(elemento, "title", "Argomento generico")
             data_assegnata = getattr(elemento, "date", None)
     else:
         topic_da_scrivere = state.get("current_topic", "Argomento generico")
         data_assegnata = state.get("data_proposta", None)
-
+    """
     """
     1. Su data_proposta = data_oggi in process_plan_node
     "È una misura di sicurezza (fallback). Normalmente ogni 
@@ -179,7 +185,8 @@ def accept_node(state: State):
             break
         if getattr(msg, "name", "") == "write_an_article":
             break
-        storico_pulito.insert(0, msg)
+        storico_pulito.insert(0, msg)#ogni nuovo messaggio viene messo all inizio e gli altri spinti verso l'alto
+        #viene fatto per mantenere l'ordine cronologico, per non confondere LLM
     """
     Lo storico_pulito in accept_node isola solo la sessione di lavoro corrente, escludendo i vecchi messaggi per
     risparmiare token e prevenire allucinazioni. È fondamentale nel paradigma ReAct poiché permette all'LLM di
@@ -199,7 +206,7 @@ def accept_node(state: State):
     messages = [{"role": "system", "content": accept_prompt}] + storico_pulito
     response = llm.invoke(messages)
     if response.content:
-        print(f"\n💭 [THOUGHT AGENTE]: {response.content}")
+        print(f"\n💭[THOUGHT AGENTE]: {response.content}")
     return Command(
         update={
             "messages": [response],
@@ -217,7 +224,9 @@ def tool_node(state: State):
 
     # 1. Recupera il contatore dallo stato (default a 0)
     current_search_count = state.get("search_count", 0)
-    state_updates = {}
+
+    # 2. Creiamo un dizionario dedicato SOLO agli aggiornamenti da restituire a LangGraph
+    updates_for_state = {}
 
     for tool_call in last_message.tool_calls:
         tool_name = tool_call["name"]
@@ -238,6 +247,16 @@ def tool_node(state: State):
                     name=tool_name
                 ))
                 continue  # Salta l'esecuzione reale del tool e passa al prossimo (se c'è)
+        """
+        Quando l'LLM decide di usare un tool (ad esempio, fare una ricerca web), invia una richiesta formale
+        che ha un ID univoco (es. call_abc123). In quel momento, l'LLM si mette in pausa e aspetta.
+        Si aspetta di ricevere indietro un messaggio di tipo "ToolMessage" che abbia esattamente quello stesso ID, 
+        contenente il risultato dell'operazione.
+
+        Se tu, nel tuo codice, decidi di bloccare la ricerca (perché ha superato il limite di 2) e passi 
+        semplicemente oltre ignorando la richiesta, il framework (LangGraph) andrà in crash o darà errore. 
+        Dirà: "Ehi, l'LLM ha chiesto di usare un tool, ma non hai fornito nessuna risposta per quell'ID!".
+        """
         # ---> FINE GUARDRAIL <---
 
         # Esecuzione normale degli altri tool o della ricerca se entro i limiti
@@ -252,9 +271,9 @@ def tool_node(state: State):
         result.append(tool_message)
 
         # ---> INIZIO ESTRAZIONE KG SUMMARIES <---
-        # Se il tool usato è quello del Knowledge Graph, salviamo il summary esplicitamente nello stato
         if tool_name in ["get_enhanced_topic_context"]:
-            state_updates["kg_summaries"] = str(observation)
+            # Salviamo l'informazione nel nostro dizionario di aggiornamento (NON direttamente in state)
+            updates_for_state["kg_summaries"] = str(observation)
         # ---> FINE ESTRAZIONE KG SUMMARIES <---
 
         if tool_name == "write_an_article":
@@ -271,14 +290,15 @@ def tool_node(state: State):
                 date=state.get("data_proposta")
             )
 
-    state_updates["messages"] = result
+    # 3. Aggiungiamo sempre i messaggi elaborati al nostro dizionario di aggiornamento
+    updates_for_state["messages"] = result
+
     if articolo_generato is not None:
+        updates_for_state["final_article"] = articolo_generato
+        updates_for_state["search_count"] = 0  # RESETTA IL CONTATORE
+
         return Command(
-            update={
-                "messages": result,
-                "final_article": articolo_generato,
-                "search_count": 0  # <--- RESETTA IL CONTATORE per il prossimo articolo
-            },
+            update=updates_for_state,  # <--- Passiamo il dizionario completo!
             goto="ask_feedback_node"
         )
     else:
@@ -291,12 +311,12 @@ def tool_node(state: State):
             msg_forzatura = HumanMessage(
                 content="SYSTEM WARNING: Non hai chiamato alcun tool. Usa esplicitamente il tool 'write_an_article' ora per generare il pezzo e proseguire.")
             result.append(msg_forzatura)
+            updates_for_state["messages"] = result  # Aggiorniamo i messaggi con la forzatura appena aggiunta
+
+        updates_for_state["search_count"] = current_search_count
 
         return Command(
-            update={
-                "messages": result,
-                "search_count": current_search_count
-            },
+            update=updates_for_state,  # <--- Passiamo il dizionario completo!
             goto="accept_node"
         )
 
@@ -309,6 +329,35 @@ def ask_feedback_node(state: State):
     else:
         testo_articolo = getattr(articolo, "text", "")
 
+    """
+    NOTA SU COME FUNZIONA L'INTERRUPT IN LANGGRAPH:
+    Quando l'agente riceve il feedback e si "risveglia", NON riprende l'esecuzione 
+    dalla riga in cui si era fermato. Al contrario, LangGraph RIESEGUE l'intero nodo dall'inizio.
+    - 1° Esecuzione: interrupt() blocca il programma e salva lo stato nel database.
+    - 2° Esecuzione: il nodo riparte da capo (i dati ricaricati ora sono dict). 
+      Questa volta interrupt() riconosce la risposta pendente, non si ferma, e 
+      restituisce istantaneamente il testo dell'utente, permettendo al nodo di concludersi.
+    """
+
+    """
+        Dipende da come il checkpointer serializza e deserializza lo stato:
+
+        Se il checkpointer riesce a ricostruire l'oggetto originale (ad esempio un modello Pydantic), allora:
+        prima dell'interrupt → FinalArticle
+        dopo il resume → FinalArticle
+        l'if isinstance(..., dict) è inutile.
+        Se invece il checkpointer salva tutto come JSON e ricarica un dizionario, allora:
+        prima dell'interrupt → FinalArticle
+        dopo il resume → dict
+        l'if è necessario.
+        
+        Quindi la domanda da farsi è: il tuo checkpointer cambia davvero il tipo di final_article?
+        
+        Puoi verificarlo molto facilmente:
+        
+        print(type(state["final_article"]))
+    """
+
     feedback_utente = interrupt({"articolo_generato": testo_articolo})
 
     messaggio_feedback = HumanMessage(
@@ -320,12 +369,38 @@ def ask_feedback_node(state: State):
         goto="tool_node_router"
     )
 
-def update_article_node(state: MessagesState):
+
+def update_article_node(state: State):
     llm = get_llm_with_tools()
     update_prompt = get_update_prompt()
-    messages = [{"role": "system", "content": update_prompt}] + state["messages"]
+
+    # 1. Recuperiamo l'articolo attuale comodamente dallo stato (come facciamo in ask_feedback_node)
+    articolo = state.get("final_article")
+    if isinstance(articolo, dict):
+        testo_articolo = articolo.get("text", "")
+    else:
+        testo_articolo = getattr(articolo, "text", "")
+
+    # 2. Recuperiamo il feedback dell'utente (che è sempre l'ultimissimo messaggio)
+    feedback_utente = state["messages"][-1].content
+
+    # 3. Creiamo un pacchetto perfetto solo con le info necessarie
+    istruzioni_revisione = f"""
+    Ecco la bozza attuale dell'articolo:
+    {testo_articolo}
+    {feedback_utente}
+    Riscrivi l'articolo applicando queste modifiche usando il tool 'write_an_article'.
+    """
+    # 4. Assembliamo i messaggi per l'LLM: niente cronologia sporca, solo il prompt di sistema e le istruzioni
+    messages = [
+        {"role": "system", "content": update_prompt},
+        {"role": "user", "content": istruzioni_revisione}
+    ]
     response = llm.invoke(messages)
-    return Command(update={"messages": [response]}, goto="tool_node")
+    return Command(
+        update={"messages": [response]},
+        goto="tool_node"
+    )
 
 
 def save_draft_node(state: State):
