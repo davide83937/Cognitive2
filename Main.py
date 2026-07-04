@@ -51,7 +51,7 @@ serde = JsonPlusSerializer(
 
 # Inizializza il MemorySaver passandogli il serializzatore personalizzato
 memory = MemorySaver(serde=serde)
-app = builder.compile(checkpointer=memory)#"""checkpointer=memory"""
+app = builder.compile()#"""checkpointer=memory"""
 
 
 """print("Inviando la domanda al grafo locale...")
@@ -101,6 +101,7 @@ if __name__ == "__main__":
                         print(f"📌 [Articolo {i}]")
                         print(f"   🔹 Titolo:  {articolo.get('title', 'N/A')}")
                         print(f"   🔹 Focus:   {articolo.get('about', 'N/A')}")
+                        print(f"   🔹 Data:    {articolo.get('date', 'Data non assegnata')}")
                         print("-" * 60)
                 else:
                     # Fallback nel caso in cui arrivasse una stringa o un formato imprevisto

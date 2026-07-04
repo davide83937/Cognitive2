@@ -39,7 +39,7 @@ def get_llm_with_calendar_tools():
     return llm
 
 
-from Tools import write_an_article,  get_previous_topics,  rag_document_retriever, verified_internet_search
+from Tools import write_an_article, rag_document_retriever, verified_internet_search
 
 
 def get_llm_with_tools():
@@ -47,7 +47,7 @@ def get_llm_with_tools():
     # Aggiungiamo Tavily alla cintura degli attrezzi!
     llm = llm.bind_tools([
         write_an_article,
-        get_previous_topics,
+        #get_previous_topics,
         get_enhanced_topic_context,
         verified_internet_search,
         rag_document_retriever,

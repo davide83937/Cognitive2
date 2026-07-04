@@ -37,9 +37,13 @@ def planning_node(state: State) -> Command:
     llm = get_llm().with_structured_output(EditorialPlanOutput)
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
 
-    # 1. Convertiamo ogni articolo in un dizionario primitivo Python.
-    # Questo evita l'errore "Blocked deserialization" del checkpointer di LangGraph.
-    lista_articoli_pulita = [articolo.model_dump() for articolo in response.plan]
+    # 1. Convertiamo ogni articolo in un dizionario e INIETTIAMO FORZATAMENTE LA DATA CALCOLATA
+    lista_articoli_pulita = []
+    for i, articolo in enumerate(response.plan):
+        art_dict = articolo.model_dump()
+        # Aggiungiamo/sovrascriviamo la chiave 'date' con la data calcolata in Python
+        art_dict["date"] = date_sicure[i]
+        lista_articoli_pulita.append(art_dict)
 
     return Command(
         update={
@@ -121,9 +125,15 @@ def accept_node(state: State):
 
     if pending:
         elemento = pending[0]
-        #if isinstance(elemento, dict):
-        topic_da_scrivere = elemento.get("title", "Argomento generico")
-        data_assegnata = elemento.get("date")   #da PLANNED ARTICLE
+
+        # Verifica se l'elemento è un dizionario (es. ricostruito dal checkpointer)
+        if isinstance(elemento, dict):
+            topic_da_scrivere = elemento.get("title", "Argomento generico")
+            data_assegnata = elemento.get("date")
+        # Altrimenti, se è un oggetto Pydantic (PlannedArticle)
+        else:
+            topic_da_scrivere = getattr(elemento, "title", "Argomento generico")
+            data_assegnata = getattr(elemento, "date", None)
     """ else:
             topic_da_scrivere = getattr(elemento, "title", "Argomento generico")
             data_assegnata = getattr(elemento, "date", None)

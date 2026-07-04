@@ -131,14 +131,15 @@ def get_smart_schedule_dates(total_posts: int = 3) -> list[str]:
             base = get_next_fixed_publish_date(base.strftime("%Y-%m-%d"))
         return date_pianificate
 
-    # 1. Recuperiamo l'ultima data dal DB per avere il punto di partenza
-    base_date_str = get_latest_scheduled_date_from_db()
-
-    # 2. Troviamo il primo giorno utile di palinsesto
-    giorno_corrente = get_next_fixed_publish_date(base_date_str)
-
-    # Recuperiamo l'occupazione di tutte le date future
     oggi = datetime.now().date()
+    giorno_corrente = datetime(oggi.year, oggi.month, oggi.day)
+
+    # Assicuriamoci che il punto di partenza sia un giorno di palinsesto valido (Lun=0, Mer=2, Ven=4, Dom=6)
+    if giorno_corrente.weekday() not in [0, 2, 4, 6]:
+        # Se oggi non è di palinsesto (es. Sabato 4), salta al primo utile (Domenica 5)
+        giorno_corrente = get_next_fixed_publish_date(giorno_corrente.strftime("%Y-%m-%d"))
+
+    # Recuperiamo l'occupazione di tutte le date future a partire da oggi
     query = get_future_post_counts_query()
     try:
         risultati = graph.query(query, params={"oggi": oggi.strftime("%Y-%m-%d")})
@@ -161,11 +162,14 @@ def get_smart_schedule_dates(total_posts: int = 3) -> list[str]:
                 # Aggiorniamo virtualmente il dizionario per questo calcolo in blocco
                 conteggio[data_str] = occupazione_attuale + 1
 
-                # Il prossimo post dovrà essere schedulato al PROSSIMO giorno di palinsesto
-                giorno_corrente = get_next_fixed_publish_date(data_str)
+                # FIX CRITICO: Il giorno va escluso (passando al successivo)
+                # SOLO se abbiamo saturato la capacità massima (3 articoli)
+                if conteggio[data_str] >= 3:
+                    giorno_corrente = get_next_fixed_publish_date(data_str)
+
                 break
             else:
-                # Il giorno è pieno, saltiamo al successivo giorno consentito dal palinsesto
+                # Il giorno è PIENO (>= 3), saltiamo al successivo giorno consentito dal palinsesto
                 giorno_corrente = get_next_fixed_publish_date(data_str)
 
     return date_pianificate

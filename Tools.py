@@ -28,23 +28,34 @@ def calendar_query_tool(natural_language_query: str) -> str:
     cypher_query = generate_cypher(natural_language_query)
     print(f"🔧 [DEBUG TEXT-TO-CYPHER] Query generata per il calendario:\n{cypher_query}")
 
-    # 2. Esecuzione diretta su Neo4j
+    # Query di fallback: recupera l'ultima data di pubblicazione occupata/pianificata nel DB
+    fallback_query = """
+    MATCH (p:Post)
+    WHERE p.date IS NOT NULL
+    RETURN p.date AS latest_scheduled_date
+    ORDER BY p.date DESC
+    LIMIT 1
+    """
+
+    # 2. Esecuzione su Neo4j con gestione del Fallback in caso di eccezione sintattica
     try:
         risultati = graph.query(cypher_query)
-
-        if not risultati:
-            return "Nessun risultato trovato nel database. Il palinsesto potrebbe essere vuoto per questa ricerca."
-
-        # 3. Formattazione pulita dei risultati da restituire all'agente
-        # Trasformiamo la lista di dizionari in una stringa leggibile per l'LLM
-        output = "Risultati estratti dal DB:\n"
-        for row in risultati:
-            output += f"- {row}\n"
-
-        return output
-
     except Exception as e:
-        return f"Errore durante l'esecuzione in Neo4j: {e}\nQuery generata: {cypher_query}"
+        print(f"⚠️ [WARNING] Query generata da Qwen fallita per il calendario ({e}). Attivazione della query di fallback...")
+        try:
+            risultati = graph.query(fallback_query)
+        except Exception as fallback_e:
+            return f"Errore critico durante l'esecuzione in Neo4j anche con il fallback: {fallback_e}\nQuery generata: {cypher_query}"
+
+    if not risultati:
+        return "Nessun risultato trovato nel database. Il palinsesto potrebbe essere vuoto per questa ricerca."
+
+    # 3. Formattazione pulita dei risultati da restituire all'agente
+    output = "Risultati estratti dal DB (o via Fallback dell'ultima data occupata):\n"
+    for row in risultati:
+        output += f"- {row}\n"
+
+    return output
 
 
 
@@ -75,19 +86,21 @@ def get_previous_topics() -> str:
         return f"Errore durante l'interrogazione del KG: {e}"
 """
 
-
-@tool
-def get_topic_claims(topic_name: str) -> str:
-    """
-    Usa questo tool durante la stesura dell'articolo per recuperare le affermazioni chiave (Claims)
-    fatte in passato su un determinato topic (topic_name), così da mantenere coerenza.
-    """
+"""
+    @tool
+    def get_topic_claims(topic_name: str) -> str:
+"""
+"""
+        Usa questo tool durante la stesura dell'articolo per recuperare le affermazioni chiave (Claims)
+        fatte in passato su un determinato topic (topic_name), così da mantenere coerenza.
+"""
+"""
     # Usiamo il vocabolario dello schema: Post -> EXTRACTS -> Claim, Post -> COVERS -> Topic
     nl_instruction = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{topic_name}'."
-
+    
     cypher_query = generate_cypher(nl_instruction)
     print(f"🔧 [DEBUG T2C] Query:\n{cypher_query}")
-
+    
     try:
         risultati = graph.query(cypher_query)
         # Estrai il primo valore restituito dinamicamente
@@ -95,14 +108,14 @@ def get_topic_claims(topic_name: str) -> str:
         return "\n- ".join(lista_claims) if lista_claims else "Nessun claim trovato."
     except Exception as e:
         return f"Errore Cypher: {e}"
-
+"""
 #@tool
 #def get_topic_claims(topic_name: str) -> str:
-    """
+"""
     Usa questo tool durante la stesura dell'articolo per recuperare le affermazioni chiave (Claims)
     fatte in passato su un determinato topic (topic_name), così da mantenere coerenza.
     """
-    """from test_neo4j import graph  # Assicurati di avere l'import
+"""from test_neo4j import graph  # Assicurati di avere l'import
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
@@ -207,41 +220,52 @@ def intelligent_topic_matcher(new_topic: str) -> str:
 
     nl_instruction = (
         "Restituisci il nome di tutti i topic presenti e i testi dei claim estratti dai post che coprono ciascun topic. Limita la tua ricerca solo agli ultimi 30 giorni")
+
+    # 1. Tentativo con il modello Text-to-Cypher fine-tuned
     cypher_query = generate_cypher(nl_instruction)
 
+    # Definizione della query di Fallback garantita (sintatticamente e semanticamente corretta rispetto al tuo schema)
+    fallback_query = """
+    MATCH (c:Claim)-[:RELATED_TO]->(t:Topic)<-[:COVERS]-(p:Post)
+    WHERE p.date >= toString(date() - duration('P30D'))
+    RETURN DISTINCT t.name AS topic_name, c.text AS claim_text
+    ORDER BY t.name ASC
+    """
+
+    # 2. Esecuzione sicura con try-except per il fallback
     try:
         records = graph.query(cypher_query)
-        if not records:
-            return f"Il database è vuoto. '{new_topic}' è un argomento 100% nuovo."
-
-        topic_dict = {}
-        for r in records:
-            valori = list(r.values())
-            if len(valori) >= 1:
-                nome_topic = str(valori[0])
-                claim = str(valori[1]) if len(valori) > 1 and valori[1] is not None else None
-
-                """
-                valori[0] (nome_topic): Corrisponde alla prima variabile presente nel RETURN della query Cypher generata. Basandosi sul tuo log, questa è t.name.
-                valori[1] (claim): Corrisponde alla seconda variabile presente nel RETURN. Basandosi sul tuo log, questa è c.text.
-                """
-
-                if nome_topic not in topic_dict:
-                    topic_dict[nome_topic] = []
-
-                if claim and claim != "None" and len(topic_dict[nome_topic]) < 2:
-                    topic_dict[nome_topic].append(claim)
-
-        lista_esistenti = []
-        for nome, claims in topic_dict.items():
-            lista_esistenti.append(f"- Topic: '{nome}' (Esempi trattati: {claims})")
-
-        contesto_db = "\n".join(lista_esistenti)
-
     except Exception as e:
-        return f"Errore durante l'interrogazione di Neo4j: {e}"
+        print(f"⚠️ [WARNING] La query generata da Qwen è fallita ({e}). Attivazione della query di fallback...")
+        try:
+            records = graph.query(fallback_query)
+        except Exception as fallback_e:
+            return f"Errore critico durante l'interrogazione di Neo4j anche con il fallback: {fallback_e}"
 
-    # --- 3. IL GIUDICE SEMANTICO AGGIORNATO PER MULTI-TOPIC ---
+    if not records:
+        return f"Il database è vuoto o nessun topic negli ultimi 30 giorni. '{new_topic}' è un argomento 100% nuovo."
+
+    # 3. Elaborazione dei risultati
+    topic_dict = {}
+    for r in records:
+        valori = list(r.values())
+        if len(valori) >= 1:
+            nome_topic = str(valori[0])
+            claim = str(valori[1]) if len(valori) > 1 and valori[1] is not None else None
+
+            if nome_topic not in topic_dict:
+                topic_dict[nome_topic] = []
+
+            if claim and claim != "None" and len(topic_dict[nome_topic]) < 2:
+                topic_dict[nome_topic].append(claim)
+
+    lista_esistenti = []
+    for nome, claims in topic_dict.items():
+        lista_esistenti.append(f"- Topic: '{nome}' (Esempi trattati: {claims})")
+
+    contesto_db = "\n".join(lista_esistenti)
+
+    # --- 4. IL GIUDICE SEMANTICO AGGIORNATO PER MULTI-TOPIC ---
     llm_giudice = get_llm()
     prompt_giudice = f"""
     Sei un analista semantico. Il tuo compito è confrontare un NUOVO argomento con una lista di argomenti GIA' ESISTENTI nel database.
@@ -261,11 +285,10 @@ def intelligent_topic_matcher(new_topic: str) -> str:
 
     risposta_llm = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}]).content.strip()
 
-    # --- 4. RISPOSTA FINALE MULTI-TOPIC ALL'AGENTE ---
+    # --- 5. RISPOSTA FINALE MULTI-TOPIC ALL'AGENTE ---
     if risposta_llm == "NESSUNO":
         return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
     else:
-        # Restituiamo l'elenco dei topic trovati sotto forma di stringa strutturata
         return f"CORRISPONDENZA_TROVATA: {risposta_llm}"
 
 
@@ -314,7 +337,20 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
         conteggio_db = {}
         if graph:
             try:
-                risultati = graph.query(cypher_query)
+                try:
+                    risultati = graph.query(cypher_query)
+                except Exception as e:
+                    print(
+                        f"⚠️ [WARNING] La query generata da Qwen è fallita ({e}). Attivazione della query di fallback...")
+                    try:
+                        fallback_query="""MATCH (p:Post)
+                                          WHERE p.date IS NOT NULL
+                                        RETURN p.date AS latest_date
+                                        ORDER BY p.date DESC
+                                        LIMIT 1"""
+                        risultati = graph.query(fallback_query)
+                    except Exception as fallback_e:
+                        return f"Errore critico durante l'interrogazione di Neo4j anche con il fallback: {fallback_e}"
                 if risultati:
                     for res in risultati:
                         # Estraiamo la data (solitamente p.date o date)
@@ -363,15 +399,26 @@ def get_enhanced_topic_context(topic_name: str) -> str:
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    # 1. NLP per gli archi (Questo funziona benissimo, lo teniamo!)
+    # --- FASE 1: NLP per gli archi e argomenti correlati ---
     nl_instruction_rel = f"Restituisci il nome del topic correlato, il tipo di relazione e il motivo della relazione per il topic '{topic_name}'."
     cypher_query_rel = generate_cypher(nl_instruction_rel)
+
+    # Query di Fallback nativa per le relazioni
+    fallback_query_rel = f"""
+    MATCH (t:Topic)-[r:RELATED_TO]-(other:Topic)
+    WHERE toLower(t.name) = toLower("{topic_name}")
+    RETURN other.name AS target_topic, r.type AS relationship_type, r.reason AS reason
+    """
 
     try:
         risultati_rel = graph.query(cypher_query_rel)
     except Exception as e:
-        risultati_rel = []
-        print(f"Errore Cypher archi: {e}")
+        print(f"⚠️ [WARNING] Query Qwen fallita per le relazioni di '{topic_name}' ({e}). Attivazione fallback...")
+        try:
+            risultati_rel = graph.query(fallback_query_rel)
+        except Exception as fallback_e:
+            risultati_rel = []
+            print(f"Errore Cypher archi (anche con fallback): {fallback_e}")
 
     # 2. Creiamo una lista con il topic principale + tutti i topic correlati trovati
     topics_da_esplorare = [topic_name]
@@ -382,24 +429,40 @@ def get_enhanced_topic_context(topic_name: str) -> str:
             if len(valori) >= 1 and valori[0]:
                 topics_da_esplorare.append(valori[0])
 
-    # 3. Estraiamo i claim per TUTTI i topic nella lista, iterando con l'istruzione semplice
+    # --- FASE 2: Estrazione dei claim per TUTTI i topic nella lista ---
     tutti_i_claims = set()
     for t in topics_da_esplorare:
-        # Usiamo l'istruzione base che sappiamo Qwen traduce alla perfezione
         nl_instruction_claims = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{t}'."
         cypher_query_claims = generate_cypher(nl_instruction_claims)
+
+        # Query di Fallback nativa per estrarre i claim storici
+        fallback_query_claims = f"""
+        MATCH (c:Claim)-[:RELATED_TO]->(top:Topic)
+        WHERE toLower(top.name) = toLower("{t}")
+        RETURN c.text AS claim_text
+        """
+
         try:
             ris_claims = graph.query(cypher_query_claims)
-            if ris_claims:
-                for r in ris_claims:
-                    tutti_i_claims.add(str(list(r.values())[0]))
         except Exception as e:
-            print(f"Errore recupero claim per '{t}': {e}")
+            print(f"⚠️ [WARNING] Query Qwen fallita per i claim di '{t}' ({e}). Attivazione fallback...")
+            try:
+                ris_claims = graph.query(fallback_query_claims)
+            except Exception as fallback_e:
+                ris_claims = []
+                print(f"Errore recupero claim per '{t}' (anche con fallback): {fallback_e}")
 
-    # 4. Generazione Output
+        # Popolamento dell'insieme dei claim
+        if ris_claims:
+            for r in ris_claims:
+                valori_claim = list(r.values())
+                if valori_claim and valori_claim[0]:
+                    tutti_i_claims.add(str(valori_claim[0]))
+
+    # --- FASE 3: Generazione Output ---
     output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
 
-    # --- GESTIONE E DEBUG DEI CLAIM ---
+    # GESTIONE E DEBUG DEI CLAIM
     if tutti_i_claims:
         print("\n" + "=" * 50)
         print(f"🔍 [DEBUG CLAIM] Trovati {len(tutti_i_claims)} claim totali per '{topic_name}' e i suoi correlati:")
@@ -408,7 +471,7 @@ def get_enhanced_topic_context(topic_name: str) -> str:
 
         output += "\n📌 Concetti già trattati in passato:\n- " + "\n- ".join(tutti_i_claims) + "\n"
 
-    # --- GESTIONE E DEBUG DELLE RELAZIONI (ARCHI) ---
+    # GESTIONE E DEBUG DELLE RELAZIONI (ARCHI)
     if risultati_rel:
         print("\n" + "=" * 50)
         print(f"🔗 [DEBUG ARCHI E RELAZIONI] Nodi collegati a '{topic_name}':")

@@ -4,12 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="fic qua e là">
+    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="fix qua e là">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/Models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RouterNodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/RouterNodes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/function_tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/function_tool.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,61 +47,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0" />
-      <entry key="S2" value="1.0" />
-      <entry key="S5" value="1.0" />
-      <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.0000003428516533" />
-      <entry key="S60" value="1.0033267213611383" />
-      <entry key="M2" value="1.3342100875793907" />
-      <entry key="M5" value="6.3496678166350575" />
-      <entry key="M10" value="14.63968824423165" />
-      <entry key="M15" value="19.895355484908823" />
-      <entry key="M30" value="28.347005057120047" />
-      <entry key="H1" value="37.96482013198107" />
-      <entry key="H2" value="55.13651042428276" />
-      <entry key="H4" value="85.78878938730986" />
-      <entry key="D1" value="423.1475593218127" />
-      <entry key="W1" value="850.5554646290834" />
+      <entry key="MS100" value="1.0000001378879766" />
+      <entry key="MS500" value="1.0424526963921545" />
+      <entry key="S2" value="1.4539168659989516" />
+      <entry key="S5" value="1.7291057579232616" />
+      <entry key="S10" value="1.8538781861501095" />
+      <entry key="S30" value="1.9712068145538888" />
+      <entry key="S60" value="2.23364670564039" />
+      <entry key="M2" value="2.8693206318346576" />
+      <entry key="M5" value="3.8335144570466557" />
+      <entry key="M10" value="4.3743584038059975" />
+      <entry key="M15" value="4.855571774823241" />
+      <entry key="M30" value="8.29689898677049" />
+      <entry key="H1" value="18.282243077926502" />
+      <entry key="H2" value="37.699157913648335" />
+      <entry key="H4" value="71.09701320065274" />
+      <entry key="D1" value="410.1772236702887" />
+      <entry key="W1" value="850.2995626802746" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="0.0" />
-      <entry key="S2" value="0.0" />
-      <entry key="S5" value="5.840868086216229E-156" />
-      <entry key="S10" value="2.41678934394416E-78" />
-      <entry key="S30" value="1.3541034782277593E-26" />
-      <entry key="S60" value="1.3126240743203992E-13" />
-      <entry key="M2" value="5.155240534850403E-7" />
-      <entry key="M5" value="0.005591114817479793" />
-      <entry key="M10" value="0.12837101260948172" />
-      <entry key="M15" value="0.36660761518914436" />
-      <entry key="M30" value="1.0832009517050998" />
-      <entry key="H1" value="2.284951420395316" />
-      <entry key="H2" value="4.930237440835398" />
-      <entry key="H4" value="10.81050395816408" />
-      <entry key="D1" value="82.44612634351955" />
-      <entry key="W1" value="165.6495793676526" />
+      <entry key="MS100" value="9.598291398436758E-17" />
+      <entry key="MS500" value="6.258046504688442E-4" />
+      <entry key="S2" value="0.15816474902142216" />
+      <entry key="S5" value="0.47823778027475017" />
+      <entry key="S10" value="0.6916078576920608" />
+      <entry key="S30" value="0.9235682899492365" />
+      <entry key="S60" value="1.13850336908858" />
+      <entry key="M2" value="1.414842076386632" />
+      <entry key="M5" value="1.7111951192482096" />
+      <entry key="M10" value="1.8446577381790807" />
+      <entry key="M15" value="1.899299872531655" />
+      <entry key="M30" value="2.080418183023704" />
+      <entry key="H1" value="2.7790052288481295" />
+      <entry key="H2" value="4.915441610423148" />
+      <entry key="H4" value="10.32595508631418" />
+      <entry key="D1" value="80.94461381896527" />
+      <entry key="W1" value="166.62594403169098" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="3.9271880019549025E-7" />
-      <entry key="MS500" value="0.05233790546927666" />
-      <entry key="S2" value="0.4783040790459372" />
-      <entry key="S5" value="0.7445290262471725" />
-      <entry key="S10" value="0.8628609541792771" />
-      <entry key="S30" value="0.952022242579535" />
-      <entry key="S60" value="0.9790403187047971" />
-      <entry key="M2" value="1.321867182746913" />
-      <entry key="M5" value="6.349517932774301" />
-      <entry key="M10" value="14.764337682307485" />
-      <entry key="M15" value="20.258933440636955" />
-      <entry key="M30" value="29.42802544213806" />
-      <entry key="H1" value="40.2480179424999" />
-      <entry key="H2" value="60.064950771472574" />
-      <entry key="H4" value="96.59730555022756" />
-      <entry key="D1" value="505.5910800936558" />
-      <entry key="W1" value="1016.2042884475325" />
+      <entry key="MS100" value="1.8245044715809203E-7" />
+      <entry key="MS500" value="0.07253438430683029" />
+      <entry key="S2" value="0.9850494474671523" />
+      <entry key="S5" value="1.8554436312556808" />
+      <entry key="S10" value="2.343014112168169" />
+      <entry key="S30" value="2.818185353348671" />
+      <entry key="S60" value="3.3277391876347657" />
+      <entry key="M2" value="4.2564231605676515" />
+      <entry key="M5" value="5.530653060708241" />
+      <entry key="M10" value="6.2112339995926975" />
+      <entry key="M15" value="6.749449788650253" />
+      <entry key="M30" value="10.37425501259855" />
+      <entry key="H1" value="21.059206841193163" />
+      <entry key="H2" value="42.61281357686209" />
+      <entry key="H4" value="81.42107519471843" />
+      <entry key="D1" value="491.1192821482021" />
+      <entry key="W1" value="1016.9247471974112" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -172,7 +175,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-245168a56dbd-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.25134.203" />
+        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
       </set>
     </attachedChunks>
   </component>
@@ -183,14 +186,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1779790139548</updated>
-    </task>
-    <task id="LOCAL-00009" summary="notion">
-      <option name="closed" value="true" />
-      <created>1779966703994</created>
-      <option name="number" value="00009" />
-      <option name="presentableId" value="LOCAL-00009" />
-      <option name="project" value="LOCAL" />
-      <updated>1779966703994</updated>
     </task>
     <task id="LOCAL-00010" summary="notion">
       <option name="closed" value="true" />
@@ -576,7 +571,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783013375970</updated>
     </task>
-    <option name="localTasksCounter" value="58" />
+    <task id="LOCAL-00058" summary="fix qua e là">
+      <option name="closed" value="true" />
+      <created>1783072116834</created>
+      <option name="number" value="00058" />
+      <option name="presentableId" value="LOCAL-00058" />
+      <option name="project" value="LOCAL" />
+      <updated>1783072116835</updated>
+    </task>
+    <option name="localTasksCounter" value="59" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -597,6 +600,7 @@
     <MESSAGE value="modifiche" />
     <MESSAGE value="piccolo fix planning prompt" />
     <MESSAGE value="fic qua e là" />
-    <option name="LAST_COMMIT_MESSAGE" value="fic qua e là" />
+    <MESSAGE value="fix qua e là" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix qua e là" />
   </component>
 </project>
