@@ -5,20 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="più o meno finito">
-      <change afterPath="$PROJECT_DIR$/Test/new_test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/Models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Prompt.py" beforeDir="false" afterPath="$PROJECT_DIR$/Prompt.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RouterNodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/RouterNodes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/function_tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/function_tool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_fine_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_fine_tuning.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,23 +41,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0000012410566066" />
-      <entry key="S2" value="1.034118423581675" />
-      <entry key="S5" value="1.312650241759862" />
-      <entry key="S10" value="1.7432676737316155" />
-      <entry key="S30" value="2.471007467180409" />
-      <entry key="S60" value="3.011762230671738" />
-      <entry key="M2" value="3.6479921693262582" />
-      <entry key="M5" value="4.6057116024212945" />
-      <entry key="M10" value="6.570283633775155" />
-      <entry key="M15" value="8.635510707800488" />
-      <entry key="M30" value="14.107353593929048" />
-      <entry key="H1" value="23.97569120491378" />
-      <entry key="H2" value="41.563112512685244" />
-      <entry key="H4" value="74.23302313303701" />
-      <entry key="D1" value="409.5784584008675" />
-      <entry key="W1" value="897.7992635653222" />
+      <entry key="MS100" value="1.0161760144350216" />
+      <entry key="MS500" value="1.4383034046166783" />
+      <entry key="S2" value="1.8414219782553367" />
+      <entry key="S5" value="2.208722074054889" />
+      <entry key="S10" value="2.6728337893495278" />
+      <entry key="S30" value="3.437269925380286" />
+      <entry key="S60" value="3.9911312388463904" />
+      <entry key="M2" value="4.63547607036437" />
+      <entry key="M5" value="5.599384287873519" />
+      <entry key="M10" value="7.5657689634497745" />
+      <entry key="M15" value="9.631554414860688" />
+      <entry key="M30" value="15.104121635835856" />
+      <entry key="H1" value="24.97294466328492" />
+      <entry key="H2" value="42.56073180784526" />
+      <entry key="H4" value="75.2308970958186" />
+      <entry key="D1" value="410.57650331986906" />
+      <entry key="W1" value="898.7986513421814" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -77,37 +65,37 @@
       <entry key="S2" value="0.0" />
       <entry key="S5" value="0.0" />
       <entry key="S10" value="0.0" />
-      <entry key="S30" value="1.2279403694571745E-115" />
-      <entry key="S60" value="4.497550694942917E-58" />
-      <entry key="M2" value="2.936931495871515E-29" />
-      <entry key="M5" value="6.664500118062819E-12" />
-      <entry key="M10" value="4.821666645181587E-6" />
-      <entry key="M15" value="4.590550982095616E-4" />
-      <entry key="M30" value="0.04655300806114765" />
-      <entry key="H1" value="0.5167998124339962" />
-      <entry key="H2" value="2.142411821219067" />
-      <entry key="H4" value="6.397336817208612" />
-      <entry key="D1" value="72.5283246199365" />
-      <entry key="W1" value="167.4585115038461" />
+      <entry key="S30" value="1.2111748638515228E-115" />
+      <entry key="S60" value="4.466741844670311E-58" />
+      <entry key="M2" value="2.92685501447013E-29" />
+      <entry key="M5" value="6.655344445239428E-12" />
+      <entry key="M10" value="4.8183535103863135E-6" />
+      <entry key="M15" value="4.588447856402789E-4" />
+      <entry key="M30" value="0.04654234288782766" />
+      <entry key="H1" value="0.5167406102951921" />
+      <entry key="H2" value="2.1422891054289424" />
+      <entry key="H4" value="6.397153597186066" />
+      <entry key="D1" value="72.52797841337606" />
+      <entry key="W1" value="167.45839731130883" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.6285066872609142" />
-      <entry key="MS500" value="0.9113024305853625" />
-      <entry key="S2" value="1.0105115563680187" />
-      <entry key="S5" value="1.300730759580606" />
-      <entry key="S10" value="1.7351699034031753" />
-      <entry key="S30" value="2.467039944872453" />
-      <entry key="S60" value="3.009367158741672" />
-      <entry key="M2" value="3.646576808883973" />
-      <entry key="M5" value="4.605026321206378" />
-      <entry key="M10" value="6.569832284038909" />
-      <entry key="M15" value="8.635577853333638" />
-      <entry key="M30" value="14.153516323113132" />
-      <entry key="H1" value="24.491883711646068" />
-      <entry key="H2" value="43.70463340835726" />
-      <entry key="H4" value="80.6291541198747" />
-      <entry key="D1" value="482.10449951106034" />
-      <entry key="W1" value="1065.2570131920345" />
+      <entry key="MS100" value="0.026342747680661627" />
+      <entry key="MS500" value="0.8377293229081862" />
+      <entry key="S2" value="1.6358751304374033" />
+      <entry key="S5" value="2.1185720057718926" />
+      <entry key="S10" value="2.6246598287631264" />
+      <entry key="S30" value="3.4197032182067493" />
+      <entry key="S60" value="3.9819024338592" />
+      <entry key="M2" value="4.6306346104157265" />
+      <entry key="M5" value="5.597326150712814" />
+      <entry key="M10" value="7.564630789082865" />
+      <entry key="M15" value="9.631163387308183" />
+      <entry key="M30" value="15.150044691853966" />
+      <entry key="H1" value="25.488963482184747" />
+      <entry key="H2" value="44.7020727594864" />
+      <entry key="H4" value="81.6268162571225" />
+      <entry key="D1" value="483.10219346100354" />
+      <entry key="W1" value="1066.2562860949606" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -119,35 +107,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.Main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Notion_Test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Notion_Test2.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Notion_Test3.executor&quot;: &quot;Run&quot;,
-    &quot;Python.fine_tuned_model.executor&quot;: &quot;Run&quot;,
-    &quot;Python.new_test.executor&quot;: &quot;Run&quot;,
-    &quot;Python.post_evaluator.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_fine_tuning.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_neo4j.executor&quot;: &quot;Run&quot;,
-    &quot;Python.test_triage_router.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Desktop/Universita/Magistrale/COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE/PROGETTO_FINALE&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.Main.executor": "Run",
+    "Python.Notion_Test.executor": "Run",
+    "Python.Notion_Test2.executor": "Run",
+    "Python.Notion_Test3.executor": "Run",
+    "Python.fine_tuned_model.executor": "Run",
+    "Python.new_test.executor": "Run",
+    "Python.post_evaluator.executor": "Run",
+    "Python.test_fine_tuning.executor": "Run",
+    "Python.test_neo4j.executor": "Run",
+    "Python.test_triage_router.executor": "Run",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/Desktop/Universita/Magistrale/COGNITIVE COMPUTING AND ARTIFICIAL INTELLIGENCE/PROGETTO_FINALE",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="Main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PROGETTO2" />
@@ -193,14 +181,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1779790139548</updated>
-    </task>
-    <task id="LOCAL-00011" summary="FUNZIONA!!!!!">
-      <option name="closed" value="true" />
-      <created>1779975174158</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1779975174158</updated>
     </task>
     <task id="LOCAL-00012" summary="FUNZIONA!!!!!">
       <option name="closed" value="true" />
@@ -586,7 +566,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783160561513</updated>
     </task>
-    <option name="localTasksCounter" value="60" />
+    <task id="LOCAL-00060" summary="più o meno finito">
+      <option name="closed" value="true" />
+      <created>1784309704134</created>
+      <option name="number" value="00060" />
+      <option name="presentableId" value="LOCAL-00060" />
+      <option name="project" value="LOCAL" />
+      <updated>1784309704135</updated>
+    </task>
+    <option name="localTasksCounter" value="61" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

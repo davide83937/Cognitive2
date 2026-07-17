@@ -229,10 +229,29 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
                         return f"Errore critico durante l'interrogazione di Neo4j anche con il fallback: {fallback_e}"
                 if risultati:
                     for res in risultati:
+                        """
+                        Qui cerca di recuperare il valore della data. 
+                        Poiché la query Cypher viene generata dinamicamente da 
+                        un'Intelligenza Artificiale, la colonna contenente la data 
+                        potrebbe essere stata chiamata in modi diversi 
+                        (ad esempio "p.date" o semplicemente "date"). 
+                        Il codice usa .get() per cercare entrambe le chiavi senza 
+                        causare errori se una non esiste.
+                        """
                         # Estraiamo la data (solitamente p.date o date)
                         data_db = res.get("p.date") or res.get("date")
 
-                        # ---> INIZIO FIX: Estrazione Dinamica del Conteggio <---
+                        """Quando l'IA genera una query di conteggio, potrebbe chiamare la colonna 
+                        risultante in mille modi imprevedibili (es. COUNT(p), numero_post, totale, ecc.). 
+                        Invece di cercare un nome specifico, il codice fa questo:
+                           Imposta un conteggio di default a 1.
+                           Analizza tutti i valori presenti nella riga corrente restituita dal database 
+                           (res.values()).
+                           Verifica di che tipo è il dato: se trova un numero intero 
+                           (isinstance(valore, int)), deduce logicamente che quello deve essere il 
+                           conteggio dei post.
+                           Lo assegna alla variabile count e interrompe la ricerca nella riga attuale 
+                           con break."""
                         # Cerchiamo dinamicamente tra tutti i valori della riga restituita dal DB
                         # Il conteggio sarà sicuramente un numero intero (int)
                         count = 1
@@ -240,7 +259,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
                             if isinstance(valore, int):
                                 count = valore
                                 break
-                        # ---> FINE FIX <---
+
 
                         if data_db:
                             conteggio_db[data_db] = count
