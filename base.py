@@ -2,7 +2,7 @@ from typing import Optional, List
 from langchain_core.tools import BaseTool
 from Tools import write_an_article,  rag_document_retriever, verified_internet_search, \
     intelligent_topic_matcher, \
-    get_enhanced_topic_context, calendar_query_tool, get_flexible_schedule_dates
+    get_enhanced_topic_context, get_flexible_schedule_dates
 
 
 def get_tools(tool_names: Optional[List[str]] = None) -> List[BaseTool]:

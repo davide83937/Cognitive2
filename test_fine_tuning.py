@@ -196,7 +196,7 @@ def robust_cleaner(query):
 
     return query
 
-TEST_SOLO_ULTIMI_11 = True
+TEST_SOLO_ULTIMI_11 = False
 
 def main():
     # 1. Caricamento dati di test

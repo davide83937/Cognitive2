@@ -6,20 +6,19 @@ from Prompt import get_refine_prompt, get_accept_prompt, get_update_prompt, chec
     get_topic_extraction_from_feedback_prompt
 from Schemas import KGExtraction, State, ArticleData, TopicSelection, EditorialPlanOutput
 from base import get_tools_by_name
-import re
 from function_tool import save_to_neo4j, get_smart_schedule_dates, get_covered_context_from_neo4j
 import datetime
 from langgraph.types import interrupt, Command
 
 
 
-def call_llm(state: MessagesState):
+"""def call_llm(state: MessagesState):
     print("DEBUG - Cosa riceve il bot:")
     for msg in state["messages"]:
         print(f"  {msg.type}: {msg.content}")
     llm = get_llm()
     risposta = llm.invoke(state["messages"])
-    return {"messages": [risposta]}
+    return {"messages": [risposta]}"""
 
 
 def planning_node(state: State) -> Command:
@@ -37,11 +36,11 @@ def planning_node(state: State) -> Command:
     llm = get_llm().with_structured_output(EditorialPlanOutput)
     response = llm.invoke([{"role": "system", "content": prompt_planning}])
 
-    # 1. Convertiamo ogni articolo in un dizionario e INIETTIAMO FORZATAMENTE LA DATA CALCOLATA
+    # convertiamo ogni articolo in un dizionario
     lista_articoli_pulita = []
     for i, articolo in enumerate(response.plan):
         art_dict = articolo.model_dump()
-        # Aggiungiamo/sovrascriviamo la chiave 'date' con la data calcolata in Python
+        # aggiungiamo la chiave 'date' con la data calcolata in Python
         art_dict["date"] = date_sicure[i]
         lista_articoli_pulita.append(art_dict)
 
@@ -117,16 +116,17 @@ def refine_node(state: MessagesState):
 def accept_node(state: State):
     pending = state.get("pending_topics", [])
 
-    # 1. Inizializzazione di base (il tuo ex blocco "else")
+    #Inizializzazione di base, nel caso in cui la lista è vuota
     topic_da_scrivere = state.get("current_topic", "Argomento generico")
     data_assegnata = state.get("data_proposta", None)
 
-    # 2. Se c'è qualcosa in pending, sovrascriviamo le variabili
+    #Se c'è qualcosa in pending, sovrascrivo le variabili
 
     if pending:
         elemento = pending[0]
 
         # Verifica se l'elemento è un dizionario (es. ricostruito dal checkpointer)
+        #uso il metodo .get() dei dizionari per estrarre in modo sicuro le chiavi "title" e "date"
         if isinstance(elemento, dict):
             topic_da_scrivere = elemento.get("title", "Argomento generico")
             data_assegnata = elemento.get("date")
@@ -172,7 +172,7 @@ def accept_node(state: State):
     if not sta_tornando_da_ricerca:
         print(f"\n⚙️ Avvio stesura articolo su: '{topic_da_scrivere}'")
     """
-    A cosa serve: È un controllo puramente visivo per la console (UX/LOG).
+    A cosa serve: È un controllo puramente visivo per la console.
     Spiegazione: Se l'ultimo messaggio della cronologia è di tipo "tool", 
     significa che l'agente ha appena eseguito un'azione di background 
     (come una ricerca sul web o un recupero RAG) ed è tornato in questo 
@@ -184,10 +184,10 @@ def accept_node(state: State):
 
 
     llm = get_llm_with_tools()
-    # 2. Recuperi i kg_summaries dallo stato
+    # Recupero i kg_summaries dallo stato
     sommari = state.get("kg_summaries", "")
 
-    # 3. Passi ENTRAMBI alla funzione!
+    # Passo entrambi alla funzione!
     accept_prompt = get_accept_prompt(topic_da_scrivere, sommari)
     storico_pulito = []
     for msg in reversed(state.get("messages", [])):
@@ -258,17 +258,11 @@ def tool_node(state: State):
                 ))
                 continue  # Salta l'esecuzione reale del tool e passa al prossimo (se c'è)
         """
-        Quando l'LLM decide di usare un tool (ad esempio, fare una ricerca web), invia una richiesta formale
-        che ha un ID univoco (es. call_abc123). In quel momento, l'LLM si mette in pausa e aspetta.
-        Si aspetta di ricevere indietro un messaggio di tipo "ToolMessage" che abbia esattamente quello stesso ID, 
-        contenente il risultato dell'operazione.
-
-        Se tu, nel tuo codice, decidi di bloccare la ricerca (perché ha superato il limite di 2) e passi 
-        semplicemente oltre ignorando la richiesta, il framework (LangGraph) andrà in crash o darà errore. 
+        Se decido di bloccare la ricerca (perché ha superato il limite di 2) e passo
+        semplicemente oltre ignorando la richiesta, il LangGraph andrà in crash o darà errore. 
         Dirà: "Ehi, l'LLM ha chiesto di usare un tool, ma non hai fornito nessuna risposta per quell'ID!".
         """
         # ---> FINE GUARDRAIL <---
-
         # Esecuzione normale degli altri tool o della ricerca se entro i limiti
         tool = get_tools_by_name[tool_name]
         observation = tool.invoke(tool_args)
@@ -279,34 +273,27 @@ def tool_node(state: State):
             name=tool_name
         )
         result.append(tool_message)
-
         # ---> INIZIO ESTRAZIONE KG SUMMARIES <---
         if tool_name in ["get_enhanced_topic_context"]:
-            # Salviamo l'informazione nel nostro dizionario di aggiornamento (NON direttamente in state)
+            # Salvo l'informazione nel mio dizionario di aggiornamento (non direttamente in state)
             updates_for_state["kg_summaries"] = str(observation)
         # ---> FINE ESTRAZIONE KG SUMMARIES <---
-
         if tool_name == "write_an_article":
             titolo_estratto = tool_args.get("about", "Nuovo Articolo")
             autore_estratto = tool_args.get("author", "Agente AI")
             testo_articolo = str(observation)
-
             print(f"\n✅ Articolo '{titolo_estratto}' generato con successo! Passo alla revisione umana...")
-
             articolo_generato = ArticleData(
                 title=titolo_estratto,
                 text=testo_articolo,
                 author=autore_estratto,
                 date=state.get("data_proposta")
             )
-
     # 3. Aggiungiamo sempre i messaggi elaborati al nostro dizionario di aggiornamento
     updates_for_state["messages"] = result
-
     if articolo_generato is not None:
         updates_for_state["final_article"] = articolo_generato
         updates_for_state["search_count"] = 0  # RESETTA IL CONTATORE
-
         return Command(
             update=updates_for_state,  # <--- Passiamo il dizionario completo!
             goto="ask_feedback_node"
@@ -314,7 +301,6 @@ def tool_node(state: State):
     else:
         nomi_tools_usati = [tc["name"] for tc in last_message.tool_calls]
         print(f"\n🛠️ [DEBUG AGENTE] In background l'LLM ha appena usato: {', '.join(nomi_tools_usati)}")
-
         # AGGIUNTA GUARDRAIL
         if not last_message.tool_calls:
             print("⚠️ L'LLM non ha chiamato alcun tool nativo. Forza l'uso di write_an_article.")
@@ -322,9 +308,7 @@ def tool_node(state: State):
                 content="SYSTEM WARNING: Non hai chiamato alcun tool. Usa esplicitamente il tool 'write_an_article' ora per generare il pezzo e proseguire.")
             result.append(msg_forzatura)
             updates_for_state["messages"] = result  # Aggiorniamo i messaggi con la forzatura appena aggiunta
-
         updates_for_state["search_count"] = current_search_count
-
         return Command(
             update=updates_for_state,  # <--- Passiamo il dizionario completo!
             goto="accept_node"
@@ -339,15 +323,6 @@ def ask_feedback_node(state: State):
     else:
         testo_articolo = getattr(articolo, "text", "")
 
-    """
-    NOTA SU COME FUNZIONA L'INTERRUPT IN LANGGRAPH:
-    Quando l'agente riceve il feedback e si "risveglia", NON riprende l'esecuzione 
-    dalla riga in cui si era fermato. Al contrario, LangGraph RIESEGUE l'intero nodo dall'inizio.
-    - 1° Esecuzione: interrupt() blocca il programma e salva lo stato nel database.
-    - 2° Esecuzione: il nodo riparte da capo (i dati ricaricati ora sono dict). 
-      Questa volta interrupt() riconosce la risposta pendente, non si ferma, e 
-      restituisce istantaneamente il testo dell'utente, permettendo al nodo di concludersi.
-    """
 
     """
         Dipende da come il checkpointer serializza e deserializza lo stato:

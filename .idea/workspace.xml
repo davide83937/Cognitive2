@@ -4,15 +4,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="fix qua e là">
+    <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="più o meno finito">
+      <change afterPath="$PROJECT_DIR$/Test/new_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" beforeDir="false" afterPath="$PROJECT_DIR$/.langgraph_api/.langgraph_ops.pckl" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/Models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Prompt.py" beforeDir="false" afterPath="$PROJECT_DIR$/Prompt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RouterNodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/RouterNodes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/function_tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/function_tool.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_fine_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_fine_tuning.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,61 +53,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000001378879766" />
-      <entry key="MS500" value="1.0424526963921545" />
-      <entry key="S2" value="1.4539168659989516" />
-      <entry key="S5" value="1.7291057579232616" />
-      <entry key="S10" value="1.8538781861501095" />
-      <entry key="S30" value="1.9712068145538888" />
-      <entry key="S60" value="2.23364670564039" />
-      <entry key="M2" value="2.8693206318346576" />
-      <entry key="M5" value="3.8335144570466557" />
-      <entry key="M10" value="4.3743584038059975" />
-      <entry key="M15" value="4.855571774823241" />
-      <entry key="M30" value="8.29689898677049" />
-      <entry key="H1" value="18.282243077926502" />
-      <entry key="H2" value="37.699157913648335" />
-      <entry key="H4" value="71.09701320065274" />
-      <entry key="D1" value="410.1772236702887" />
-      <entry key="W1" value="850.2995626802746" />
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0000012410566066" />
+      <entry key="S2" value="1.034118423581675" />
+      <entry key="S5" value="1.312650241759862" />
+      <entry key="S10" value="1.7432676737316155" />
+      <entry key="S30" value="2.471007467180409" />
+      <entry key="S60" value="3.011762230671738" />
+      <entry key="M2" value="3.6479921693262582" />
+      <entry key="M5" value="4.6057116024212945" />
+      <entry key="M10" value="6.570283633775155" />
+      <entry key="M15" value="8.635510707800488" />
+      <entry key="M30" value="14.107353593929048" />
+      <entry key="H1" value="23.97569120491378" />
+      <entry key="H2" value="41.563112512685244" />
+      <entry key="H4" value="74.23302313303701" />
+      <entry key="D1" value="409.5784584008675" />
+      <entry key="W1" value="897.7992635653222" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="9.598291398436758E-17" />
-      <entry key="MS500" value="6.258046504688442E-4" />
-      <entry key="S2" value="0.15816474902142216" />
-      <entry key="S5" value="0.47823778027475017" />
-      <entry key="S10" value="0.6916078576920608" />
-      <entry key="S30" value="0.9235682899492365" />
-      <entry key="S60" value="1.13850336908858" />
-      <entry key="M2" value="1.414842076386632" />
-      <entry key="M5" value="1.7111951192482096" />
-      <entry key="M10" value="1.8446577381790807" />
-      <entry key="M15" value="1.899299872531655" />
-      <entry key="M30" value="2.080418183023704" />
-      <entry key="H1" value="2.7790052288481295" />
-      <entry key="H2" value="4.915441610423148" />
-      <entry key="H4" value="10.32595508631418" />
-      <entry key="D1" value="80.94461381896527" />
-      <entry key="W1" value="166.62594403169098" />
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="1.2279403694571745E-115" />
+      <entry key="S60" value="4.497550694942917E-58" />
+      <entry key="M2" value="2.936931495871515E-29" />
+      <entry key="M5" value="6.664500118062819E-12" />
+      <entry key="M10" value="4.821666645181587E-6" />
+      <entry key="M15" value="4.590550982095616E-4" />
+      <entry key="M30" value="0.04655300806114765" />
+      <entry key="H1" value="0.5167998124339962" />
+      <entry key="H2" value="2.142411821219067" />
+      <entry key="H4" value="6.397336817208612" />
+      <entry key="D1" value="72.5283246199365" />
+      <entry key="W1" value="167.4585115038461" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.8245044715809203E-7" />
-      <entry key="MS500" value="0.07253438430683029" />
-      <entry key="S2" value="0.9850494474671523" />
-      <entry key="S5" value="1.8554436312556808" />
-      <entry key="S10" value="2.343014112168169" />
-      <entry key="S30" value="2.818185353348671" />
-      <entry key="S60" value="3.3277391876347657" />
-      <entry key="M2" value="4.2564231605676515" />
-      <entry key="M5" value="5.530653060708241" />
-      <entry key="M10" value="6.2112339995926975" />
-      <entry key="M15" value="6.749449788650253" />
-      <entry key="M30" value="10.37425501259855" />
-      <entry key="H1" value="21.059206841193163" />
-      <entry key="H2" value="42.61281357686209" />
-      <entry key="H4" value="81.42107519471843" />
-      <entry key="D1" value="491.1192821482021" />
-      <entry key="W1" value="1016.9247471974112" />
+      <entry key="MS100" value="0.6285066872609142" />
+      <entry key="MS500" value="0.9113024305853625" />
+      <entry key="S2" value="1.0105115563680187" />
+      <entry key="S5" value="1.300730759580606" />
+      <entry key="S10" value="1.7351699034031753" />
+      <entry key="S30" value="2.467039944872453" />
+      <entry key="S60" value="3.009367158741672" />
+      <entry key="M2" value="3.646576808883973" />
+      <entry key="M5" value="4.605026321206378" />
+      <entry key="M10" value="6.569832284038909" />
+      <entry key="M15" value="8.635577853333638" />
+      <entry key="M30" value="14.153516323113132" />
+      <entry key="H1" value="24.491883711646068" />
+      <entry key="H2" value="43.70463340835726" />
+      <entry key="H4" value="80.6291541198747" />
+      <entry key="D1" value="482.10449951106034" />
+      <entry key="W1" value="1065.2570131920345" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -121,6 +127,7 @@
     &quot;Python.Notion_Test2.executor&quot;: &quot;Run&quot;,
     &quot;Python.Notion_Test3.executor&quot;: &quot;Run&quot;,
     &quot;Python.fine_tuned_model.executor&quot;: &quot;Run&quot;,
+    &quot;Python.new_test.executor&quot;: &quot;Run&quot;,
     &quot;Python.post_evaluator.executor&quot;: &quot;Run&quot;,
     &quot;Python.test_fine_tuning.executor&quot;: &quot;Run&quot;,
     &quot;Python.test_neo4j.executor&quot;: &quot;Run&quot;,
@@ -186,14 +193,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1779790139548</updated>
-    </task>
-    <task id="LOCAL-00010" summary="notion">
-      <option name="closed" value="true" />
-      <created>1779972673814</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1779972673814</updated>
     </task>
     <task id="LOCAL-00011" summary="FUNZIONA!!!!!">
       <option name="closed" value="true" />
@@ -579,7 +578,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783072116835</updated>
     </task>
-    <option name="localTasksCounter" value="59" />
+    <task id="LOCAL-00059" summary="più o meno finito">
+      <option name="closed" value="true" />
+      <created>1783160561512</created>
+      <option name="number" value="00059" />
+      <option name="presentableId" value="LOCAL-00059" />
+      <option name="project" value="LOCAL" />
+      <updated>1783160561513</updated>
+    </task>
+    <option name="localTasksCounter" value="60" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -601,6 +608,7 @@
     <MESSAGE value="piccolo fix planning prompt" />
     <MESSAGE value="fic qua e là" />
     <MESSAGE value="fix qua e là" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix qua e là" />
+    <MESSAGE value="più o meno finito" />
+    <option name="LAST_COMMIT_MESSAGE" value="più o meno finito" />
   </component>
 </project>

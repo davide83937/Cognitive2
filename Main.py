@@ -51,7 +51,7 @@ serde = JsonPlusSerializer(
 
 # Inizializza il MemorySaver passandogli il serializzatore personalizzato
 memory = MemorySaver(serde=serde)
-app = builder.compile()#"""checkpointer=memory"""
+app = builder.compile(checkpointer=memory)#"""checkpointer=memory"""
 
 
 """print("Inviando la domanda al grafo locale...")
@@ -64,9 +64,14 @@ output = app.invoke(Command(update={"messages": [HumanMessage(content=content)],
 if __name__ == "__main__":
     print("Inviando la domanda al grafo locale...")
     content = input()
+
     config = {"configurable": {"thread_id": "1"}}
+    """Questa riga è fondamentale per la memoria di LangGraph (i checkpointer). 
+    Impostando un thread_id, stai dicendo al programma: "Tieni traccia di questa specifica conversazione". 
+    Se l'utente scrive più messaggi di fila con lo stesso thread_id, l'LLM ricorderà lo storico precedente."""
+
     output = app.invoke(Command(update={"messages": [HumanMessage(content=content)],
-                                        "classification_decision": None}), config=config)
+                                        "classification_decision": None}), config=config)#classification decision non usata
 
     """print("Inviando la domanda al grafo locale...")
     content = input()

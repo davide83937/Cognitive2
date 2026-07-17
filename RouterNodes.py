@@ -7,21 +7,21 @@ from Prompt import triage_system_prompt, tool_node_prompt, scheduling_node_promp
 from Schemas import State, RouterSchema, RouterSchemaToolNode, RouterSchemaScheduling
 
 
-class TriageDecision(BaseModel):
-    classification: Literal["accept", "refine", "reject"] = Field(description="La decisione di classificazione")
+"""class TriageDecision(BaseModel):
+    classification: Literal["accept", "refine", "reject"] = Field(description="La decisione di classificazione")"""
 
 def triage_router(state: State) -> Command[Literal["__end__"]]:
     topic_input = state["messages"][-1].content
     system_prompt = triage_system_prompt
 
-    user_prompt = topic_input
+   # user_prompt = topic_input
 
     llm = get_llm()
     llm = llm.with_structured_output(RouterSchema)
     result = llm.invoke(
         [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
+            {"role": "user", "content": topic_input},
         ]
     )
     classification = result.classification
@@ -39,9 +39,9 @@ def triage_router(state: State) -> Command[Literal["__end__"]]:
     else:
         raise ValueError(f"Invalid classification: {result.classification}")
     return Command(goto=goto)
-
+"""
 class FinalPlan(BaseModel):
-    posts_to_write: list[str] = Field(description="Lista degli argomenti da scrivere, escludendo quelli scartati dall'utente")
+    posts_to_write: list[str] = Field(description="Lista degli argomenti da scrivere, escludendo quelli scartati dall'utente")"""
 
 def tool_node_router(state: State) -> Command[Literal["__end__"]]:
     feedback_input = state["messages"][-1].content
@@ -99,8 +99,6 @@ def scheduling_node_router(state: State) -> Command[Literal["__end__"]]:
     feedback_input = state["messages"][-1].content
 
     system_prompt = get_scheduling_router_system_prompt(scheduling_node_prompt, feedback_input)
-
-#    user_prompt = feedback_input
 
     llm = get_llm()
     llm = llm.with_structured_output(RouterSchemaScheduling, method="json_mode")

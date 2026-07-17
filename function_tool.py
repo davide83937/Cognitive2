@@ -24,11 +24,10 @@ def get_next_fixed_publish_date(base_date_str=None):
     giorni_pubblicazione = [0, 2, 4, 6]
 
     if base_date_str:
+        #conversione da stringa a date
         base_date = datetime.strptime(base_date_str, "%Y-%m-%d").date()
     else:
-        # Fallback alla data odierna solo se il DB è completamente vuoto
         base_date = datetime.now().date()
-
     next_date = base_date + timedelta(days=1)
 
     # Scorre i giorni finché non trova un giorno del palinsesto
@@ -90,8 +89,7 @@ def get_covered_context_from_neo4j():
     Estrarre sia i Topic che i singoli Claims dal Knowledge Graph
     usando lo schema esatto definito in save_to_neo4j per evitare warning ed elementi vuoti.
     """
-    # Seguiamo esattamente la relazione (c:Claim)-[:RELATED_TO]->(t:Topic)
-    # e prendiamo la proprietà c.text definita nel tuo salvataggio.
+    # prendiamo claim e topic del kg
     query = get_covered_context_query()
 
     try:
@@ -183,7 +181,7 @@ from langchain_chroma import Chroma
 
 
 
-# --- 1. SETUP DEL DATABASE VETTORIALE ---
+# SETUP DEL DATABASE VETTORIALE
 def setup_vector_database(cartella_documenti="./knowledge_base", db_path="./chroma_db"):
     # Se la cartella non esiste, la crea
     if not os.path.exists(cartella_documenti):

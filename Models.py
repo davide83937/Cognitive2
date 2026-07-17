@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
 import os
-from Tools import intelligent_topic_matcher, get_enhanced_topic_context, calendar_query_tool, \
+from Tools import intelligent_topic_matcher, get_enhanced_topic_context, \
     get_flexible_schedule_dates
 
 load_dotenv()

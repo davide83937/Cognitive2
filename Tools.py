@@ -13,131 +13,7 @@ def write_an_article(about: str, author: str, content: str):
     return f"My article about: {about}. \n{content} \n Written by {author}"
 
 
-@tool
-def calendar_query_tool(natural_language_query: str) -> str:
-    """
-    Strumento generalizzato per interrogare il palinsesto del blog nel Knowledge Graph.
-    Passa una richiesta in linguaggio naturale (es. "Quanti articoli ci sono il 2026-05-10?",
-    "Qual è l'ultima data occupata?", "Dammi tutte le date dei post pianificati").
-    Il tool tradurrà la richiesta in Cypher e restituirà i risultati grezzi.
-    """
-    if not graph:
-        return "Errore: Database Neo4j non connesso."
 
-    # 1. Deleghiamo al modello fine-tuned sulla RTX 3070 la creazione della query
-    cypher_query = generate_cypher(natural_language_query)
-    print(f"🔧 [DEBUG TEXT-TO-CYPHER] Query generata per il calendario:\n{cypher_query}")
-
-    # Query di fallback: recupera l'ultima data di pubblicazione occupata/pianificata nel DB
-    fallback_query = """
-    MATCH (p:Post)
-    WHERE p.date IS NOT NULL
-    RETURN p.date AS latest_scheduled_date
-    ORDER BY p.date DESC
-    LIMIT 1
-    """
-
-    # 2. Esecuzione su Neo4j con gestione del Fallback in caso di eccezione sintattica
-    try:
-        risultati = graph.query(cypher_query)
-    except Exception as e:
-        print(f"⚠️ [WARNING] Query generata da Qwen fallita per il calendario ({e}). Attivazione della query di fallback...")
-        try:
-            risultati = graph.query(fallback_query)
-        except Exception as fallback_e:
-            return f"Errore critico durante l'esecuzione in Neo4j anche con il fallback: {fallback_e}\nQuery generata: {cypher_query}"
-
-    if not risultati:
-        return "Nessun risultato trovato nel database. Il palinsesto potrebbe essere vuoto per questa ricerca."
-
-    # 3. Formattazione pulita dei risultati da restituire all'agente
-    output = "Risultati estratti dal DB (o via Fallback dell'ultima data occupata):\n"
-    for row in risultati:
-        output += f"- {row}\n"
-
-    return output
-
-
-
-
-"""
-@tool
-def get_previous_topics() -> str:
-"""
-"""
-    Usa questo tool per scoprire quali argomenti (Topic) sono già stati trattati nel blog
-    così da evitare di proporre ripetizioni.
-"""
-"""
-    if not graph:
-        return "Errore: Database Neo4j non connesso."
-
-    # Cypher query per recuperare tutti i nomi dei nodi Topic
-    query = get_all_topics_query()
-
-    try:
-        risultati = graph.query(query)
-        if not risultati:
-            return "Nessun topic trattato finora. Il blog è vuoto."
-
-        lista_topic = [res["topic_name"] for res in risultati]
-        return f"I topic già trattati nel blog sono: {', '.join(lista_topic)}."
-    except Exception as e:
-        return f"Errore durante l'interrogazione del KG: {e}"
-"""
-
-"""
-    @tool
-    def get_topic_claims(topic_name: str) -> str:
-"""
-"""
-        Usa questo tool durante la stesura dell'articolo per recuperare le affermazioni chiave (Claims)
-        fatte in passato su un determinato topic (topic_name), così da mantenere coerenza.
-"""
-"""
-    # Usiamo il vocabolario dello schema: Post -> EXTRACTS -> Claim, Post -> COVERS -> Topic
-    nl_instruction = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{topic_name}'."
-    
-    cypher_query = generate_cypher(nl_instruction)
-    print(f"🔧 [DEBUG T2C] Query:\n{cypher_query}")
-    
-    try:
-        risultati = graph.query(cypher_query)
-        # Estrai il primo valore restituito dinamicamente
-        lista_claims = [str(list(res.values())[0]) for res in risultati]
-        return "\n- ".join(lista_claims) if lista_claims else "Nessun claim trovato."
-    except Exception as e:
-        return f"Errore Cypher: {e}"
-"""
-#@tool
-#def get_topic_claims(topic_name: str) -> str:
-"""
-    Usa questo tool durante la stesura dell'articolo per recuperare le affermazioni chiave (Claims)
-    fatte in passato su un determinato topic (topic_name), così da mantenere coerenza.
-    """
-"""from test_neo4j import graph  # Assicurati di avere l'import
-    if not graph:
-        return "Errore: Database Neo4j non connesso."
-
-    from query_neo4j import get_claims_by_topic_query
-    query = get_claims_by_topic_query()
-
-    print(f"\n🧠 [DEBUG KG] L'agente sta interrogando la memoria per il topic: '{topic_name}'")
-
-    try:
-        risultati = graph.query(query, params={"topic": topic_name})
-        if not risultati:
-            print(f"❌ [DEBUG KG] Nessuna informazione precedente trovata. Argomento nuovo.")
-            return f"Non ho trovato affermazioni precedenti sul topic '{topic_name}'."
-
-        lista_claims = [res["claim_text"] for res in risultati]
-        risultato_testuale = f"Affermazioni passate su {topic_name}:\n- " + "\n- ".join(lista_claims)
-
-        print(f"✅ [DEBUG KG] Trovate {len(lista_claims)} informazioni storiche passate al RAG/LLM.")
-        return risultato_testuale
-    except Exception as e:
-        return f"Errore durante l'interrogazione del KG: {e}"
-"""
 
 @tool
 def rag_document_retriever(query: str) -> str:
@@ -221,10 +97,10 @@ def intelligent_topic_matcher(new_topic: str) -> str:
     nl_instruction = (
         "Restituisci il nome di tutti i topic presenti e i testi dei claim estratti dai post che coprono ciascun topic. Limita la tua ricerca solo agli ultimi 30 giorni")
 
-    # 1. Tentativo con il modello Text-to-Cypher fine-tuned
+    #tentativo con il modello Text-to-Cypher fine-tuned
     cypher_query = generate_cypher(nl_instruction)
 
-    # Definizione della query di Fallback garantita (sintatticamente e semanticamente corretta rispetto al tuo schema)
+    # Definizione della query di Fallback
     fallback_query = """
     MATCH (c:Claim)-[:RELATED_TO]->(t:Topic)<-[:COVERS]-(p:Post)
     WHERE p.date >= toString(date() - duration('P30D'))
@@ -371,7 +247,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
             except Exception as e:
                 print(f"⚠️ Errore Cypher sul lotto corrente (salto): {e}")
 
-        # 3. Controllo disponibilità per il lotto analizzato
+        #Controllo disponibilità per il lotto analizzato
         for data_cand in lotto_corrente:
             occupazione = conteggio_db.get(data_cand, 0)
             if occupazione < 3:
@@ -429,7 +305,7 @@ def get_enhanced_topic_context(topic_name: str) -> str:
             if len(valori) >= 1 and valori[0]:
                 topics_da_esplorare.append(valori[0])
 
-    # --- FASE 2: Estrazione dei claim per TUTTI i topic nella lista ---
+    # estrazione dei claim per TUTTI i topic nella lista ---
     tutti_i_claims = set()
     for t in topics_da_esplorare:
         nl_instruction_claims = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{t}'."

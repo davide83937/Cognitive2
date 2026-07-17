@@ -56,7 +56,7 @@ def get_accept_prompt(topic: str, kg_summaries: str) -> str:
     4. Espansione della Ricerca (K-RAG): Quando invochi il tool 'rag_document_retriever' o 'verified_internet_search', 
     DEVI utilizzare le parole chiave, i claim storici o i nodi correlati estratti dal Knowledge Graph per arricchire 
     la query di ricerca. Non fare ricerche generiche, ma guidate dal contesto del Grafo.
-    5. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere il pezzo.
+    5. Quando hai tutte le informazioni, chiama 'write_an_article' per stendere l'articolo.
     
     OBIETTIVO DI RICERCA:
     Il tuo compito ora è raccogliere informazioni. Tuttavia, non devi cercare all'infinito. 
