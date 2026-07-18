@@ -141,7 +141,7 @@ def intelligent_topic_matcher(new_topic: str) -> str:
 
     contesto_db = "\n".join(lista_esistenti)
 
-    # --- 4. IL GIUDICE SEMANTICO AGGIORNATO PER MULTI-TOPIC ---
+
     llm_giudice = get_llm()
     prompt_giudice = f"""
     Sei un analista semantico. Il tuo compito è confrontare un NUOVO argomento con una lista di argomenti GIA' ESISTENTI nel database.
@@ -161,7 +161,7 @@ def intelligent_topic_matcher(new_topic: str) -> str:
 
     risposta_llm = llm_giudice.invoke([{"role": "user", "content": prompt_giudice}]).content.strip()
 
-    # --- 5. RISPOSTA FINALE MULTI-TOPIC ALL'AGENTE ---
+    # risposta finale
     if risposta_llm == "NESSUNO":
         return f"Nessuna corrispondenza semantica trovata. L'argomento '{new_topic}' è nuovo."
     else:
@@ -182,7 +182,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
     except ValueError:
         return "Errore: le date devono essere nel formato YYYY-MM-DD."
 
-    # 1. Troviamo TUTTE le date candidate nel range
+    #Troviamo tutte le date candidate nel range
     giorni_validi = [0, 2, 4, 6]
     tutte_le_date_candidate = []
 
@@ -199,12 +199,12 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
 
     # 2. BATCHING: Dividiamo le date in piccoli lotti da 5 per evitare limiti di token
     batch_size = 5
-    print(f"🤖 [TOOL NLP] Trovate {len(tutte_le_date_candidate)} date candidate. Inizio elaborazione a lotti...")
+    print(f"🤖 [TOOL] Trovate {len(tutte_le_date_candidate)} date candidate. Inizio elaborazione a lotti...")
 
     for i in range(0, len(tutte_le_date_candidate), batch_size):
         lotto_corrente = tutte_le_date_candidate[i:i + batch_size]
 
-        # Creiamo la richiesta NLP solo per questo piccolo gruppo
+        # Creiamo la richiesta solo per questo piccolo gruppo
         date_str_nlp = ", ".join([f"'{d}'" for d in lotto_corrente])
         prompt_nlp_per_cypher = f"Restituisci la data (p.date) e il conteggio dei post raggruppati per data, solo per i post dove la data è una di queste: {date_str_nlp}."
 
@@ -238,7 +238,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
                         Il codice usa .get() per cercare entrambe le chiavi senza 
                         causare errori se una non esiste.
                         """
-                        # Estraiamo la data (solitamente p.date o date)
+                        # Estraiamo la data
                         data_db = res.get("p.date") or res.get("date")
 
                         """Quando l'IA genera una query di conteggio, potrebbe chiamare la colonna 
@@ -286,6 +286,7 @@ def get_flexible_schedule_dates(start_date: str, end_date: str, limit: int = 10)
     return f"Date disponibili trovate con successo (meno di 3 post): {', '.join(date_disponibili_finali)}."
 
 
+#viene chiamato per ogni topic correlato trovato
 @tool
 def get_enhanced_topic_context(topic_name: str) -> str:
     """
@@ -294,7 +295,7 @@ def get_enhanced_topic_context(topic_name: str) -> str:
     if not graph:
         return "Errore: Database Neo4j non connesso."
 
-    # --- FASE 1: NLP per gli archi e argomenti correlati ---
+
     nl_instruction_rel = f"Restituisci il nome del topic correlato, il tipo di relazione e il motivo della relazione per il topic '{topic_name}'."
     cypher_query_rel = generate_cypher(nl_instruction_rel)
 
@@ -315,7 +316,7 @@ def get_enhanced_topic_context(topic_name: str) -> str:
             risultati_rel = []
             print(f"Errore Cypher archi (anche con fallback): {fallback_e}")
 
-    # 2. Creiamo una lista con il topic principale + tutti i topic correlati trovati
+    # creiamo una lista con il topic principale + tutti i topic correlati trovati
     topics_da_esplorare = [topic_name]
     if risultati_rel:
         for rel in risultati_rel:
@@ -324,7 +325,7 @@ def get_enhanced_topic_context(topic_name: str) -> str:
             if len(valori) >= 1 and valori[0]:
                 topics_da_esplorare.append(valori[0])
 
-    # estrazione dei claim per TUTTI i topic nella lista ---
+    # estrazione dei claim per TUTTI i topic nella lista
     tutti_i_claims = set()
     for t in topics_da_esplorare:
         nl_instruction_claims = f"Restituisci il testo dei claim estratti dai post che coprono il topic '{t}'."
@@ -353,11 +354,10 @@ def get_enhanced_topic_context(topic_name: str) -> str:
                 valori_claim = list(r.values())
                 if valori_claim and valori_claim[0]:
                     tutti_i_claims.add(str(valori_claim[0]))
-
-    # --- FASE 3: Generazione Output ---
     output = f"--- CONTESTO KNOWLEDGE GRAPH PER: '{topic_name}' ---\n"
 
-    # GESTIONE E DEBUG DEI CLAIM
+#stampiamo tutto per verifica, claim e relazioni trovate
+      #claim
     if tutti_i_claims:
         print("\n" + "=" * 50)
         print(f"🔍 [DEBUG CLAIM] Trovati {len(tutti_i_claims)} claim totali per '{topic_name}' e i suoi correlati:")
@@ -366,7 +366,7 @@ def get_enhanced_topic_context(topic_name: str) -> str:
 
         output += "\n📌 Concetti già trattati in passato:\n- " + "\n- ".join(tutti_i_claims) + "\n"
 
-    # GESTIONE E DEBUG DELLE RELAZIONI (ARCHI)
+    # relazioni
     if risultati_rel:
         print("\n" + "=" * 50)
         print(f"🔗 [DEBUG ARCHI E RELAZIONI] Nodi collegati a '{topic_name}':")

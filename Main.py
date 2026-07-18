@@ -41,11 +41,13 @@ builder.add_node("rag_document_retriever", rag_document_retriever)
 # 4. Definisci l'arco di ingresso
 builder.add_edge(START, "triage_router")
 
-# 5. Compila il grafo (punto di accesso vero e proprio)
+"""
+Serve per serializzare correttamente le strutture dati durante l'interrupt
+"""
 serde = JsonPlusSerializer(
     allowed_msgpack_modules=[
         ('Schemas', 'ArticleData'),
-        ('Schemas', 'PlannedArticle')  # <--- AGGIUNGI QUESTA RIGA
+        ('Schemas', 'PlannedArticle')
     ]
 )
 

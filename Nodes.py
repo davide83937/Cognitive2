@@ -121,7 +121,6 @@ def accept_node(state: State):
     data_assegnata = state.get("data_proposta", None)
 
     #Se c'è qualcosa in pending, sovrascrivo le variabili
-
     if pending:
         elemento = pending[0]
 
@@ -574,7 +573,7 @@ def decision_node(state: State) -> Command:
     if approved_articles:
         print(f"\n🔁 Ci sono ancora {len(approved_articles)} articoli in coda da schedulare. Passo al prossimo...")
         return Command(
-            update={"approved_articles": approved_articles},  # Salviamo la coda ridotta
+            update={"approved_articles": approved_articles},
             goto="scheduling_queue_router"
         )
     else:

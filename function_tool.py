@@ -86,8 +86,7 @@ def save_to_neo4j(title: str, topic: str, claims: list, sources: list, publish_d
 
 def get_covered_context_from_neo4j():
     """
-    Estrarre sia i Topic che i singoli Claims dal Knowledge Graph
-    usando lo schema esatto definito in save_to_neo4j per evitare warning ed elementi vuoti.
+    Estrarre sia i Topic che i singoli Claims dal Knowledge Graph.
     """
     # prendiamo claim e topic del kg
     query = get_covered_context_query()
