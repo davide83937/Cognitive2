@@ -46,64 +46,7 @@ def generate_cypher(query_testuale: str) -> str:
     Genera una query Cypher deterministica delegando il calcolo al server API (Flask)
     che ospita il modello fine-tuned Qwen-7B sulla RTX 3070.
     """
-    prompt_text_old = """Genera SOLO la query Neo4j Cypher. Non aggiungere spiegazioni.
-        REGOLE RIGIDE:
-        1. Restituisci in RETURN SOLO le variabili esplicitamente richieste.
-        2. Le date ('date') appartengono ESCLUSIVAMENTE al nodo Post (p.date).
-        3. Usa SEMPRE le regex case-insensitive per cercare i nomi (es. `=~ '(?i).*nome.*'`).
-        4. I Tipi di relazione devono essere TUTTI IN MAIUSCOLO (es. 'APPLICAZIONE', 'CONTRASTO').
-        5. Per accedere alle proprietà delle relazioni, assegna una variabile nel MATCH (es. `-[r:RELATED_TO]->`) e usala nel RETURN (es. `r.reason`).
-        6. Non usare MAI due clausole WHERE nello stesso MATCH. Usa AND.
-        7. Usa ESCLUSIVAMENTE i nodi e le relazioni elencate nello SCHEMA CONSENTITO. Non inventare relazioni come [:CONTRO].
-        8. Se la richiesta menziona nodi multipli (es. claim e documenti), DEVI collegarli TUTTI esplicitamente usando clausole MATCH (es. MATCH (p)-[:EXTRACTS]->(c:Claim) MATCH (p)-[:USES]->(d:Documentation)) prima di usarli nel RETURN.
-        9. Usa ESCLUSIVAMENTE le proprietà dichiarate nello SCHEMA CONSENTITO. Non inventare proprietà come p.content o p.url.
 
-
-        SCHEMA CONSENTITO:
-        - Nodi: Post {title, date}, Topic {name}, Claim {text}, Source {name}, Documentation {text}
-        - Relazioni Post: (Post)-[:COVERS]->(Topic), (Post)-[:USES]->(Documentation), (Post)-[:EXTRACTS]->(Claim)
-        - Relazioni Topic: (Topic)-[r:RELATED_TO]->(Topic) dove r.type DEVE ESSERE 'PREREQUISITO', 'CONTRASTO', 'ESTENSIONE', 'SIMILARE', 'SOTTO_CATEGORIA' o 'APPLICAZIONE'. La relazione 'r' possiede la proprietà 'reason'.
-
-        ESEMPI DI RIFERIMENTO:
-        Utente: Seleziona i post di aprile 2026 che coprono il topic 'Docker'.
-        Cypher: MATCH (p:Post)-[:COVERS]->(t:Topic) WHERE p.date STARTS WITH '2026-04' AND t.name =~ '(?i).*docker.*' RETURN p.title
-        Utente: Topic simili a 'RAG' senza contrasti.
-        Cypher: MATCH (t1:Topic)-[:RELATED_TO {type: 'SIMILARE'}]->(t2:Topic) WHERE t2.name =~ '(?i).*rag.*' AND NOT (t1)-[:RELATED_TO {type: 'CONTRASTO'}]-(:Topic) RETURN t1.name
-        Utente: Trova i topic che sono un'estensione di 'Python' e restituisci anche il motivo.
-        Cypher: MATCH (t1:Topic)-[r:RELATED_TO {type: 'ESTENSIONE'}]->(t2:Topic) WHERE t2.name =~ '(?i).*python.*' RETURN t1.name, r.reason
-
-        Richiesta: """
-
-
-    prompt_text1 = """
-    Genera SOLO la query Neo4j Cypher. Non aggiungere spiegazioni o formattazione markdown.
-
-REGOLE RIGIDE:
-1. Restituisci in RETURN SOLO le variabili esplicitamente richieste.
-2. Le date ('date') appartengono ESCLUSIVAMENTE al nodo Post (p.date).
-3. Usa SEMPRE le regex case-insensitive per cercare i nomi o i testi (es. `=~ '(?i).*nome.*'`).
-4. I Tipi di relazione devono essere TUTTI IN MAIUSCOLO: COVERS, EXTRACTS, RELATED_TO, USES.
-5. Se la richiesta menziona nodi multipli, DEVI collegarli esplicitamente tramite i path corretti.
-6. Non usare mai due clausole WHERE separate in un MATCH; usa l'operatore AND.
-
-SCHEMA CONSENTITO:
-- Nodi: Post {title, date}, Topic {name}, Claim {text}, Source {name}
-- Relazioni:
-  (Post)-[:COVERS]->(Topic)
-  (Post)-[:EXTRACTS]->(Claim)
-  (Post)-[:USES]->(Source)
-  (Topic)-[r:RELATED_TO]->(Topic) dove r.type DEVE ESSERE 'PREREQUISITO', 'CONTRASTO', 'ESTENSIONE', 'SIMILARE', 'SOTTO_CATEGORIA' o 'APPLICAZIONE'.
-    
-    ESEMPI DI RIFERIMENTO:
-Utente: Trova i post del 2026 sul topic 'Docker' e restituisci claim e fonti (Source) associate.
-Cypher: MATCH (p:Post)-[:COVERS]->(t:Topic) MATCH (p)-[:EXTRACTS]->(c:Claim) MATCH (p)-[:USES]->(s:Source) WHERE t.name =~ '(?i).*docker.*' AND p.date STARTS WITH '2026' RETURN p.title, c.text, s.name
-
-Utente: Catena multi-hop in cui A è SIMILARE a B e B è un'ESTENSIONE di C, con motivi.
-Cypher: MATCH (a:Topic)-[r1:RELATED_TO {type: 'SIMILARE'}]->(b:Topic)-[r2:RELATED_TO {type: 'ESTENSIONE'}]->(c:Topic) RETURN a.name, b.name, c.name, r1.reason, r2.reason
-
-Utente: Conta quante fonti (Source) sono citate nei post che coprono il topic 'AI'.
-Cypher: MATCH (p:Post)-[:COVERS]->(t:Topic) MATCH (p)-[:USES]->(s:Source) WHERE t.name =~ '(?i).*ai.*' WITH p, count(s) AS total_sources RETURN p.title, total_sources
-    Richiesta: """
 
     prompt_text = """Genera SOLO la query Neo4j Cypher. Non aggiungere spiegazioni o formattazione markdown.
     REGOLE RIGIDE:
@@ -124,7 +67,6 @@ Cypher: MATCH (p:Post)-[:COVERS]->(t:Topic) MATCH (p)-[:USES]->(s:Source) WHERE 
 
     Richiesta: """
 
-    #full_prompt = prompt_text + query_testuale + "\nCypher: "
 
     full_prompt = prompt_text + query_testuale + "\nCypher: "
 
