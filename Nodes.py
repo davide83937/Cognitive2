@@ -30,6 +30,7 @@ def planning_node(state: State) -> Command:
     data_1, data_2, data_3 = date_sicure[0], date_sicure[1], date_sicure[2]
 
     contesto_kg_lista = get_covered_context_from_neo4j()
+    #prendiamo tutti gli elementi della lista e li inseriamo in un unica grande stringa
     contesto_kg_str = "\n".join(contesto_kg_lista)
 
     prompt_planning = get_planning_prompt(last_input, data_1, data_2, data_3, contesto_kg_str)
@@ -234,35 +235,32 @@ def tool_node(state: State):
     # 1. Recupera il contatore dallo stato (default a 0)
     current_search_count = state.get("search_count", 0)
 
-    # 2. Creiamo un dizionario dedicato SOLO agli aggiornamenti da restituire a LangGraph
     updates_for_state = {}
 
     for tool_call in last_message.tool_calls:
         tool_name = tool_call["name"]
         tool_args = tool_call.get("args", {})
 
-        # ---> INIZIO GUARDRAIL LIMITE RICERCHE <---
+
         if tool_name == "verified_internet_search":
             current_search_count += 1
 
-            if current_search_count > 2:  # Limite massimo di 2 ricerche
+            if current_search_count > 2:  # limite massimo di 2 ricerche
                 msg_limite = "SYSTEM WARNING: Limite di 2 ricerche web raggiunto per questo post. Usa le informazioni già raccolte (fonti locali e web) per scrivere la bozza ORA con 'write_an_article', senza altre ricerche."
                 print(f"🛑 [GUARDRAIL] {msg_limite}")
 
-                # Restituiamo l'avviso come finta "Observation"
+
                 result.append(ToolMessage(
                     content=msg_limite,
                     tool_call_id=tool_call["id"],
                     name=tool_name
                 ))
-                continue  # Salta l'esecuzione reale del tool e passa al prossimo (se c'è)
+                continue
         """
         Se decido di bloccare la ricerca (perché ha superato il limite di 2) e passo
         semplicemente oltre ignorando la richiesta, il LangGraph andrà in crash o darà errore. 
         Dirà: "Ehi, l'LLM ha chiesto di usare un tool, ma non hai fornito nessuna risposta per quell'ID!".
         """
-        # ---> FINE GUARDRAIL <---
-        # Esecuzione normale degli altri tool o della ricerca se entro i limiti
         tool = get_tools_by_name[tool_name]
         observation = tool.invoke(tool_args)
 
@@ -272,11 +270,11 @@ def tool_node(state: State):
             name=tool_name
         )
         result.append(tool_message)
-        # ---> INIZIO ESTRAZIONE KG SUMMARIES <---
+
         if tool_name in ["get_enhanced_topic_context"]:
-            # Salvo l'informazione nel mio dizionario di aggiornamento (non direttamente in state)
+
             updates_for_state["kg_summaries"] = str(observation)
-        # ---> FINE ESTRAZIONE KG SUMMARIES <---
+
         if tool_name == "write_an_article":
             titolo_estratto = tool_args.get("about", "Nuovo Articolo")
             autore_estratto = tool_args.get("author", "Agente AI")
@@ -288,28 +286,27 @@ def tool_node(state: State):
                 author=autore_estratto,
                 date=state.get("data_proposta")
             )
-    # 3. Aggiungiamo sempre i messaggi elaborati al nostro dizionario di aggiornamento
+
     updates_for_state["messages"] = result
     if articolo_generato is not None:
         updates_for_state["final_article"] = articolo_generato
         updates_for_state["search_count"] = 0  # RESETTA IL CONTATORE
         return Command(
-            update=updates_for_state,  # <--- Passiamo il dizionario completo!
+            update=updates_for_state,
             goto="ask_feedback_node"
         )
     else:
         nomi_tools_usati = [tc["name"] for tc in last_message.tool_calls]
         print(f"\n🛠️ [DEBUG AGENTE] In background l'LLM ha appena usato: {', '.join(nomi_tools_usati)}")
-        # AGGIUNTA GUARDRAIL
         if not last_message.tool_calls:
             print("⚠️ L'LLM non ha chiamato alcun tool nativo. Forza l'uso di write_an_article.")
             msg_forzatura = HumanMessage(
                 content="SYSTEM WARNING: Non hai chiamato alcun tool. Usa esplicitamente il tool 'write_an_article' ora per generare il pezzo e proseguire.")
             result.append(msg_forzatura)
-            updates_for_state["messages"] = result  # Aggiorniamo i messaggi con la forzatura appena aggiunta
+            updates_for_state["messages"] = result
         updates_for_state["search_count"] = current_search_count
         return Command(
-            update=updates_for_state,  # <--- Passiamo il dizionario completo!
+            update=updates_for_state,
             goto="accept_node"
         )
 
@@ -358,24 +355,24 @@ def update_article_node(state: State):
     llm = get_llm_with_tools()
     update_prompt = get_update_prompt()
 
-    # 1. Recuperiamo l'articolo attuale comodamente dallo stato (come facciamo in ask_feedback_node)
+
     articolo = state.get("final_article")
     if isinstance(articolo, dict):
         testo_articolo = articolo.get("text", "")
     else:
         testo_articolo = getattr(articolo, "text", "")
 
-    # 2. Recuperiamo il feedback dell'utente (che è sempre l'ultimissimo messaggio)
+
     feedback_utente = state["messages"][-1].content
 
-    # 3. Creiamo un pacchetto perfetto solo con le info necessarie
+
     istruzioni_revisione = f"""
     Ecco la bozza attuale dell'articolo:
     {testo_articolo}
     {feedback_utente}
     Riscrivi l'articolo applicando queste modifiche usando il tool 'write_an_article'.
     """
-    # 4. Assembliamo i messaggi per l'LLM: niente cronologia sporca, solo il prompt di sistema e le istruzioni
+
     messages = [
         {"role": "system", "content": update_prompt},
         {"role": "user", "content": istruzioni_revisione}
@@ -567,6 +564,7 @@ def decision_node(state: State) -> Command:
         claims=estrazione.claims,
         sources=estrazione.sources,
         publish_date=target_date,
+        documentation_text=testo,
         related_topics=estrazione.related_topics
     )
 

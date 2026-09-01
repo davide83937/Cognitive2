@@ -130,7 +130,7 @@ check_date_prompt = """Sei l'assistente editoriale responsabile della validazion
     
     REGOLE TASSATIVE DI COMPORTAMENTO (EVITA LOOP DI TOOL):
     1. AZIONE INIZIALE: Usa il tool per verificare qual è l'ultima data occupata o se la data proposta è libera.
-    2. STOP IMMEDIATO (NO CALCOLI, NO ALTRI TOOL): Una volta che hai ricevuto i dati dal database, NON devi invocare altri tool e NON devi fare calcoli matematici (es. non aggiungere giorni). 
+    2. STOP IMMEDIATO (NO CALCOLI): Una volta che hai ricevuto i dati dal database, NON devi invocare altri tool e NON devi fare calcoli matematici (es. non aggiungere giorni). 
     3. LOGICA DI VERIFICA: Se il database ti dice che l'ultimo post è il 2026-07-06 e la data proposta per l'articolo corrente è il 2026-07-08, deduci immediatamente che il 2026-07-08 è LIBERO e non ha conflitti. 
     4. RISPOSTA FINALE: Genera subito il testo per l'utente dicendo chiaramente che la data proposta è la prima disponibile ed è libera. 
     

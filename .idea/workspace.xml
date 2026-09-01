@@ -6,10 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="3d3ce9fe-c17a-406c-a605-0eb35db0879d" name="Changes" comment="più o meno finito">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Nodes.py" beforeDir="false" afterPath="$PROJECT_DIR$/Nodes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Prompt.py" beforeDir="false" afterPath="$PROJECT_DIR$/Prompt.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fine_tuned_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/fine_tuned_model.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/function_tool.py" beforeDir="false" afterPath="$PROJECT_DIR$/function_tool.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/query_neo4j.py" beforeDir="false" afterPath="$PROJECT_DIR$/query_neo4j.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_fine_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/test_fine_tuning.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,61 +47,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0000071679897249" />
-      <entry key="MS500" value="1.0935576866745431" />
-      <entry key="S2" value="1.553056968388399" />
-      <entry key="S5" value="1.789056219689523" />
-      <entry key="S10" value="1.8882883677391415" />
-      <entry key="S30" value="1.9677185141390094" />
-      <entry key="S60" value="2.274775443936207" />
-      <entry key="M2" value="4.1979985718967106" />
-      <entry key="M5" value="9.87000071544132" />
-      <entry key="M10" value="14.328724279198909" />
-      <entry key="M15" value="16.972808997959596" />
-      <entry key="M30" value="24.044092193146287" />
-      <entry key="H1" value="37.12236532726084" />
-      <entry key="H2" value="58.55176938610853" />
-      <entry key="H4" value="94.36983149575163" />
-      <entry key="D1" value="432.62168316481916" />
-      <entry key="W1" value="931.1564436119586" />
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="3.52045716239868E-198" />
+      <entry key="S2" value="4.331670410770165E-50" />
+      <entry key="S5" value="1.8174645674351615E-20" />
+      <entry key="S10" value="1.4889240823452502E-10" />
+      <entry key="S30" value="8.520330569640774E-4" />
+      <entry key="S60" value="0.05305795218362692" />
+      <entry key="M2" value="0.5095562864141557" />
+      <entry key="M5" value="2.4781226205758484" />
+      <entry key="M10" value="4.7059236189874545" />
+      <entry key="M15" value="5.963290437987764" />
+      <entry key="M30" value="7.663238178857638" />
+      <entry key="H1" value="8.7365855492639" />
+      <entry key="H2" value="9.34583441636328" />
+      <entry key="H4" value="10.411447057000915" />
+      <entry key="D1" value="204.15843416937673" />
+      <entry key="W1" value="851.5038635961661" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="0.0" />
-      <entry key="S2" value="0.0" />
-      <entry key="S5" value="0.0" />
-      <entry key="S10" value="0.0" />
-      <entry key="S30" value="4.1438490196700435E-160" />
-      <entry key="S60" value="2.6126990682445163E-80" />
-      <entry key="M2" value="2.238465876137666E-40" />
-      <entry key="M5" value="2.380072818954054E-16" />
-      <entry key="M10" value="2.8814329201182407E-8" />
-      <entry key="M15" value="1.5117235192857929E-5" />
-      <entry key="M30" value="0.008447953718756448" />
-      <entry key="H1" value="0.22015281150979654" />
-      <entry key="H2" value="1.3983114064785105" />
-      <entry key="H4" value="5.168323492501106" />
-      <entry key="D1" value="69.9948452256497" />
-      <entry key="W1" value="166.61008479571785" />
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0" />
+      <entry key="S2" value="1.0" />
+      <entry key="S5" value="1.0" />
+      <entry key="S10" value="1.0000000000395945" />
+      <entry key="S30" value="1.0004824738094436" />
+      <entry key="S60" value="1.0305082355337067" />
+      <entry key="M2" value="1.245867446849517" />
+      <entry key="M5" value="1.8637913955286924" />
+      <entry key="M10" value="2.3141280380887337" />
+      <entry key="M15" value="2.511530610269187" />
+      <entry key="M30" value="2.7386588835447827" />
+      <entry key="H1" value="2.864747003577076" />
+      <entry key="H2" value="2.9312434950280193" />
+      <entry key="H4" value="2.998066099534885" />
+      <entry key="D1" value="33.10781365267278" />
+      <entry key="W1" value="150.69638448362585" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.8066476627140756" />
-      <entry key="MS500" value="1.0479309256298641" />
-      <entry key="S2" value="1.5370297533995625" />
-      <entry key="S5" value="1.7817110452105072" />
-      <entry key="S10" value="1.8844195894833573" />
-      <entry key="S30" value="1.966374712195915" />
-      <entry key="S60" value="2.2739565116798763" />
-      <entry key="M2" value="4.197109451607636" />
-      <entry key="M5" value="9.869069003457893" />
-      <entry key="M10" value="14.328019744625843" />
-      <entry key="M15" value="16.972232085989113" />
-      <entry key="M30" value="24.05201783937385" />
-      <entry key="H1" value="37.34192177689777" />
-      <entry key="H2" value="59.94928085389263" />
-      <entry key="H4" value="99.53705486439422" />
-      <entry key="D1" value="502.6143008532903" />
-      <entry key="W1" value="1097.7657669159157" />
+      <entry key="MS100" value="2.1191660908855675E-7" />
+      <entry key="MS500" value="0.046262915562501526" />
+      <entry key="S2" value="0.4637759778738652" />
+      <entry key="S5" value="0.7353994486375025" />
+      <entry key="S10" value="0.8575543415875195" />
+      <entry key="S30" value="0.9511470300504152" />
+      <entry key="S60" value="1.051317874273471" />
+      <entry key="M2" value="1.7165431615091054" />
+      <entry key="M5" value="4.301388206648663" />
+      <entry key="M10" value="6.990777876413657" />
+      <entry key="M15" value="8.452663167573553" />
+      <entry key="M30" value="10.38929072687547" />
+      <entry key="H1" value="11.594603174552045" />
+      <entry key="H2" value="12.273600513218952" />
+      <entry key="H4" value="13.407738105401172" />
+      <entry key="D1" value="237.26498641004878" />
+      <entry key="W1" value="1002.1995289904135" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -173,7 +176,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
+        <option value="bundled-python-sdk-821f704e66d9-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.9437.214" />
       </set>
     </attachedChunks>
   </component>
@@ -184,22 +187,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1779790139548</updated>
-    </task>
-    <task id="LOCAL-00013" summary="neo4j">
-      <option name="closed" value="true" />
-      <created>1781591197146</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
-      <option name="project" value="LOCAL" />
-      <updated>1781591197146</updated>
-    </task>
-    <task id="LOCAL-00014" summary="neo4j">
-      <option name="closed" value="true" />
-      <created>1781602959561</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
-      <option name="project" value="LOCAL" />
-      <updated>1781602959561</updated>
     </task>
     <task id="LOCAL-00015" summary="neo4j">
       <option name="closed" value="true" />
@@ -577,7 +564,23 @@
       <option name="project" value="LOCAL" />
       <updated>1784311211836</updated>
     </task>
-    <option name="localTasksCounter" value="62" />
+    <task id="LOCAL-00062" summary="più o meno finito">
+      <option name="closed" value="true" />
+      <created>1784386553709</created>
+      <option name="number" value="00062" />
+      <option name="presentableId" value="LOCAL-00062" />
+      <option name="project" value="LOCAL" />
+      <updated>1784386553710</updated>
+    </task>
+    <task id="LOCAL-00063" summary="più o meno finito">
+      <option name="closed" value="true" />
+      <created>1784399604941</created>
+      <option name="number" value="00063" />
+      <option name="presentableId" value="LOCAL-00063" />
+      <option name="project" value="LOCAL" />
+      <updated>1784399604942</updated>
+    </task>
+    <option name="localTasksCounter" value="64" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

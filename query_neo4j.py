@@ -27,7 +27,7 @@ def get_latest_scheduled_date_query() -> str:
     """
 
 
-def get_save_post_to_neo4j_query() -> str:
+def get_save_post_to_neo4j_query_old() -> str:
     """Restituisce la query per salvare un nuovo post, topic, claims, fonti e relazioni nel Knowledge Graph."""
     return """
     // 1. Crea/Trova il Post e imposta la data
@@ -53,6 +53,49 @@ def get_save_post_to_neo4j_query() -> str:
     MERGE (p)-[:USES]->(s)
 
     // 5. DINAMICITÀ AI: Generazione relazioni arricchite tra topic
+    WITH t
+    UNWIND $related_topics AS rel
+    // rel ora è un dizionario con target_topic, relationship_type, reason
+    MATCH (old_t:Topic {name: toLower(rel.target_topic)})
+    WHERE old_t <> t
+    // Creiamo la relazione e iniettiamo le proprietà
+    MERGE (t)-[r:RELATED_TO]->(old_t)
+    ON CREATE SET r.type = rel.relationship_type, r.reason = rel.reason
+    ON MATCH SET r.type = rel.relationship_type, r.reason = rel.reason
+    """
+
+def get_save_post_to_neo4j_query() -> str:
+    """Restituisce la query per salvare un nuovo post, topic, claims, fonti, documentazione e relazioni nel Knowledge Graph."""
+    return """
+    // 1. Crea/Trova il Post e imposta la data
+    MERGE (p:Post {title: $title})
+    ON CREATE SET p.date = $date
+    ON MATCH SET p.date = $date
+
+    // 2. Crea/Aggiorna il nodo Documentation (l'articolo completo)
+    // Facciamo il MERGE direttamente dal Post per evitare costosi calcoli di matching su testi molto lunghi
+    MERGE (p)-[:USES]->(d:Documentation)
+    ON CREATE SET d.text = $documentation_text
+    ON MATCH SET d.text = $documentation_text
+
+    // 3. Crea/Trova il Topic principale (normalizzato in minuscolo per sicurezza di indicizzazione)
+    MERGE (t:Topic {name: toLower($topic)})
+    MERGE (p)-[:COVERS]->(t)
+
+    // 4. Aggiungi le Claims
+    WITH p, t
+    UNWIND $claims AS claim_text
+    MERGE (c:Claim {text: claim_text})
+    MERGE (p)-[:EXTRACTS]->(c)
+    MERGE (c)-[:RELATED_TO]->(t)
+
+    // 5. Aggiungi le Fonti
+    WITH p, t
+    UNWIND $sources AS source_name
+    MERGE (s:Source {name: source_name})
+    MERGE (p)-[:USES]->(s)
+
+    // 6. DINAMICITÀ AI: Generazione relazioni arricchite tra topic
     WITH t
     UNWIND $related_topics AS rel
     // rel ora è un dizionario con target_topic, relationship_type, reason

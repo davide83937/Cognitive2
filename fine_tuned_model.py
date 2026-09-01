@@ -3,7 +3,7 @@ import os
 
 # Sostituisci con l'IP e la porta esatti esposti dal tuo server Flask
 # Dai log del tuo server vedo che è in ascolto su: http://192.168.1.2:5000
-API_URL = os.environ.get("CYPHER_API_URL", "http://192.168.1.2:5000/generate_cypher")
+API_URL = os.environ.get("CYPHER_API_URL", "http://192.168.1.4:5000/generate_cypher")
 
 
 def generate_cypher(query_testuale: str) -> str:
@@ -18,10 +18,10 @@ def generate_cypher(query_testuale: str) -> str:
     3. Se viene richiesto di estrarre i testi dei claim o il contesto trattato filtrando per data, devi unire esplicitamente tutti e tre i nodi nel MATCH principale: (c:Claim)-[:RELATED_TO]->(t:Topic)<-[:COVERS]-(p:Post). Non inventare sotto-query o comprehension nel RETURN.
     4. Mantieni i percorsi ottimali e diretti.
 
-   SCHEMA CONSENTITO:
-- Nodi: Post {title, date}, Topic {name}, Claim {text}, Source {name}
-- Relazioni Post: (Post)-[:COVERS]->(Topic), (Post)-[:EXTRACTS]->(Claim), (Post)-[:USES]->(Source)
-- Relazioni Topic: (Topic)-[r:RELATED_TO]->(Topic) dove r.type DEVE ESSERE 'PREREQUISITO', 'CONTRASTO', 'ESTENSIONE', 'SIMILARE', 'SOTTO_CATEGORIA' o 'APPLICAZIONE'.
+       SCHEMA CONSENTITO:
+    - Nodi: Post {title, date}, Topic {name}, Claim {text}, Source {name}
+    - Relazioni Post: (Post)-[:COVERS]->(Topic), (Post)-[:EXTRACTS]->(Claim), (Post)-[:USES]->(Source)
+    - Relazioni Topic: (Topic)-[r:RELATED_TO]->(Topic) dove r.type DEVE ESSERE 'PREREQUISITO', 'CONTRASTO', 'ESTENSIONE', 'SIMILARE', 'SOTTO_CATEGORIA' o 'APPLICAZIONE'.
 
     ESEMPI DI RIFERIMENTO:
     Utente: Seleziona i post di aprile 2026 che coprono il topic 'Docker'.

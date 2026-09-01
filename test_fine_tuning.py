@@ -11,13 +11,13 @@ from neo4j.exceptions import Neo4jError
 DATASET_PATH = "test_set_esterno.json"  # Nuovo file del test set
 
 # L'API Flask in locale funziona (Lascia invariato)
-API_URL = os.environ.get("CYPHER_API_URL", "http://192.168.1.2:5000/generate_cypher")
+API_URL = os.environ.get("CYPHER_API_URL", "http://192.168.1.4:5000/generate_cypher")
 
 # --- MODIFICA QUESTA PARTE PER IL CLOUD ---
 # Se usi Neo4j Aura, il prefisso è solitamente "neo4j+s://"
-NEO4J_URI = "neo4j+s://13ee89a5.databases.neo4j.io"
-NEO4J_USER = "13ee89a5" # o il tuo username cloud
-NEO4J_PASSWORD = "Q_hewmVIUQ_Vm1vxnS-BxiOSE6Gvn30cddRuqFSnS7Y"
+NEO4J_URI = "neo4j+s://941d934d.databases.neo4j.io"
+NEO4J_USER = "941d934d" # o il tuo username cloud
+NEO4J_PASSWORD = "acexibjJSvbj-RCi-6bm6PR1Q-6J_Bwff82cYeQ6XPw"
 # ------------------------------------------
 
 # ==========================================
@@ -46,7 +46,6 @@ def generate_cypher(query_testuale: str) -> str:
     Genera una query Cypher deterministica delegando il calcolo al server API (Flask)
     che ospita il modello fine-tuned Qwen-7B sulla RTX 3070.
     """
-
 
     prompt_text = """Genera SOLO la query Neo4j Cypher. Non aggiungere spiegazioni o formattazione markdown.
     REGOLE RIGIDE:
